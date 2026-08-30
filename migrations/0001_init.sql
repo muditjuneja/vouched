@@ -51,18 +51,30 @@ CREATE INDEX idx_incidents_status ON incidents(status);
 -- Sample rows so the homepage renders something meaningful before the
 -- triage worker exists. Replace/remove once real incidents flow through.
 INSERT INTO incidents
-  (status, title, summary, location, country, aircraft_type, operator,
+  (status, title, summary, location, country, aircraft_type, operator, flight_number,
    fatalities, injuries, occurred_at, first_seen_at, sources)
 VALUES
   ('confirmed_fatalities',
    'Sample: cargo aircraft down shortly after departure',
    'Placeholder record for layout/testing. Replace once ingestion + triage are wired up.',
-   'Example City', 'US', 'MD-11F', 'Example Cargo Co.',
+   'Example City', 'US', 'MD-11F', 'Example Cargo Co.', NULL,
    3, 0, '2026-08-20T14:10:00Z', '2026-08-20T14:22:00Z',
    '[{"name":"Sample source","url":"https://example.com","type":"news"}]'),
   ('unconfirmed',
    'Sample: reports of small aircraft down near regional airport',
    'Placeholder record — unconfirmed status shows the taxonomy before anything is verified.',
-   'Example County', 'US', NULL, NULL,
+   'Example County', 'US', NULL, NULL, NULL,
    NULL, NULL, NULL, '2026-08-29T09:05:00Z',
-   '[{"name":"Sample wire","url":"https://example.com","type":"news"}]');
+   '[{"name":"Sample wire","url":"https://example.com","type":"news"}]'),
+  ('investigating',
+   'Sample: regional turboprop diverts after cabin pressure warning',
+   'Crew declared an emergency and diverted; aircraft landed safely, all passengers deplaned normally. Investigation opened by the relevant authority to determine cause.',
+   'Example Regional Airport', 'DE', 'ATR 72', 'Example Regional Airlines', 'ER482',
+   0, 0, '2026-08-25T07:40:00Z', '2026-08-25T08:02:00Z',
+   '[{"name":"Sample wire","url":"https://example.com","type":"news"},{"name":"Example Authority (official)","url":"https://example.gov","type":"official"}]'),
+  ('confirmed_no_fatalities',
+   'Sample: light aircraft makes gear-up landing, no injuries reported',
+   'Aircraft landed with its landing gear retracted following a reported hydraulic issue. No injuries reported among the two occupants.',
+   'Example Municipal Airport', 'US', 'Cessna 172', NULL, NULL,
+   0, 0, '2026-08-28T16:15:00Z', '2026-08-28T16:30:00Z',
+   '[{"name":"Sample local news","url":"https://example.com","type":"news"}]');

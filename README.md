@@ -153,6 +153,21 @@ policy).
 - `POST /admin/backfill/wikidata` — pull the Wikidata historical set into
   `raw_signals`.
 
+## Visually verifying the UI
+
+`scripts/screenshot.mjs` drives the real running `wrangler dev` server with
+Playwright and saves full-page screenshots — this is how the UI actually
+got checked while building it (caught a real mobile nav-wrap bug this way,
+not just eyeballing code). Requires `wrangler dev` running on :8787:
+
+```bash
+npm run dev &
+node scripts/screenshot.mjs /tmp/screenshots
+```
+
+Uses the Chromium Playwright manages for you (`npx playwright install` if
+you don't have one already — this repo doesn't vendor a browser binary).
+
 ## Deploy
 
 ```bash
