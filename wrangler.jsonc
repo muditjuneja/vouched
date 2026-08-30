@@ -1,0 +1,32 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "planecrashes-today",
+  "main": "src/index.ts",
+  // Pinned to what the currently-installed wrangler (see package.json) supports
+  // for local dev. Bump forward after `npm install --save-dev wrangler@4`.
+  "compatibility_date": "2025-07-18",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // System of record. Run `wrangler d1 create planecrashes-today-db` first,
+  // then paste the returned database_id below (and into .dev.vars-equivalent
+  // for remote). Local dev works without a real ID via --local.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "planecrashes-today-db",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // Polls ingestion sources on a schedule, independent of any deploy.
+  // Every 15 min for now — tune once real source rate limits are dialed in.
+  "triggers": {
+    "crons": ["*/15 * * * *"]
+  }
+
+  // Phase 2, not wired up yet — add when the pipeline needs them:
+  // "kv_namespaces": [{ "binding": "CACHE", "id": "..." }]        // hot-path read caching
+  // "queues": { "producers": [...], "consumers": [...] }          // decouple ingest from LLM triage
+  // "r2_buckets": [{ "binding": "ARCHIVE", "bucket_name": "..." }] // raw source snapshots (e.g. FAA CSV, which self-deletes history)
+}
