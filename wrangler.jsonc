@@ -54,9 +54,12 @@
   },
 
   // Polls ingestion sources on a schedule, independent of any deploy.
-  // Every 15 min for now — tune once real source rate limits are dialed in.
+  // Two patterns, dispatched by event.cron in the scheduled() handler:
+  // fast/breaking sources (GDELT, NewsData.io) every 15min; slower/heavier
+  // authoritative sources (NTSB CAROL - a POST+unzip; FAA - a full CSV
+  // pull) hourly.
   "triggers": {
-    "crons": ["*/15 * * * *"]
+    "crons": ["*/15 * * * *", "0 * * * *"]
   },
 
   // Model slug is a var (not a secret) so it's easy to swap without

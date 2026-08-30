@@ -2,6 +2,8 @@ import { Hono } from "hono";
 import { fetchGdeltSignals } from "./sources/gdelt";
 import { fetchNewsdataSignals } from "./sources/newsdata";
 import { fetchWikidataBackfill } from "./sources/wikidata";
+import { fetchNtsbSignals } from "./sources/ntsb";
+import { fetchFaaSignals } from "./sources/faa";
 import {
   countRawSignals,
   getIncident,
@@ -27,6 +29,12 @@ export interface Env {
 interface TriageMessage {
   rawSignalId: number;
 }
+
+type FastSource = "gdelt" | "newsdata";
+type SlowSource = "ntsb" | "faa";
+
+const FAST_SOURCES: FastSource[] = ["gdelt", "newsdata"];
+const SLOW_SOURCES: SlowSource[] = ["ntsb", "faa"];
 
 const HOME_CACHE_KEY = "home:v1";
 const HOME_CACHE_TTL_SECONDS = 60; // freshness vs. read load — short is fine, ingestion is minutes-grained anyway
@@ -59,12 +67,17 @@ app.get("/debug/signals", async (c) => {
 
 // Manual triggers for local dev (`wrangler dev` doesn't fire cron on its own
 // without --test-scheduled). Same code paths the scheduled handler uses.
+// NTSB takes an optional date range (defaults to the last 7 days); the rest
+// ignore query params.
 app.post("/debug/ingest/:source", async (c) => {
   const source = c.req.param("source");
-  if (source !== "gdelt" && source !== "newsdata") {
+  if (!isKnownSource(source)) {
     return c.json({ error: `unknown source '${source}'` }, 400);
   }
-  const result = await runIngest(c.env, source);
+  const result = await runIngest(c.env, source, {
+    ntsbStartDate: c.req.query("start"),
+    ntsbEndDate: c.req.query("end"),
+  });
   return c.json(result);
 });
 
@@ -86,20 +99,44 @@ app.post("/admin/backfill/wikidata", async (c) => {
   return c.json({ source: "wikidata_backfill", fetched: signals.length, ...result });
 });
 
-async function runIngest(env: Env, source: "gdelt" | "newsdata") {
+function isKnownSource(s: string): s is FastSource | SlowSource {
+  return (FAST_SOURCES as string[]).includes(s) || (SLOW_SOURCES as string[]).includes(s);
+}
+
+async function runIngest(
+  env: Env,
+  source: FastSource | SlowSource,
+  opts: { ntsbStartDate?: string; ntsbEndDate?: string } = {}
+) {
   let signals: NormalizedSignal[];
 
-  if (source === "gdelt") {
-    signals = await fetchGdeltSignals();
-  } else {
-    if (!env.NEWSDATA_API_KEY) {
-      return { source, skipped: true, reason: "NEWSDATA_API_KEY not set" };
+  switch (source) {
+    case "gdelt":
+      signals = await fetchGdeltSignals();
+      break;
+    case "newsdata":
+      if (!env.NEWSDATA_API_KEY) {
+        return { source, skipped: true, reason: "NEWSDATA_API_KEY not set" };
+      }
+      signals = await fetchNewsdataSignals(env.NEWSDATA_API_KEY);
+      break;
+    case "ntsb": {
+      // Default window: last 7 days, inclusive — deliberately overlaps
+      // previous runs (dedup on url means re-seeing a case is a no-op) so
+      // a missed/failed run doesn't silently drop cases.
+      const end = opts.ntsbEndDate ?? new Date().toISOString().slice(0, 10);
+      const start = opts.ntsbStartDate ?? new Date(Date.now() - 7 * 86400_000).toISOString().slice(0, 10);
+      signals = await fetchNtsbSignals(start, end);
+      break;
     }
-    signals = await fetchNewsdataSignals(env.NEWSDATA_API_KEY);
+    case "faa":
+      signals = await fetchFaaSignals();
+      break;
   }
 
   // Archive the raw pull before touching D1 — durability insurance even if
-  // the D1 write or triage step below fails.
+  // the D1 write or triage step below fails. Matters most for FAA, whose
+  // own rolling window deletes history we didn't save ourselves.
   await archiveRawPayload(env.ARCHIVE, source, signals);
 
   const result = await upsertRawSignals(env.DB, source, signals);
@@ -111,23 +148,27 @@ async function runIngest(env: Env, source: "gdelt" | "newsdata") {
   return { source, fetched: signals.length, ...result };
 }
 
+async function runIngestBatch(env: Env, sources: (FastSource | SlowSource)[]) {
+  for (const source of sources) {
+    try {
+      const r = await runIngest(env, source);
+      console.log(`ingest ${source}:`, JSON.stringify(r));
+    } catch (err) {
+      // One source failing shouldn't take the others down with it.
+      console.error(`ingest ${source} failed:`, err);
+    }
+  }
+}
+
 export default {
   fetch: app.fetch,
 
-  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
-    ctx.waitUntil(
-      (async () => {
-        for (const source of ["gdelt", "newsdata"] as const) {
-          try {
-            const r = await runIngest(env, source);
-            console.log(`ingest ${source}:`, JSON.stringify(r));
-          } catch (err) {
-            // One source failing shouldn't take the others down with it.
-            console.error(`ingest ${source} failed:`, err);
-          }
-        }
-      })()
-    );
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
+    // Two cron patterns share this handler (see wrangler.jsonc) — the fast
+    // breaking-signal sources run every 15min, the slower/heavier
+    // authoritative sources (a POST+unzip, and a full CSV pull) hourly.
+    const sources = event.cron === "0 * * * *" ? SLOW_SOURCES : FAST_SOURCES;
+    ctx.waitUntil(runIngestBatch(env, sources));
   },
 
   async queue(batch: MessageBatch<TriageMessage>, env: Env) {
