@@ -1,0 +1,24 @@
+# Copy to .dev.vars for local `wrangler dev` (gitignored). In production, set
+# each of these with `wrangler secret put <NAME>`.
+
+# Gates every request to the MCP endpoint. Generate with e.g.
+# `openssl rand -hex 32`.
+MCP_BEARER_TOKEN=
+
+# DataForSEO (unlocks the seo/serp/backlinks/ai_visibility tools).
+# Pay-as-you-go, bring-your-own-key: https://dataforseo.com/
+DATAFORSEO_LOGIN=
+DATAFORSEO_PASSWORD=
+# Optional soft cap; the cost tracker warns past this, it does not hard-stop.
+DATAFORSEO_DAILY_BUDGET_USD=
+
+# Google OAuth (unlocks the gsc/analytics tools). Create a client at
+# https://console.cloud.google.com/apis/credentials, add
+# `<your-worker-url>/oauth/google/callback` as an authorized redirect URI,
+# and enable the Search Console API + Google Analytics Data API.
+GOOGLE_OAUTH_CLIENT_ID=
+GOOGLE_OAUTH_CLIENT_SECRET=
+
+# Optional: raises PageSpeed Insights quota for audit_site's Core Web
+# Vitals enrichment. audit_site works without it, at a lower rate limit.
+PAGESPEED_API_KEY=
