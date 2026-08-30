@@ -8,8 +8,8 @@
   "compatibility_flags": ["nodejs_compat"],
 
   // System of record. Run `wrangler d1 create planecrashes-today-db` first,
-  // then paste the returned database_id below (and into .dev.vars-equivalent
-  // for remote). Local dev works without a real ID via --local.
+  // then paste the returned database_id below. Local dev works without a
+  // real id (wrangler simulates D1 locally).
   "d1_databases": [
     {
       "binding": "DB",
@@ -19,14 +19,55 @@
     }
   ],
 
+  // Hot-path read cache for the homepage. Run `wrangler kv namespace create
+  // CACHE` and paste the returned id below.
+  "kv_namespaces": [
+    {
+      "binding": "CACHE",
+      "id": "REPLACE_WITH_KV_NAMESPACE_ID"
+    }
+  ],
+
+  // Durable archive of every raw source payload, independent of D1 — matters
+  // most for sources that delete their own history (e.g. FAA's rolling CSV,
+  // once implemented). Run `wrangler r2 bucket create planecrashes-today-archive`.
+  "r2_buckets": [
+    {
+      "binding": "ARCHIVE",
+      "bucket_name": "planecrashes-today-archive"
+    }
+  ],
+
+  // Decouples ingestion (cron, must stay fast) from triage (an LLM call per
+  // signal — slower, and needs retry semantics for free via the queue).
+  // Run `wrangler queues create planecrashes-today-ingest` first.
+  "queues": {
+    "producers": [{ "queue": "planecrashes-today-ingest", "binding": "INGEST_QUEUE" }],
+    "consumers": [
+      {
+        "queue": "planecrashes-today-ingest",
+        "max_batch_size": 5,
+        "max_batch_timeout": 30,
+        "max_retries": 3
+      }
+    ]
+  },
+
   // Polls ingestion sources on a schedule, independent of any deploy.
   // Every 15 min for now — tune once real source rate limits are dialed in.
   "triggers": {
     "crons": ["*/15 * * * *"]
+  },
+
+  // Model slug is a var (not a secret) so it's easy to swap without
+  // `wrangler secret put`. Check https://openrouter.ai/models for current
+  // options/pricing before committing to this one — model catalogs change.
+  "vars": {
+    "OPENROUTER_MODEL": "anthropic/claude-sonnet-4.5"
   }
 
-  // Phase 2, not wired up yet — add when the pipeline needs them:
-  // "kv_namespaces": [{ "binding": "CACHE", "id": "..." }]        // hot-path read caching
-  // "queues": { "producers": [...], "consumers": [...] }          // decouple ingest from LLM triage
-  // "r2_buckets": [{ "binding": "ARCHIVE", "bucket_name": "..." }] // raw source snapshots (e.g. FAA CSV, which self-deletes history)
+  // Secrets (never committed) — set with `wrangler secret put <NAME>`:
+  //   OPENROUTER_API_KEY   required — triage will throw without it
+  //   NEWSDATA_API_KEY     optional — that source is skipped (not a hard
+  //                        failure) if unset, GDELT still runs
 }

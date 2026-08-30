@@ -2,7 +2,9 @@
 // Docs: https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/
 // Filtering on the AVIATION_INCIDENT GKG theme, last 1 day, most recent first.
 
-export interface GdeltArticle {
+import type { NormalizedSignal } from "../types";
+
+interface GdeltArticle {
   url: string;
   title: string;
   domain: string;
@@ -17,7 +19,7 @@ interface GdeltResponse {
 
 const GDELT_ENDPOINT = "https://api.gdeltproject.org/api/v2/doc/doc";
 
-export async function fetchGdeltAviationSignals(): Promise<GdeltArticle[]> {
+export async function fetchGdeltSignals(): Promise<NormalizedSignal[]> {
   const params = new URLSearchParams({
     query: "theme:AVIATION_INCIDENT",
     mode: "ArtList",
@@ -36,5 +38,15 @@ export async function fetchGdeltAviationSignals(): Promise<GdeltArticle[]> {
   }
 
   const body = (await res.json()) as GdeltResponse;
-  return body.articles ?? [];
+  return (body.articles ?? []).map(
+    (a): NormalizedSignal => ({
+      url: a.url,
+      title: a.title,
+      domain: a.domain ?? null,
+      sourceCountry: a.sourcecountry ?? null,
+      language: a.language ?? null,
+      seenAt: a.seendate,
+      raw: a,
+    })
+  );
 }
