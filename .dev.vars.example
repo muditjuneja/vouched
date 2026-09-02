@@ -22,3 +22,29 @@ GOOGLE_OAUTH_CLIENT_SECRET=
 # Optional: raises PageSpeed Insights quota for audit_site's Core Web
 # Vitals enrichment. audit_site works without it, at a lower rate limit.
 PAGESPEED_API_KEY=
+
+# --- Cloud offering only — leave all of these unset for self-host ---
+# Setting CLOUD_MODE flips /mcp from the shared-bearer-token check above to
+# per-tenant API keys, and enables the Clerk-gated dashboard/OAuth-connect
+# routes. Self-host behavior is completely unaffected when this is unset.
+CLOUD_MODE=
+
+# Clerk (dashboard auth). CLERK_JWT_KEY is the PEM public key from your
+# Clerk dashboard's API Keys section — set it for zero-network-roundtrip
+# session verification (Clerk's own recommendation for edge runtimes);
+# CLERK_SECRET_KEY is a fallback that verifies against Clerk's API instead.
+CLERK_SECRET_KEY=
+CLERK_JWT_KEY=
+
+# Dodo Payments (billing) — added in M13, unused until then.
+DODO_API_KEY=
+DODO_WEBHOOK_SECRET=
+
+# xmit.sh / Transmit (transactional email) — added in M18, unused until then.
+XMIT_API_KEY=
+
+# The cloud tier's own DataForSEO account for bundled access — separate
+# from DATAFORSEO_LOGIN/PASSWORD above, which stays the self-host BYOK
+# path. Added in M14, unused until then.
+CLOUD_DATAFORSEO_LOGIN=
+CLOUD_DATAFORSEO_PASSWORD=

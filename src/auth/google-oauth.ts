@@ -16,7 +16,19 @@ const SCOPES: Record<ScopeGroup, string> = {
   analytics_property: "openid email https://www.googleapis.com/auth/analytics.readonly"
 };
 
-export function buildAuthUrl(env: Env, redirectUri: string, scopeGroup: ScopeGroup): string {
+/**
+ * `state` round-trips through Google untouched, so it's how the callback
+ * learns which scope group (and, in cloud mode, which tenant) this consent
+ * flow was for. Self-host: just the scope group. Cloud mode: scope group
+ * plus the Clerk user id that started the flow, colon-separated (a Clerk
+ * user id never contains a colon, so this is an unambiguous split).
+ */
+export function buildAuthUrl(
+  env: Env,
+  redirectUri: string,
+  scopeGroup: ScopeGroup,
+  tenantId: string | null = null
+): string {
   const url = new URL(AUTH_ENDPOINT);
   url.searchParams.set("client_id", env.GOOGLE_OAUTH_CLIENT_ID ?? "");
   url.searchParams.set("redirect_uri", redirectUri);
@@ -27,7 +39,7 @@ export function buildAuthUrl(env: Env, redirectUri: string, scopeGroup: ScopeGro
   // without this, reconnecting after a revoked/expired refresh_token would
   // silently fail to get a new one.
   url.searchParams.set("prompt", "consent");
-  url.searchParams.set("state", scopeGroup);
+  url.searchParams.set("state", tenantId ? `${scopeGroup}:${tenantId}` : scopeGroup);
   return url.toString();
 }
 

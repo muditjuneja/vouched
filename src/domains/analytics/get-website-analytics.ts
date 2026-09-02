@@ -22,7 +22,8 @@ const inputSchema = z.object({
 });
 
 async function handler(args: z.infer<typeof inputSchema>, env: Env) {
-  const website = await getWebsiteByDomain(env.DB, args.domain);
+  const tenantId = env.__tenantId ?? null;
+  const website = await getWebsiteByDomain(env.DB, args.domain, tenantId);
   if (!website?.ga4_property_id) {
     throw new ConnectionRequiredError(
       "analytics_property",
@@ -31,7 +32,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   }
 
   const dimension = args.dimension ?? "date";
-  const accessToken = await getValidAccessToken(env, "analytics_property");
+  const accessToken = await getValidAccessToken(env, "analytics_property", tenantId);
   const report = await runReport(accessToken, website.ga4_property_id, {
     startDate: args.startDate,
     endDate: args.endDate,

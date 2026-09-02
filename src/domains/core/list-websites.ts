@@ -9,17 +9,20 @@ import type { ToolModule } from "../types";
 async function connectionState(
   env: Env,
   configured: string | null,
-  scopeGroup: "webmaster_console" | "analytics_property"
+  scopeGroup: "webmaster_console" | "analytics_property",
+  tenantId: string | null
 ): Promise<ConnectionState> {
   if (!configured) return "not_connected";
   // NOTE: v1 doesn't bind a specific Google account to a specific website —
   // see getAnyToken's doc comment — so this reports whether *some* connected
-  // account can serve this scope group, not this exact property specifically.
-  return checkConnectionState(env, scopeGroup);
+  // account (this tenant's, in cloud mode) can serve this scope group, not
+  // this exact property specifically.
+  return checkConnectionState(env, scopeGroup, tenantId);
 }
 
 async function handler(_args: Record<string, never>, env: Env) {
-  const websites = await queryWebsites(env.DB);
+  const tenantId = env.__tenantId ?? null;
+  const websites = await queryWebsites(env.DB, tenantId);
 
   if (websites.length === 0) {
     return envelope("core", { connection_required: true, websites: [] })
@@ -31,8 +34,8 @@ async function handler(_args: Record<string, never>, env: Env) {
 
   for (const site of websites) {
     const [searchConsole, websiteAnalytics] = await Promise.all([
-      connectionState(env, site.gsc_site_url, "webmaster_console"),
-      connectionState(env, site.ga4_property_id, "analytics_property")
+      connectionState(env, site.gsc_site_url, "webmaster_console", tenantId),
+      connectionState(env, site.ga4_property_id, "analytics_property", tenantId)
     ]);
 
     builder.addEntity({

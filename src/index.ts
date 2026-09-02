@@ -1,8 +1,9 @@
 import { createMcpHandler } from "agents/mcp/server";
 import { Hono } from "hono";
 import { handleOAuthCallback, handleOAuthStart } from "./auth/oauth-routes";
+import { verifyApiKey } from "./db/mcp-api-keys";
 import { buildMcpServer } from "./mcp/server";
-import type { Env } from "./types/env";
+import { isCloudMode, type Env } from "./types/env";
 
 /** Constant-time string compare — avoids leaking the bearer token via timing. */
 function timingSafeEqual(a: string, b: string): boolean {
@@ -41,17 +42,34 @@ app.get("/oauth/google/start", (c) => handleOAuthStart(c.req.raw, c.env));
 app.get("/oauth/google/callback", (c) => handleOAuthCallback(c.req.raw, c.env));
 
 app.all("/mcp", async (c) => {
-  if (!c.env.MCP_BEARER_TOKEN) {
-    return c.text("server misconfigured: MCP_BEARER_TOKEN is not set", 500);
-  }
-  if (!isAuthorized(c.req.raw, c.env)) {
-    return c.text("unauthorized", 401, { "WWW-Authenticate": "Bearer" });
+  let tenantId: string | null = null;
+
+  if (isCloudMode(c.env)) {
+    // Cloud mode: a per-tenant issued API key (mcp_api_keys), not the
+    // shared bearer token — see src/db/mcp-api-keys.ts's doc comment on
+    // why this is a separate mechanism from a Clerk session.
+    const header = c.req.raw.headers.get("Authorization") ?? "";
+    const [scheme, token] = header.split(" ");
+    if (scheme !== "Bearer" || !token) {
+      return c.text("unauthorized", 401, { "WWW-Authenticate": "Bearer" });
+    }
+    tenantId = await verifyApiKey(c.env.DB, token);
+    if (!tenantId) {
+      return c.text("unauthorized", 401, { "WWW-Authenticate": "Bearer" });
+    }
+  } else {
+    if (!c.env.MCP_BEARER_TOKEN) {
+      return c.text("server misconfigured: MCP_BEARER_TOKEN is not set", 500);
+    }
+    if (!isAuthorized(c.req.raw, c.env)) {
+      return c.text("unauthorized", 401, { "WWW-Authenticate": "Bearer" });
+    }
   }
 
   // A fresh factory per request, closing over this request's `env` —
   // `McpRequestContext` (what the SDK actually hands the factory) carries
   // no Worker bindings, so this closure is how tool handlers reach D1/R2.
-  const handler = createMcpHandler(() => buildMcpServer(c.env));
+  const handler = createMcpHandler(() => buildMcpServer(c.env, tenantId));
   // Hono types executionCtx with its own (older, simpler) local
   // ExecutionContext interface; @cloudflare/workers-types' current one adds
   // fields (tracing/abort) Hono's doesn't declare. Same real object at

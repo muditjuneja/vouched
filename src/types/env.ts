@@ -37,6 +37,16 @@ export interface Env {
   // DATAFORSEO_LOGIN/PASSWORD above, which remain the self-host BYOK path.
   CLOUD_DATAFORSEO_LOGIN?: string;
   CLOUD_DATAFORSEO_PASSWORD?: string;
+
+  /**
+   * NOT a real Worker binding/secret — a per-request field `buildMcpServer`
+   * sets on a shallow copy of `env` before calling a tool's handler, so the
+   * handful of tools that need to know "which tenant is calling" (currently
+   * list_websites, get_search_performance, get_website_analytics) can read
+   * it without every ToolModule's signature having to change. Always null
+   * in self-host mode. See src/mcp/server.ts.
+   */
+  __tenantId?: string | null;
 }
 
 export function hasDataForSEO(env: Env): boolean {

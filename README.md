@@ -26,8 +26,30 @@ limitation from M11**: `websites.primary_domain`'s uniqueness constraint
 predates multi-tenancy and is still global — two cloud tenants can't yet
 both track the same domain; fixing it needs a table-rebuild migration
 tested against a real D1 instance first (see
-`migrations/0002_multi_tenant.sql`'s comment). M12 onward (Clerk, billing,
-bundled DataForSEO, dashboard, pSEO, email) are in progress.
+`migrations/0002_multi_tenant.sql`'s comment).
+
+**M12 (Clerk auth) is done**: `src/auth/clerk.ts` verifies dashboard
+sessions (`verifyToken`, preferring `CLERK_JWT_KEY`'s zero-network-roundtrip
+path over `CLERK_SECRET_KEY`); a new `mcp_api_keys` table + `src/db/mcp-
+api-keys.ts` gives cloud tenants a separate long-lived key for the `/mcp`
+endpoint (a Clerk session expires and isn't meant for static client
+config); `/mcp` in cloud mode now checks that key instead of the shared
+bearer token, resolving a `tenantId` that flows into `list_websites`,
+`get_search_performance`, and `get_website_analytics` (the only tools that
+currently need it) via a per-request field on `env`, not a signature change
+to all 18 tools — see `Env.__tenantId`'s doc comment for why. The Google
+OAuth connect flow (`/oauth/google/start`) is now Clerk-session-gated in
+cloud mode instead of the self-host `setup_token`, with the tenant id
+riding through Google's `state` param to the callback. **Not built yet,
+and needed before this is usable**: any actual UI to sign in, or to create/
+view/revoke an MCP API key — that's M15's dashboard. **No Clerk account
+was available to test against in this sandbox** — `verifyToken`'s real
+behavior (a valid session, a real JWKS/PEM key) is unverified beyond
+matching its documented type signature; test against a real Clerk app
+before trusting it.
+
+M13 onward (billing, bundled DataForSEO, dashboard, pSEO, email) are in
+progress.
 
 **All 18 of OpenRush's tools are implemented.** See `docs/ARCHITECTURE.md`
 for the full design, `docs/TOOLS.md` for the generated tool-by-tool

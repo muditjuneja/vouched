@@ -17,7 +17,8 @@ const inputSchema = z.object({
 });
 
 async function handler(args: z.infer<typeof inputSchema>, env: Env) {
-  const website = await getWebsiteByDomain(env.DB, args.domain);
+  const tenantId = env.__tenantId ?? null;
+  const website = await getWebsiteByDomain(env.DB, args.domain, tenantId);
   if (!website?.gsc_site_url) {
     throw new ConnectionRequiredError(
       "webmaster_console",
@@ -26,7 +27,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   }
 
   const dimension = args.dimension ?? "query";
-  const accessToken = await getValidAccessToken(env, "webmaster_console");
+  const accessToken = await getValidAccessToken(env, "webmaster_console", tenantId);
   const result = await querySearchAnalytics(accessToken, website.gsc_site_url, {
     startDate: args.startDate,
     endDate: args.endDate,

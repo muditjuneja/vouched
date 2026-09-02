@@ -18,6 +18,7 @@
     "docs:tools": "tsx scripts/generate-tools-doc.ts"
   },
   "dependencies": {
+    "@clerk/backend": "^3.17.0",
     "@modelcontextprotocol/sdk": "1.30.0",
     "@modelcontextprotocol/server": "2.0.0",
     "agents": "0.22.0",

@@ -59,9 +59,17 @@ const DATAFORSEO_TOOL_MODULES: ToolModule<any>[] = [
  * registered against this request's `env` (D1/R2 bindings + secrets),
  * captured via closure — `createMcpHandler`'s factory has no other way to
  * reach Worker bindings, so this is the mechanism, not a workaround.
+ *
+ * `tenantId` is null in self-host mode (the default) and the Clerk user id
+ * in cloud mode, resolved by the caller (src/index.ts's /mcp route) from
+ * the presented API key before this is called. It's threaded into a
+ * per-request copy of `env` (see Env.__tenantId's doc comment) rather than
+ * changing every ToolModule's handler signature — only a few tools
+ * currently need it.
  */
-export function buildMcpServer(env: Env): McpServer {
+export function buildMcpServer(env: Env, tenantId: string | null = null): McpServer {
   const server = new McpServer({ name: "mcp-seo-toolkit", version: "0.1.0" });
+  const requestEnv: Env = { ...env, __tenantId: tenantId };
 
   const toolModules = hasDataForSEO(env)
     ? [...FREE_TOOL_MODULES, ...DATAFORSEO_TOOL_MODULES]
@@ -78,7 +86,7 @@ export function buildMcpServer(env: Env): McpServer {
       },
       async (args: Record<string, unknown>) => {
         try {
-          const result = await tool.handler(args, env);
+          const result = await tool.handler(args, requestEnv);
           return {
             content: [{ type: "text" as const, text: JSON.stringify(result) }],
             structuredContent: result
