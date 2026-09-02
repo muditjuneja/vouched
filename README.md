@@ -86,7 +86,27 @@ real gate logic (free-plan block, pro-plan pass-through + usage
 recording, pro-plan over-quota block, self-host bypass) against mocked
 `fetch` + an in-memory D1 fake.
 
-M15 onward (dashboard, pSEO, email) are in progress.
+**M15 (dashboard, medium scope) is done**: `GET /dashboard` (Clerk-gated —
+signed-out visitors get a plain sign-in-link page pointing at
+`CLERK_SIGN_IN_URL`, a Clerk Account Portal or custom sign-in page you
+configure, since which URL that is isn't something this build can know or
+verify) shows tracked websites + their GSC/GA4 connection state (with
+connect links), current plan + usage-vs-quota, upgrade buttons for
+Pro/Team (linking to M13's `/billing/checkout`), and MCP API key
+management (create — shown once, exactly like a Stripe/GitHub key reveal —
+list, revoke). Plain server-rendered HTML via hand-written escaping
+(`src/dashboard/html.ts`'s `esc()`) rather than a JSX toolchain unrun in
+this sandbox — deliberately simple, not a placeholder. Landed on "medium
+scope" per your call: a control-plane dashboard (accounts, billing, keys,
+connection status) rather than a full analytics replica — actually using
+the SEO tools still happens through Claude/MCP.
+
+**Not verified**: no live Clerk/Dodo account to click through the real
+flow end-to-end. 7 new tests cover what's testable without one — the
+cloud-mode/session gate (404 outside cloud mode before any session check;
+401 with/without a configured sign-in link) and HTML escaping.
+
+M16 onward (pSEO, cloud hardening, email) are in progress.
 
 **All 18 of OpenRush's tools are implemented.** See `docs/ARCHITECTURE.md`
 for the full design, `docs/TOOLS.md` for the generated tool-by-tool

@@ -30,6 +30,8 @@ export interface Env {
   CLOUD_MODE?: string;
   CLERK_SECRET_KEY?: string;
   CLERK_JWT_KEY?: string; // PEM public key — enables verifyToken() with zero network roundtrip
+  /** Where the dashboard sends an unauthenticated visitor — Clerk's Account Portal or a custom sign-in page. A `redirect_url` param is appended. */
+  CLERK_SIGN_IN_URL?: string;
   DODO_API_KEY?: string;
   DODO_WEBHOOK_SECRET?: string;
   /** "live_mode" or "test_mode" (Dodo's own enum) — defaults to test_mode when unset, never live by accident. */

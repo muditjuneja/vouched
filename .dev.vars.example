@@ -35,6 +35,10 @@ CLOUD_MODE=
 # CLERK_SECRET_KEY is a fallback that verifies against Clerk's API instead.
 CLERK_SECRET_KEY=
 CLERK_JWT_KEY=
+# Where the dashboard sends a signed-out visitor — Clerk's Account Portal
+# URL or a custom sign-in page; a redirect_url back to the dashboard is
+# appended automatically.
+CLERK_SIGN_IN_URL=
 
 # Dodo Payments (billing). Create Pro/Team products in the Dodo dashboard
 # first and paste their ids below; DODO_ENVIRONMENT defaults to test_mode

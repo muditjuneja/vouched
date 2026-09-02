@@ -4,6 +4,7 @@ import { handleOAuthCallback, handleOAuthStart } from "./auth/oauth-routes";
 import { verifyClerkSession } from "./auth/clerk";
 import { startCheckout } from "./billing/dodo-client";
 import { buildDodoWebhookHandler } from "./billing/webhook-handlers";
+import { dashboard } from "./dashboard/routes";
 import { verifyApiKey } from "./db/mcp-api-keys";
 import { ConfigError } from "./lib/errors";
 import { buildMcpServer } from "./mcp/server";
@@ -95,6 +96,10 @@ app.get("/billing/checkout", async (c) => {
 });
 
 app.get("/billing/success", (c) => c.text("Payment received — your plan will update shortly.\n"));
+
+// The dashboard's own middleware handles both the cloud-mode and
+// Clerk-session gates — see src/dashboard/routes.ts.
+app.route("/dashboard", dashboard);
 
 app.all("/mcp", async (c) => {
   let tenantId: string | null = null;
