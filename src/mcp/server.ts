@@ -1,4 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/server";
+import { auditSite } from "../domains/audit/audit-site";
 import { describeCapabilities } from "../domains/core/describe-capabilities";
 import { exportDataset } from "../domains/core/export-dataset";
 import { listWebsitesTool } from "../domains/core/list-websites";
@@ -7,11 +8,15 @@ import { ofeEnvelopeSchema } from "../envelope/schema";
 import { ConnectionRequiredError } from "../lib/errors";
 import type { Env } from "../types/env";
 
-// M1 scope: core domain only. Later milestones append audit, gsc,
-// analytics, then the DataForSEO-backed seo/serp/backlinks/ai_visibility
-// tools here as they're built.
+// Grows as each milestone lands — see docs/ARCHITECTURE.md and the build
+// plan for what's next (gsc/analytics, then the DataForSEO-backed domains).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const TOOL_MODULES: ToolModule<any>[] = [describeCapabilities, listWebsitesTool, exportDataset];
+const TOOL_MODULES: ToolModule<any>[] = [
+  describeCapabilities,
+  listWebsitesTool,
+  exportDataset,
+  auditSite
+];
 
 /**
  * Builds a fresh McpServer for one request, with every implemented tool

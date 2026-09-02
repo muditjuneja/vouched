@@ -136,7 +136,7 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
     source_classes: ["crawl"],
     requires_connection: null,
     billing: "free",
-    implemented: false
+    implemented: true
   },
   {
     name: "inspect_backlinks",

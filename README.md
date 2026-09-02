@@ -18,11 +18,16 @@ below.
 
 ## Status
 
-Milestone **M1 (core domain)** of the build plan is implemented:
-`describe_capabilities`, `list_websites`, `export_dataset`. Everything else
-(`audit`, `gsc`, `analytics`, then the DataForSEO-backed domains) is tracked
-but not yet built — `describe_capabilities` reports `implemented: false` for
-those tools honestly rather than pretending they exist.
+Implemented so far:
+- **`core`** (M1): `describe_capabilities`, `list_websites`, `export_dataset`.
+- **`audit`** (M2): `audit_site` — a bounded, robots.txt-aware self-crawl
+  (meta/heading/image/indexability/broken-internal-link checks, issue
+  clustering, a simple site-health score). No paid keys needed.
+
+Everything else (`gsc`, `analytics`, then the DataForSEO-backed domains) is
+tracked but not yet built — `describe_capabilities` reports
+`implemented: false` for those tools honestly rather than pretending they
+exist.
 
 ## Setup
 
