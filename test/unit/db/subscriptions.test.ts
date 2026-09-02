@@ -27,7 +27,7 @@ describe("getEffectivePlan", () => {
       dodo_customer_id: "cus_1",
       dodo_subscription_id: "sub_1",
       plan: "pro",
-      status: "past_due",
+      status: "on_hold",
       current_period_end: null,
       created_at: "2026-01-01T00:00:00Z",
       updated_at: "2026-01-01T00:00:00Z"

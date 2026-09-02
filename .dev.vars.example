@@ -36,9 +36,14 @@ CLOUD_MODE=
 CLERK_SECRET_KEY=
 CLERK_JWT_KEY=
 
-# Dodo Payments (billing) — added in M13, unused until then.
+# Dodo Payments (billing). Create Pro/Team products in the Dodo dashboard
+# first and paste their ids below; DODO_ENVIRONMENT defaults to test_mode
+# (set "live_mode" explicitly when you mean it — never live by accident).
 DODO_API_KEY=
 DODO_WEBHOOK_SECRET=
+DODO_ENVIRONMENT=
+DODO_PRODUCT_ID_PRO=
+DODO_PRODUCT_ID_TEAM=
 
 # xmit.sh / Transmit (transactional email) — added in M18, unused until then.
 XMIT_API_KEY=

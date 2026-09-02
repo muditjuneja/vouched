@@ -48,8 +48,30 @@ behavior (a valid session, a real JWKS/PEM key) is unverified beyond
 matching its documented type signature; test against a real Clerk app
 before trusting it.
 
-M13 onward (billing, bundled DataForSEO, dashboard, pSEO, email) are in
-progress.
+**M13 (Dodo Payments billing) is done**: `GET /billing/checkout?plan=pro
+|team&email=...` (Clerk-session-gated, cloud mode only) creates a Dodo
+checkout session via `@dodopayments/core`'s `createCheckoutSession` and
+redirects to it, stamping the tenant id into the session's `metadata` —
+`POST /webhooks/dodo` (via `@dodopayments/hono`'s `Webhooks()`, HMAC-signed
+per the Standard Webhooks spec) reads that same `metadata.tenant_id` back
+off every subscription event to sync `subscriptions`. `subscriptions.status`
+uses Dodo's own real status vocabulary (`pending/active/on_hold/paused/
+cancelled/failed/expired`) — confirmed against `@dodopayments/core`'s
+actual schema types, which corrected a wrong guess from M11 (`past_due`
+isn't a real Dodo status; fixed in place in `migrations/0002_multi_tenant.sql`
+since that table was never applied to a real D1 anywhere). **A genuine
+verification win**: TypeScript itself caught that Dodo's webhook payloads
+arrive as `{type, data}`, not flat fields, when an earlier draft of
+`src/billing/webhook-handlers.ts` assumed the wrong shape — the compiler
+error was the check here, not a guess. **Still unverified**: no Dodo
+account was available to actually send a webhook or complete a checkout in
+this sandbox; `@dodopayments/core`'s webhook module also documents using
+Node's `crypto` (works via our `nodejs_compat` flag on paper, unconfirmed
+under real `workerd`). No dashboard yet to link `/billing/checkout` from —
+that's still M15.
+
+M14 onward (bundled DataForSEO quota enforcement, dashboard, pSEO, email)
+are in progress.
 
 **All 18 of OpenRush's tools are implemented.** See `docs/ARCHITECTURE.md`
 for the full design, `docs/TOOLS.md` for the generated tool-by-tool

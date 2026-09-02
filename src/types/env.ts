@@ -32,6 +32,11 @@ export interface Env {
   CLERK_JWT_KEY?: string; // PEM public key — enables verifyToken() with zero network roundtrip
   DODO_API_KEY?: string;
   DODO_WEBHOOK_SECRET?: string;
+  /** "live_mode" or "test_mode" (Dodo's own enum) — defaults to test_mode when unset, never live by accident. */
+  DODO_ENVIRONMENT?: string;
+  /** Dodo product ids for the Pro/Team plans, created in the Dodo dashboard — deployment-specific, not hardcoded. */
+  DODO_PRODUCT_ID_PRO?: string;
+  DODO_PRODUCT_ID_TEAM?: string;
   XMIT_API_KEY?: string;
   // The cloud tier's own DataForSEO account — distinct from
   // DATAFORSEO_LOGIN/PASSWORD above, which remain the self-host BYOK path.

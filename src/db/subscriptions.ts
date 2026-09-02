@@ -1,5 +1,18 @@
 export type Plan = "free" | "pro" | "team";
-export type SubscriptionStatus = "active" | "past_due" | "cancelled" | "expired";
+/**
+ * Dodo Payments' own real subscription status vocabulary, verbatim
+ * (confirmed against @dodopayments/core's schema types in M13) — stored
+ * as-is rather than translated into an invented internal vocabulary, so a
+ * webhook payload's `status` field can be written straight through.
+ */
+export type SubscriptionStatus =
+  | "pending"
+  | "active"
+  | "on_hold"
+  | "paused"
+  | "cancelled"
+  | "failed"
+  | "expired";
 
 export interface SubscriptionRow {
   tenant_id: string;
@@ -55,10 +68,11 @@ export async function upsertSubscription(db: D1Database, input: UpsertSubscripti
 }
 
 /**
- * A tenant with no subscriptions row, or one that isn't `active`
- * (including `past_due`), is treated as the free plan — conservative for
- * now; a grace period for `past_due` before downgrading is a fast-follow
- * once M13's dunning-email flow exists to actually warn the tenant first.
+ * A tenant with no subscriptions row, or one that isn't `active` (pending,
+ * on_hold, paused, cancelled, failed, or expired), is treated as the free
+ * plan — conservative for now; a grace period for `on_hold`/`failed`
+ * before downgrading, coordinated with M18's dunning-email flow so the
+ * tenant is warned first, is a fast-follow.
  */
 export async function getEffectivePlan(db: D1Database, tenantId: string): Promise<Plan> {
   const row = await getSubscription(db, tenantId);

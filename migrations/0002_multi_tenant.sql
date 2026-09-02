@@ -24,13 +24,18 @@ CREATE INDEX idx_google_tokens_tenant ON google_tokens (tenant_id);
 CREATE INDEX idx_cost_log_tenant ON cost_log (tenant_id);
 
 -- One row per cloud tenant with an active or past Dodo subscription.
--- Absent entirely for self-host users (there is no "tenant").
+-- Absent entirely for self-host users (there is no "tenant"). `status`
+-- uses Dodo's own real subscription status vocabulary verbatim (confirmed
+-- against @dodopayments/core's actual schema types in M13, not guessed —
+-- this table was M11-authored before that verification and originally had
+-- a wrong/invented status list; fixed in place here rather than via a
+-- later migration since M11's shape has never been applied to a real D1).
 CREATE TABLE subscriptions (
   tenant_id           TEXT PRIMARY KEY,
   dodo_customer_id    TEXT,
   dodo_subscription_id TEXT,
   plan                TEXT NOT NULL CHECK (plan IN ('free', 'pro', 'team')),
-  status              TEXT NOT NULL CHECK (status IN ('active', 'past_due', 'cancelled', 'expired')),
+  status              TEXT NOT NULL CHECK (status IN ('pending', 'active', 'on_hold', 'paused', 'cancelled', 'failed', 'expired')),
   current_period_end  TEXT,
   created_at          TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at          TEXT NOT NULL DEFAULT (datetime('now'))

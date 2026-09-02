@@ -19,10 +19,12 @@
   },
   "dependencies": {
     "@clerk/backend": "^3.17.0",
+    "@dodopayments/hono": "^0.2.10",
     "@modelcontextprotocol/sdk": "1.30.0",
     "@modelcontextprotocol/server": "2.0.0",
     "agents": "0.22.0",
     "cheerio": "^1.0.0",
+    "dodopayments": "^2.49.0",
     "hono": "^4.13.5",
     "zod": "^4.4.3"
   },

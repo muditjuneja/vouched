@@ -1,7 +1,11 @@
 import { createMcpHandler } from "agents/mcp/server";
 import { Hono } from "hono";
 import { handleOAuthCallback, handleOAuthStart } from "./auth/oauth-routes";
+import { verifyClerkSession } from "./auth/clerk";
+import { startCheckout } from "./billing/dodo-client";
+import { buildDodoWebhookHandler } from "./billing/webhook-handlers";
 import { verifyApiKey } from "./db/mcp-api-keys";
+import { ConfigError } from "./lib/errors";
 import { buildMcpServer } from "./mcp/server";
 import { isCloudMode, type Env } from "./types/env";
 
@@ -40,6 +44,57 @@ app.get("/health", (c) => c.text("mcp-seo-toolkit: ok\n"));
 // carry it), so handleOAuthStart enforces its own setup_token check.
 app.get("/oauth/google/start", (c) => handleOAuthStart(c.req.raw, c.env));
 app.get("/oauth/google/callback", (c) => handleOAuthCallback(c.req.raw, c.env));
+
+// Dodo webhooks — auth is the HMAC signature (Standard Webhooks spec),
+// verified inside buildDodoWebhookHandler itself, not a Clerk/bearer check.
+app.post("/webhooks/dodo", async (c) => {
+  if (!isCloudMode(c.env)) {
+    return c.text("not found", 404);
+  }
+  const handler = buildDodoWebhookHandler(c.env);
+  return handler(c);
+});
+
+// Starts a plan upgrade. Cloud-mode + Clerk-session-gated, same pattern as
+// /oauth/google/start. No dashboard exists yet (M15) to link here from —
+// this route works today via a bare URL, the same way the Google-connect
+// flow did before one existed.
+app.get("/billing/checkout", async (c) => {
+  if (!isCloudMode(c.env)) {
+    return c.text("not found", 404);
+  }
+  const session = await verifyClerkSession(c.req.raw, c.env);
+  if (!session) {
+    return c.text("unauthorized — sign in first", 401);
+  }
+
+  const plan = c.req.query("plan");
+  const email = c.req.query("email");
+  if (plan !== "pro" && plan !== "team") {
+    return c.text('plan must be "pro" or "team"', 400);
+  }
+  if (!email) {
+    return c.text("email is required", 400);
+  }
+
+  try {
+    const returnUrl = new URL("/billing/success", new URL(c.req.url).origin).toString();
+    const checkoutUrl = await startCheckout(c.env, {
+      plan,
+      tenantId: session.userId,
+      customerEmail: email,
+      returnUrl
+    });
+    return c.redirect(checkoutUrl, 302);
+  } catch (error) {
+    if (error instanceof ConfigError) {
+      return c.text(error.message, 500);
+    }
+    throw error;
+  }
+});
+
+app.get("/billing/success", (c) => c.text("Payment received — your plan will update shortly.\n"));
 
 app.all("/mcp", async (c) => {
   let tenantId: string | null = null;
