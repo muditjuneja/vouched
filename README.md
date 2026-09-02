@@ -58,9 +58,23 @@ not four) and `compare_backlink_gap` (link gap across up to 5 competitors,
 spam-score filtered, with a heuristic earned-link flag). Same field-shape
 caveat as `seo`/`serp` above.
 
-`ai_visibility` is tracked but not yet built — `describe_capabilities`
-reports `implemented: false` for those tools honestly rather than
-pretending they exist.
+**`ai_visibility` domain** (M8, 2 tools): `discover_ai_citations` and
+`inspect_ai_visibility`, backed by DataForSEO's AI Optimization / LLM
+Mentions API — its newest product area. **This is the lowest-confidence
+part of the whole build**: only endpoint paths and general shape were
+confirmed this session (see
+`src/clients/dataforseo/endpoints/llm-mentions.ts`'s doc comment) — request
+field names are a best-effort guess, not verified against docs or a live
+call. Spike this against the real API before trusting it, expect to revise
+the request body shape.
+
+**All 18 tools in OpenRush's manifest are now implemented** —
+`describe_capabilities` reports `implemented: true` across the board. What
+remains (M9) is hardening/polish, not new tools: generated docs, an
+optional OAuth-provider upgrade for the MCP endpoint, Queue-based crawler
+scaling for very large sites, and — most importantly — real verification
+against live DataForSEO/Google accounts, which this sandboxed build
+couldn't do (see the two caveats above and the sandbox-limitation note).
 
 ## Setup
 

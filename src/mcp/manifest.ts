@@ -173,7 +173,7 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
     source_classes: ["ai_answer"],
     requires_connection: null,
     billing: "dataforseo",
-    implemented: false
+    implemented: true
   },
   {
     name: "inspect_ai_visibility",
@@ -183,7 +183,7 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
     source_classes: ["ai_answer"],
     requires_connection: null,
     billing: "dataforseo",
-    implemented: false
+    implemented: true
   },
   {
     name: "get_search_performance",

@@ -1,4 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/server";
+import { discoverAiCitations } from "../domains/ai_visibility/discover-ai-citations";
+import { inspectAiVisibility } from "../domains/ai_visibility/inspect-ai-visibility";
 import { getWebsiteAnalytics } from "../domains/analytics/get-website-analytics";
 import { auditSite } from "../domains/audit/audit-site";
 import { compareBacklinkGap } from "../domains/backlinks/compare-backlink-gap";
@@ -33,8 +35,9 @@ const FREE_TOOL_MODULES: ToolModule<any>[] = [
 
 // Backed by DataForSEO — only registered (and only then advertised by
 // describe_capabilities) when DATAFORSEO_LOGIN/PASSWORD are configured, so
-// the server never lists a tool call it would just fail on. ai_visibility
-// joins this list in M8.
+// the server never lists a tool call it would just fail on. All 12 tools
+// here are now built — see README's Status section for per-domain
+// field-shape confidence (ai_visibility is the least certain).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const DATAFORSEO_TOOL_MODULES: ToolModule<any>[] = [
   researchKeywords,
@@ -46,7 +49,9 @@ const DATAFORSEO_TOOL_MODULES: ToolModule<any>[] = [
   inspectDomain,
   compareKeywordCoverage,
   inspectBacklinks,
-  compareBacklinkGap
+  compareBacklinkGap,
+  discoverAiCitations,
+  inspectAiVisibility
 ];
 
 /**
