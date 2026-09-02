@@ -12,6 +12,16 @@ Two tiers, split by what backs them:
   same tool shapes, backed by [DataForSEO](https://dataforseo.com/),
   pay-as-you-go with **your own API key** — this server never marks it up.
 
+**Cloud offering in progress (M10+)**: this repo is also becoming a hosted,
+sellable product — Clerk for auth, Dodo Payments for billing, bundled
+DataForSEO access, a dashboard, landing/pSEO pages, and xmit.sh for
+transactional email — while self-host (everything below) stays fully
+intact and unaffected, gated behind a `CLOUD_MODE` flag. M10 (migrating the
+Worker onto Hono, which both Dodo's adapter and the planned SSR
+landing/pSEO pages need) is done; self-host behavior is unchanged and still
+fully tested. M11 onward (multi-tenant D1, Clerk, billing, dashboard,
+pSEO, email) are in progress.
+
 **All 18 of OpenRush's tools are implemented.** See `docs/ARCHITECTURE.md`
 for the full design, `docs/TOOLS.md` for the generated tool-by-tool
 reference, and `docs/OFE_ENVELOPE.md` for the shared response shape every

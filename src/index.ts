@@ -1,4 +1,5 @@
 import { createMcpHandler } from "agents/mcp/server";
+import { Hono } from "hono";
 import { handleOAuthCallback, handleOAuthStart } from "./auth/oauth-routes";
 import { buildMcpServer } from "./mcp/server";
 import type { Env } from "./types/env";
@@ -23,39 +24,39 @@ function isAuthorized(request: Request, env: Env): boolean {
   return timingSafeEqual(token, env.MCP_BEARER_TOKEN);
 }
 
-export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const url = new URL(request.url);
+// Hono carries the whole cloud-facing surface (dashboard, landing/pSEO
+// pages, billing webhooks land here in later milestones) — it's what
+// Dodo Payments' own adapter targets and runs natively on Workers. In
+// self-host mode (CLOUD_MODE unset) this is just a thin router in front of
+// the same handful of routes as before; behavior is unchanged.
+const app = new Hono<{ Bindings: Env }>();
 
-    if (url.pathname === "/" || url.pathname === "/health") {
-      return new Response("mcp-seo-toolkit: ok\n", { status: 200 });
-    }
+app.get("/", (c) => c.text("mcp-seo-toolkit: ok\n"));
+app.get("/health", (c) => c.text("mcp-seo-toolkit: ok\n"));
 
-    // Browser-hit routes for the Google consent flow — outside the MCP
-    // endpoint's bearer-header gate by necessity (a browser redirect can't
-    // carry it), so handleOAuthStart enforces its own setup_token check.
-    if (url.pathname === "/oauth/google/start") {
-      return handleOAuthStart(request, env);
-    }
-    if (url.pathname === "/oauth/google/callback") {
-      return handleOAuthCallback(request, env);
-    }
+// Browser-hit routes for the Google consent flow — outside the MCP
+// endpoint's bearer-header gate by necessity (a browser redirect can't
+// carry it), so handleOAuthStart enforces its own setup_token check.
+app.get("/oauth/google/start", (c) => handleOAuthStart(c.req.raw, c.env));
+app.get("/oauth/google/callback", (c) => handleOAuthCallback(c.req.raw, c.env));
 
-    if (!env.MCP_BEARER_TOKEN) {
-      return new Response("server misconfigured: MCP_BEARER_TOKEN is not set", { status: 500 });
-    }
-
-    if (!isAuthorized(request, env)) {
-      return new Response("unauthorized", {
-        status: 401,
-        headers: { "WWW-Authenticate": "Bearer" }
-      });
-    }
-
-    // A fresh factory per request, closing over this request's `env` —
-    // `McpRequestContext` (what the SDK actually hands the factory) carries
-    // no Worker bindings, so this closure is how tool handlers reach D1/R2.
-    const handler = createMcpHandler(() => buildMcpServer(env));
-    return handler(request, env, ctx);
+app.all("/mcp", async (c) => {
+  if (!c.env.MCP_BEARER_TOKEN) {
+    return c.text("server misconfigured: MCP_BEARER_TOKEN is not set", 500);
   }
-} satisfies ExportedHandler<Env>;
+  if (!isAuthorized(c.req.raw, c.env)) {
+    return c.text("unauthorized", 401, { "WWW-Authenticate": "Bearer" });
+  }
+
+  // A fresh factory per request, closing over this request's `env` —
+  // `McpRequestContext` (what the SDK actually hands the factory) carries
+  // no Worker bindings, so this closure is how tool handlers reach D1/R2.
+  const handler = createMcpHandler(() => buildMcpServer(c.env));
+  // Hono types executionCtx with its own (older, simpler) local
+  // ExecutionContext interface; @cloudflare/workers-types' current one adds
+  // fields (tracing/abort) Hono's doesn't declare. Same real object at
+  // runtime either way — this cast bridges the two type declarations.
+  return handler(c.req.raw, c.env, c.executionCtx as unknown as ExecutionContext);
+});
+
+export default app;
