@@ -19,7 +19,7 @@ import { researchKeywords } from "../domains/seo/research-keywords";
 import { inspectSerp } from "../domains/serp/inspect-serp";
 import type { ToolModule } from "../domains/types";
 import { ofeEnvelopeSchema } from "../envelope/schema";
-import { ConnectionRequiredError } from "../lib/errors";
+import { ConnectionRequiredError, QuotaExceededError } from "../lib/errors";
 import { hasDataForSEO, type Env } from "../types/env";
 
 // Free — no keys needed. Grows as each milestone lands.
@@ -101,6 +101,12 @@ export function buildMcpServer(env: Env, tenantId: string | null = null): McpSer
                   text: `connection_required: ${error.connection} — ${error.message}`
                 }
               ]
+            };
+          }
+          if (error instanceof QuotaExceededError) {
+            return {
+              isError: true,
+              content: [{ type: "text" as const, text: `quota_exceeded: ${error.message}` }]
             };
           }
           const message = error instanceof Error ? error.message : String(error);

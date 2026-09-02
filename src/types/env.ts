@@ -54,8 +54,17 @@ export interface Env {
   __tenantId?: string | null;
 }
 
+/**
+ * True whenever *some* DataForSEO credentials are usable — self-host's
+ * own BYOK login/password, or (in cloud mode) the deployment's bundled
+ * account. Doesn't say whether *this tenant* is allowed to use them —
+ * that's a per-tenant plan/quota check, done at call time in
+ * src/clients/dataforseo/client.ts, not here.
+ */
 export function hasDataForSEO(env: Env): boolean {
-  return Boolean(env.DATAFORSEO_LOGIN && env.DATAFORSEO_PASSWORD);
+  const byok = Boolean(env.DATAFORSEO_LOGIN && env.DATAFORSEO_PASSWORD);
+  const bundled = isCloudMode(env) && Boolean(env.CLOUD_DATAFORSEO_LOGIN && env.CLOUD_DATAFORSEO_PASSWORD);
+  return byok || bundled;
 }
 
 export function hasGoogleOAuth(env: Env): boolean {

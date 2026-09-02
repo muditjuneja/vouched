@@ -70,8 +70,23 @@ Node's `crypto` (works via our `nodejs_compat` flag on paper, unconfirmed
 under real `workerd`). No dashboard yet to link `/billing/checkout` from —
 that's still M15.
 
-M14 onward (bundled DataForSEO quota enforcement, dashboard, pSEO, email)
-are in progress.
+**M14 (bundled DataForSEO + quota enforcement) is done**: in cloud mode
+with a resolved tenant, every DataForSEO call (`src/clients/dataforseo/client.ts`'s
+`dfsLivePost` — the single chokepoint all `seo`/`serp`/`backlinks`/
+`ai_visibility` tools funnel through) now uses the deployment's bundled
+account (`CLOUD_DATAFORSEO_LOGIN/PASSWORD`, never the tenant's own key —
+cloud has no BYOK path) and checks the tenant's plan quota first
+(`src/billing/quotas.ts` — Free: $0/mo, Pro: $10/mo, Team: $50/mo of
+underlying DataForSEO cost, placeholder amounts to tune against real
+margins). Over quota throws a clear `QuotaExceededError` (same
+error-driven-UX pattern as `ConnectionRequiredError`), never a silent
+block. Self-host is completely unaffected — the quota gate only engages
+when `isCloudMode(env) && tenantId !== null`. 4 new tests exercise the
+real gate logic (free-plan block, pro-plan pass-through + usage
+recording, pro-plan over-quota block, self-host bypass) against mocked
+`fetch` + an in-memory D1 fake.
+
+M15 onward (dashboard, pSEO, email) are in progress.
 
 **All 18 of OpenRush's tools are implemented.** See `docs/ARCHITECTURE.md`
 for the full design, `docs/TOOLS.md` for the generated tool-by-tool

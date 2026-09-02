@@ -25,6 +25,27 @@ export class ConfigError extends Error {
   }
 }
 
+/**
+ * Thrown by a DataForSEO-backed tool when a cloud tenant's bundled-access
+ * usage has hit their plan's included quota for the current billing
+ * period. Not thrown at all for self-host (BYOK has no quota) or for a
+ * cloud tenant with their own key — only for bundled-access calls.
+ */
+export class QuotaExceededError extends Error {
+  readonly plan: string;
+  readonly quotaUsd: number;
+
+  constructor(plan: string, quotaUsd: number) {
+    super(
+      `You've used your ${plan} plan's included $${quotaUsd.toFixed(2)}/month DataForSEO quota. ` +
+        "Upgrade your plan, or wait for it to reset next billing period."
+    );
+    this.name = "QuotaExceededError";
+    this.plan = plan;
+    this.quotaUsd = quotaUsd;
+  }
+}
+
 /** An upstream API (DataForSEO, Google, a crawl target) failed or errored. */
 export class UpstreamError extends Error {
   readonly upstream: string;

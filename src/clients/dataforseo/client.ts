@@ -1,7 +1,10 @@
-import { UpstreamError } from "../../lib/errors";
-import type { Env } from "../../types/env";
+import { getEffectivePlan } from "../../db/subscriptions";
+import { getUsage, recordUsage } from "../../db/usage-counters";
+import { QuotaExceededError, UpstreamError } from "../../lib/errors";
+import { isCloudMode, type Env } from "../../types/env";
+import { MONTHLY_QUOTA_USD } from "../../billing/quotas";
 import { recordCost } from "./cost-tracker";
-import { dataForSeoAuthHeader } from "./dataforseo-auth";
+import { bundledDataForSeoAuthHeader, dataForSeoAuthHeader } from "./dataforseo-auth";
 
 const API_BASE = "https://api.dataforseo.com";
 
@@ -25,6 +28,12 @@ interface DfsResponse<T> {
  * results directly, per DataForSEO's own docs) with a single task, logs its
  * real cost to D1, and returns that task's `result` array.
  *
+ * In cloud mode with a resolved tenant, this uses the deployment's bundled
+ * DataForSEO account (never the tenant's own key — cloud has no BYOK path,
+ * per the locked-in "bundled access" decision) and enforces that tenant's
+ * plan quota first. Self-host and any non-cloud call path is completely
+ * unaffected — same BYOK behavior as before this milestone.
+ *
  * NOTE: request/response field names here follow DataForSEO's documented
  * conventions, confirmed only via endpoint *paths* (from DataForSEO's own
  * `mcp-server-typescript` field-config, since docs.dataforseo.com itself
@@ -39,10 +48,25 @@ export async function dfsLivePost<TResult>(
   path: string,
   task: Record<string, unknown>
 ): Promise<TResult[]> {
+  const tenantId = env.__tenantId ?? null;
+  const usingBundled = isCloudMode(env) && tenantId !== null;
+
+  if (usingBundled) {
+    const plan = await getEffectivePlan(env.DB, tenantId!);
+    const quotaUsd = MONTHLY_QUOTA_USD[plan];
+    const usage = await getUsage(env.DB, tenantId!);
+    const usedUsd = usage?.cost_incurred_usd ?? 0;
+    if (usedUsd >= quotaUsd) {
+      throw new QuotaExceededError(plan, quotaUsd);
+    }
+    // M18 email hook belongs here: warn at e.g. 80%/100% of quotaUsd,
+    // debounced so a burst of calls near the threshold doesn't spam.
+  }
+
   const res = await fetch(`${API_BASE}${path}`, {
     method: "POST",
     headers: {
-      Authorization: dataForSeoAuthHeader(env),
+      Authorization: usingBundled ? bundledDataForSeoAuthHeader(env) : dataForSeoAuthHeader(env),
       "content-type": "application/json"
     },
     body: JSON.stringify([task])
@@ -62,6 +86,9 @@ export async function dfsLivePost<TResult>(
     );
   }
 
-  await recordCost(env, toolName, path, task0.cost);
+  await recordCost(env, toolName, path, task0.cost, tenantId);
+  if (usingBundled) {
+    await recordUsage(env.DB, tenantId!, task0.cost);
+  }
   return task0.result ?? [];
 }
