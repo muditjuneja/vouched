@@ -1,5 +1,6 @@
 import { Webhooks } from "@dodopayments/hono";
 import { upsertSubscription, type Plan, type SubscriptionStatus } from "../db/subscriptions";
+import { sendAdminAlert } from "../lib/alerts";
 import type { Env } from "../types/env";
 
 /**
@@ -70,11 +71,19 @@ export function buildDodoWebhookHandler(env: Env) {
     webhookKey: env.DODO_WEBHOOK_SECRET ?? "",
     onSubscriptionActive: (payload) => syncSubscription(env, payload),
     onSubscriptionRenewed: (payload) => syncSubscription(env, payload),
-    onSubscriptionOnHold: (payload) => syncSubscription(env, payload),
+    onSubscriptionOnHold: async (payload) => {
+      await syncSubscription(env, payload);
+      // M18 will add the tenant-facing dunning email here; this is the
+      // operator-facing side of it in the meantime.
+      await sendAdminAlert(env, `Dodo subscription ${payload.data.subscription_id} went on_hold`);
+    },
     onSubscriptionPaused: (payload) => syncSubscription(env, payload),
     onSubscriptionUnpaused: (payload) => syncSubscription(env, payload),
     onSubscriptionCancelled: (payload) => syncSubscription(env, payload),
-    onSubscriptionFailed: (payload) => syncSubscription(env, payload),
+    onSubscriptionFailed: async (payload) => {
+      await syncSubscription(env, payload);
+      await sendAdminAlert(env, `Dodo subscription ${payload.data.subscription_id} failed`);
+    },
     onSubscriptionExpired: (payload) => syncSubscription(env, payload)
   });
 }

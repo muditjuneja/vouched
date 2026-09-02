@@ -1,3 +1,4 @@
+import { sendAdminAlert } from "../../lib/alerts";
 import type { Env } from "../../types/env";
 
 /**
@@ -28,8 +29,10 @@ export async function recordCost(
     // blocks a call the caller asked for over a cost heuristic. (Cloud
     // mode's actual quota enforcement, M14, is a separate, harder check
     // against usage_counters — this stays the soft self-host warning.)
-    console.warn(
-      `[dataforseo] today's spend $${total.toFixed(4)} exceeds DATAFORSEO_DAILY_BUDGET_USD ($${budget})`
+    await sendAdminAlert(
+      env,
+      `DataForSEO daily spend $${total.toFixed(4)} exceeds DATAFORSEO_DAILY_BUDGET_USD ($${budget})` +
+        (tenantId ? ` (tenant ${tenantId})` : "")
     );
   }
 }

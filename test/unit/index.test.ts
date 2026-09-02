@@ -18,10 +18,10 @@ function fakeEnv(overrides: Partial<Env> = {}): Env {
 }
 
 describe("Hono app — routes not requiring D1/R2", () => {
-  it("GET / reports ok", async () => {
+  it("GET / serves the marketing landing page", async () => {
     const res = await app.request("/", {}, fakeEnv());
     expect(res.status).toBe(200);
-    expect(await res.text()).toContain("ok");
+    expect(await res.text()).toContain("mcp-seo-toolkit");
   });
 
   it("GET /health reports ok", async () => {

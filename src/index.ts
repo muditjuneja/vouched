@@ -7,6 +7,8 @@ import { buildDodoWebhookHandler } from "./billing/webhook-handlers";
 import { dashboard } from "./dashboard/routes";
 import { verifyApiKey } from "./db/mcp-api-keys";
 import { ConfigError } from "./lib/errors";
+import { checkAndIncrementRateLimit } from "./lib/rate-limit";
+import { marketing } from "./marketing/routes";
 import { buildMcpServer } from "./mcp/server";
 import { isCloudMode, type Env } from "./types/env";
 
@@ -37,8 +39,13 @@ function isAuthorized(request: Request, env: Env): boolean {
 // the same handful of routes as before; behavior is unchanged.
 const app = new Hono<{ Bindings: Env }>();
 
-app.get("/", (c) => c.text("mcp-seo-toolkit: ok\n"));
 app.get("/health", (c) => c.text("mcp-seo-toolkit: ok\n"));
+
+// Landing/pricing/comparison/pSEO pages — see src/marketing/routes.ts. Mounted
+// at the root ahead of everything else so it owns "/"; none of its other
+// routes (/pricing, /tools/*, /vs/*, /for/*, /sitemap.xml, /robots.txt)
+// collide with anything else registered below.
+app.route("/", marketing);
 
 // Browser-hit routes for the Google consent flow — outside the MCP
 // endpoint's bearer-header gate by necessity (a browser redirect can't
@@ -116,6 +123,12 @@ app.all("/mcp", async (c) => {
     tenantId = await verifyApiKey(c.env.DB, token);
     if (!tenantId) {
       return c.text("unauthorized", 401, { "WWW-Authenticate": "Bearer" });
+    }
+
+    const limit = c.env.RATE_LIMIT_PER_MINUTE ? Number(c.env.RATE_LIMIT_PER_MINUTE) : undefined;
+    const withinLimit = await checkAndIncrementRateLimit(c.env.DB, tenantId, limit);
+    if (!withinLimit) {
+      return c.text("rate limit exceeded — try again in a minute", 429, { "Retry-After": "60" });
     }
   } else {
     if (!c.env.MCP_BEARER_TOKEN) {

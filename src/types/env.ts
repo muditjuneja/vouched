@@ -45,6 +45,11 @@ export interface Env {
   CLOUD_DATAFORSEO_LOGIN?: string;
   CLOUD_DATAFORSEO_PASSWORD?: string;
 
+  /** Optional Slack/Discord incoming-webhook URL for operator alerts (billing failures, budget warnings). No-op when unset. */
+  ADMIN_ALERT_WEBHOOK_URL?: string;
+  /** Requests per minute per cloud tenant on /mcp — see src/lib/rate-limit.ts. Defaults to 60 when unset. */
+  RATE_LIMIT_PER_MINUTE?: string;
+
   /**
    * NOT a real Worker binding/secret — a per-request field `buildMcpServer`
    * sets on a shallow copy of `env` before calling a tool's handler, so the
