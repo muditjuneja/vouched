@@ -1,5 +1,10 @@
 import { Webhooks } from "@dodopayments/hono";
 import { upsertSubscription, type Plan, type SubscriptionStatus } from "../db/subscriptions";
+import {
+  notifyPaymentFailed,
+  notifyPaymentReceipt,
+  notifySubscriptionCancelled
+} from "../email/notifications";
 import { sendAdminAlert } from "../lib/alerts";
 import type { Env } from "../types/env";
 
@@ -12,7 +17,8 @@ import type { Env } from "../types/env";
  * before it ever ran). `data` carries subscription_id/product_id/status/
  * next_billing_date/customer/metadata across every event variant.
  */
-interface SubscriptionWebhookPayload {
+/** Exported for unit testing — lets tests build a payload without a real Dodo webhook. */
+export interface SubscriptionWebhookPayload {
   type: string;
   data: {
     subscription_id: string;
@@ -41,14 +47,15 @@ export function planFromProductId(env: Env, productId: string): Plan {
   return "free";
 }
 
-async function syncSubscription(env: Env, payload: SubscriptionWebhookPayload): Promise<void> {
+/** Exported for unit testing without a real Dodo webhook payload — returns the resolved tenant id (or null if the payload had none), so callers can send a tenant-facing email without re-deriving it. */
+export async function syncSubscription(env: Env, payload: SubscriptionWebhookPayload): Promise<string | null> {
   const { data } = payload;
   const tenantId = tenantIdFromMetadata(data.metadata);
   if (!tenantId) {
     console.warn(
       `[dodo webhook] subscription ${data.subscription_id} has no tenant_id in metadata — ignoring`
     );
-    return;
+    return null;
   }
 
   await upsertSubscription(env.DB, {
@@ -59,6 +66,42 @@ async function syncSubscription(env: Env, payload: SubscriptionWebhookPayload): 
     status: data.status,
     currentPeriodEnd: new Date(data.next_billing_date).toISOString()
   });
+  return tenantId;
+}
+
+// One named function per Dodo event below (rather than inline arrows in
+// buildDodoWebhookHandler) so each is independently unit-testable — see
+// test/unit/billing/webhook-handlers.test.ts, which mocks src/email/
+// notifications.ts and asserts these call the right sender.
+
+/** Exported for unit testing. */
+export async function handleSubscriptionActive(env: Env, payload: SubscriptionWebhookPayload): Promise<void> {
+  const tenantId = await syncSubscription(env, payload);
+  if (tenantId) await notifyPaymentReceipt(env, tenantId, planFromProductId(env, payload.data.product_id));
+}
+
+/** Exported for unit testing. Same as onSubscriptionActive — a renewal is also a successful payment. */
+export const handleSubscriptionRenewed = handleSubscriptionActive;
+
+/** Exported for unit testing. */
+export async function handleSubscriptionOnHold(env: Env, payload: SubscriptionWebhookPayload): Promise<void> {
+  const tenantId = await syncSubscription(env, payload);
+  if (tenantId) await notifyPaymentFailed(env, tenantId);
+  // Operator-facing side of the same event, alongside the tenant email above.
+  await sendAdminAlert(env, `Dodo subscription ${payload.data.subscription_id} went on_hold`);
+}
+
+/** Exported for unit testing. */
+export async function handleSubscriptionCancelled(env: Env, payload: SubscriptionWebhookPayload): Promise<void> {
+  const tenantId = await syncSubscription(env, payload);
+  if (tenantId) await notifySubscriptionCancelled(env, tenantId);
+}
+
+/** Exported for unit testing. */
+export async function handleSubscriptionFailed(env: Env, payload: SubscriptionWebhookPayload): Promise<void> {
+  const tenantId = await syncSubscription(env, payload);
+  if (tenantId) await notifyPaymentFailed(env, tenantId);
+  await sendAdminAlert(env, `Dodo subscription ${payload.data.subscription_id} failed`);
 }
 
 /**
@@ -69,21 +112,19 @@ async function syncSubscription(env: Env, payload: SubscriptionWebhookPayload): 
 export function buildDodoWebhookHandler(env: Env) {
   return Webhooks({
     webhookKey: env.DODO_WEBHOOK_SECRET ?? "",
-    onSubscriptionActive: (payload) => syncSubscription(env, payload),
-    onSubscriptionRenewed: (payload) => syncSubscription(env, payload),
-    onSubscriptionOnHold: async (payload) => {
+    onSubscriptionActive: (payload) => handleSubscriptionActive(env, payload),
+    onSubscriptionRenewed: (payload) => handleSubscriptionRenewed(env, payload),
+    onSubscriptionOnHold: (payload) => handleSubscriptionOnHold(env, payload),
+    onSubscriptionPaused: async (payload) => {
       await syncSubscription(env, payload);
-      // M18 will add the tenant-facing dunning email here; this is the
-      // operator-facing side of it in the meantime.
-      await sendAdminAlert(env, `Dodo subscription ${payload.data.subscription_id} went on_hold`);
     },
-    onSubscriptionPaused: (payload) => syncSubscription(env, payload),
-    onSubscriptionUnpaused: (payload) => syncSubscription(env, payload),
-    onSubscriptionCancelled: (payload) => syncSubscription(env, payload),
-    onSubscriptionFailed: async (payload) => {
+    onSubscriptionUnpaused: async (payload) => {
       await syncSubscription(env, payload);
-      await sendAdminAlert(env, `Dodo subscription ${payload.data.subscription_id} failed`);
     },
-    onSubscriptionExpired: (payload) => syncSubscription(env, payload)
+    onSubscriptionCancelled: (payload) => handleSubscriptionCancelled(env, payload),
+    onSubscriptionFailed: (payload) => handleSubscriptionFailed(env, payload),
+    onSubscriptionExpired: async (payload) => {
+      await syncSubscription(env, payload);
+    }
   });
 }

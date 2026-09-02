@@ -40,6 +40,10 @@ export interface Env {
   DODO_PRODUCT_ID_PRO?: string;
   DODO_PRODUCT_ID_TEAM?: string;
   XMIT_API_KEY?: string;
+  /** The From address for transactional email — deployment-specific, no hardcoded domain guessed here. */
+  XMIT_FROM_EMAIL?: string;
+  /** Override for xmit.sh's API base URL — a safety valve since the endpoint path itself is a best-effort guess (see src/email/client.ts). Defaults to https://api.xmit.sh. */
+  XMIT_API_BASE_URL?: string;
   // The cloud tier's own DataForSEO account — distinct from
   // DATAFORSEO_LOGIN/PASSWORD above, which remain the self-host BYOK path.
   CLOUD_DATAFORSEO_LOGIN?: string;
@@ -76,6 +80,11 @@ export function hasDataForSEO(env: Env): boolean {
 
 export function hasGoogleOAuth(env: Env): boolean {
   return Boolean(env.GOOGLE_OAUTH_CLIENT_ID && env.GOOGLE_OAUTH_CLIENT_SECRET);
+}
+
+/** True when transactional email (src/email/) is configured — cloud mode only reads this. */
+export function hasEmail(env: Env): boolean {
+  return Boolean(env.XMIT_API_KEY);
 }
 
 /**

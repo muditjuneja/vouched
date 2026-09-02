@@ -173,14 +173,51 @@ Done.
 
 ## M18 — Transactional email (xmit.sh)
 
-See `docs/SELF_HOST.md`'s sibling status once built; tracked here as
-in-progress pending completion, since it touches both tiers' lifecycle
-events (signup, API-key issuance, billing, quota, reconnect nudges) rather
-than being purely a cloud-only concern. **Flagged unverified from the
-outset**: xmit.sh's own docs site was blocked from this sandbox, so its
-exact endpoint path and request payload shape are a best-effort guess —
-spike against the real API/docs before trusting it, same caveat treatment
-as DataForSEO's `ai_visibility` endpoints.
+Done. `src/email/client.ts`'s `sendEmail` POSTs to xmit.sh
+(`POST https://api.xmit.sh/email/send`, Bearer auth, `{from, to, subject,
+html}`) and, like `sendAdminAlert`, never throws — a delivery failure logs
+a warning rather than breaking the flow that triggered it.
+`src/email/dedup.ts` (backed by `tenant_notifications`,
+`migrations/0005_email_notifications.sql`) prevents duplicate sends:
+`markNotifiedOnce` for one-time/period-scoped notices, `markNotifiedWithCooldown`
+for genuinely recurring ones. `src/email/notifications.ts` holds one sender
+per hook point, each resolving the tenant's address on demand via a new
+`getTenantEmail` in `src/auth/clerk.ts` (`ClerkClient.users.getUser` — a
+real API call, unlike `verifyToken`'s zero-roundtrip session check, since
+neither a Clerk session token nor Dodo's webhook payload reliably carries
+an email address).
+
+Wired into:
+- **Welcome** — a tenant's first `GET /dashboard` visit (approximates
+  "signup complete"; no Clerk `user.created` webhook exists in this build).
+- **API key issued/rotated** — every `POST /dashboard/api-keys`.
+- **Google reconnect nudge** — `GET /dashboard`, when GSC/GA4's connection
+  state is `reconnect_required`, cooldown-limited to once per 24h per scope.
+- **Billing lifecycle** — `src/billing/webhook-handlers.ts`'s
+  `handleSubscriptionActive`/`Renewed` (payment receipt),
+  `OnHold`/`Failed` (payment-failed notice, alongside the existing admin
+  alert), `Cancelled` (cancellation confirmation) — all independently
+  unit-tested (refactored from inline closures into named exported
+  functions specifically for this).
+- **Quota threshold warning** — `src/clients/dataforseo/client.ts`'s
+  `dfsLivePost`, at 80%/100% of the tenant's monthly quota, once per
+  threshold per billing period (the notice key itself encodes the period).
+
+**Deliberately not built**: a team-invite email (no multi-seat/invite
+mechanism exists anywhere in this codebase yet — Team is currently just a
+pricing tier name) and a pSEO lead-capture confirmation (verified: no
+marketing page collects an email address, so there's nothing to hook).
+Both are documented gaps in `src/email/notifications.ts`, not silently
+dropped.
+
+**Flagged unverified from the outset, still true**: xmit.sh's own docs
+site (`xmit.sh/docs`) is directly egress-blocked from this sandbox — its
+endpoint path and request shape were assembled from indirect web-search
+snippets of xmit.sh's own pages, not a fetched doc or a live call.
+`XMIT_API_BASE_URL` exists as an override in case the base URL needs
+correcting without a code change. Spike against a real xmit.sh API key
+before trusting this, same caveat treatment as DataForSEO's
+`ai_visibility` endpoints elsewhere in this build.
 
 ## Verification discipline
 

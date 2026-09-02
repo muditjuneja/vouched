@@ -73,8 +73,9 @@ if (cloudMode) {
     `[${bundledDfs ? "x" : " "}] Bundled DataForSEO account configured (CLOUD_DATAFORSEO_LOGIN/PASSWORD) — without this, Pro/Team tenants can't use the paid tools at all`
   );
 
+  const email = has("XMIT_API_KEY") && has("XMIT_FROM_EMAIL");
   console.log(
-    `[${has("XMIT_API_KEY") ? "x" : " "}] XMIT_API_KEY set — transactional email (welcome/billing/quota/reconnect notices)`
+    `[${email ? "x" : " "}] XMIT_API_KEY + XMIT_FROM_EMAIL set — transactional email (welcome/billing/quota/reconnect notices)`
   );
   console.log(
     `[${has("ADMIN_ALERT_WEBHOOK_URL") ? "x" : " "}] ADMIN_ALERT_WEBHOOK_URL set — operator alerts on billing failures/budget warnings (optional)`

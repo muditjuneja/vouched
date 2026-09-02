@@ -1,13 +1,26 @@
 import { Hono } from "hono";
 import { verifyClerkSession } from "../auth/clerk";
-import { checkConnectionState } from "../auth/google-oauth";
+import { checkConnectionState, type ConnectionState } from "../auth/google-oauth";
+import type { ScopeGroup } from "../db/google-tokens";
 import { createApiKey, listApiKeys, revokeApiKey } from "../db/mcp-api-keys";
 import { getEffectivePlan } from "../db/subscriptions";
 import { getUsage } from "../db/usage-counters";
 import { addWebsite, listWebsites } from "../db/websites";
 import { MONTHLY_QUOTA_USD } from "../billing/quotas";
+import { markNotifiedOnce, markNotifiedWithCooldown } from "../email/dedup";
+import { notifyApiKeyIssued, notifyReconnectRequired, notifyWelcome } from "../email/notifications";
 import { hasGoogleOAuth, isCloudMode, type Env } from "../types/env";
 import { renderApiKeyCreated, renderDashboard, renderSignInRequired, type DashboardWebsite } from "./pages";
+
+const RECONNECT_NUDGE_COOLDOWN_HOURS = 24;
+
+/** Fires the reconnect-nudge email at most once per cooldown window per scope group. */
+async function maybeNotifyReconnect(env: Env, tenantId: string, scope: ScopeGroup, state: ConnectionState) {
+  if (state !== "reconnect_required") return;
+  if (await markNotifiedWithCooldown(env.DB, tenantId, `reconnect:${scope}`, RECONNECT_NUDGE_COOLDOWN_HOURS)) {
+    await notifyReconnectRequired(env, tenantId, scope);
+  }
+}
 
 type DashboardEnv = { Bindings: Env; Variables: { tenantId: string } };
 
@@ -32,12 +45,23 @@ dashboard.get("/", async (c) => {
   const tenantId = c.get("tenantId");
   const env = c.env;
 
+  // Approximates "signup complete" as "first dashboard visit" — no Clerk
+  // user.created webhook exists in this build (out of scope to add one
+  // just for this welcome email).
+  if (await markNotifiedOnce(env.DB, tenantId, "welcome")) {
+    await notifyWelcome(env, tenantId);
+  }
+
   const websiteRows = await listWebsites(env.DB, tenantId);
   // Same caveat as list_websites the MCP tool: one connection check per
   // scope group, not per site (see getAnyToken's doc comment).
   const [gscState, ga4State] = await Promise.all([
     checkConnectionState(env, "webmaster_console", tenantId),
     checkConnectionState(env, "analytics_property", tenantId)
+  ]);
+  await Promise.all([
+    maybeNotifyReconnect(env, tenantId, "webmaster_console", gscState),
+    maybeNotifyReconnect(env, tenantId, "analytics_property", ga4State)
   ]);
   const websites: DashboardWebsite[] = websiteRows.map((row) => ({
     row,
@@ -94,6 +118,7 @@ dashboard.post("/api-keys", async (c) => {
   const label = String(body.label ?? "").trim() || undefined;
 
   const created = await createApiKey(c.env.DB, tenantId, label);
+  await notifyApiKeyIssued(c.env, tenantId, label ?? null);
   return c.html(renderApiKeyCreated(created.plaintext));
 });
 

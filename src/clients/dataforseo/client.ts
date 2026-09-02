@@ -1,5 +1,7 @@
 import { getEffectivePlan } from "../../db/subscriptions";
-import { getUsage, recordUsage } from "../../db/usage-counters";
+import { currentPeriod, getUsage, recordUsage } from "../../db/usage-counters";
+import { markNotifiedOnce } from "../../email/dedup";
+import { notifyQuotaWarning } from "../../email/notifications";
 import { QuotaExceededError, UpstreamError } from "../../lib/errors";
 import { isCloudMode, type Env } from "../../types/env";
 import { MONTHLY_QUOTA_USD } from "../../billing/quotas";
@@ -89,6 +91,33 @@ export async function dfsLivePost<TResult>(
   await recordCost(env, toolName, path, task0.cost, tenantId);
   if (usingBundled) {
     await recordUsage(env.DB, tenantId!, task0.cost);
+    await warnOnQuotaThreshold(env, tenantId!);
   }
   return task0.result ?? [];
+}
+
+/**
+ * Fires the 80%/100%-of-quota email at most once per threshold per billing
+ * period — the notice key itself encodes the period (currentPeriod()), so
+ * markNotifiedOnce's "ever" semantics naturally reset every month with no
+ * time math needed here.
+ */
+async function warnOnQuotaThreshold(env: Env, tenantId: string): Promise<void> {
+  const plan = await getEffectivePlan(env.DB, tenantId);
+  const quotaUsd = MONTHLY_QUOTA_USD[plan];
+  if (quotaUsd <= 0) return; // free plan has no bundled quota to warn about
+
+  const usage = await getUsage(env.DB, tenantId);
+  const usedUsd = usage?.cost_incurred_usd ?? 0;
+  const pctUsed = (usedUsd / quotaUsd) * 100;
+  const period = currentPeriod();
+
+  const thresholds: Array<80 | 100> = [100, 80]; // check 100 first so a call that jumps straight past 80 still gets the right (higher) notice
+  for (const threshold of thresholds) {
+    if (pctUsed < threshold) continue;
+    if (await markNotifiedOnce(env.DB, tenantId, `quota_warning_${threshold}:${period}`)) {
+      await notifyQuotaWarning(env, tenantId, threshold);
+    }
+    break;
+  }
 }

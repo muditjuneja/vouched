@@ -1,4 +1,4 @@
-import { verifyToken } from "@clerk/backend";
+import { createClerkClient, verifyToken, type ClerkClient } from "@clerk/backend";
 import type { Env } from "../types/env";
 
 const SESSION_COOKIE_NAME = "__session";
@@ -42,6 +42,35 @@ export async function verifyClerkSession(request: Request, env: Env): Promise<Cl
       jwtKey: env.CLERK_JWT_KEY
     });
     return { userId: payload.sub };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Looks up a tenant's email address from Clerk — needed by src/email/
+ * notifications.ts, since neither a Clerk session token nor Dodo's webhook
+ * payload reliably carries one. Verified against @clerk/backend 3.17's real
+ * type declarations (node_modules/@clerk/backend/dist/api/endpoints/
+ * UserApi.d.ts, .../resources/User.d.ts): `ClerkClient.users.getUser`
+ * returns a User with `emailAddresses`/`primaryEmailAddressId`.
+ *
+ * Unlike `verifyToken`, this is a real network call to Clerk's API (a user
+ * lookup, not a session verification) — made on demand per notification
+ * send, using the same CLERK_SECRET_KEY cloud mode already requires.
+ * `makeClient` is injectable so tests don't need a real Clerk account.
+ * Never throws — a lookup failure just means "skip this email".
+ */
+export async function getTenantEmail(
+  env: Env,
+  tenantId: string,
+  makeClient: typeof createClerkClient = createClerkClient
+): Promise<string | null> {
+  try {
+    const client: ClerkClient = makeClient({ secretKey: env.CLERK_SECRET_KEY });
+    const user = await client.users.getUser(tenantId);
+    const primary = user.emailAddresses.find((e) => e.id === user.primaryEmailAddressId);
+    return (primary ?? user.emailAddresses[0])?.emailAddress ?? null;
   } catch {
     return null;
   }
