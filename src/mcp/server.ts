@@ -1,21 +1,25 @@
 import { McpServer } from "@modelcontextprotocol/server";
+import { getWebsiteAnalytics } from "../domains/analytics/get-website-analytics";
 import { auditSite } from "../domains/audit/audit-site";
 import { describeCapabilities } from "../domains/core/describe-capabilities";
 import { exportDataset } from "../domains/core/export-dataset";
 import { listWebsitesTool } from "../domains/core/list-websites";
+import { getSearchPerformance } from "../domains/gsc/get-search-performance";
 import type { ToolModule } from "../domains/types";
 import { ofeEnvelopeSchema } from "../envelope/schema";
 import { ConnectionRequiredError } from "../lib/errors";
 import type { Env } from "../types/env";
 
 // Grows as each milestone lands — see docs/ARCHITECTURE.md and the build
-// plan for what's next (gsc/analytics, then the DataForSEO-backed domains).
+// plan for what's next (the DataForSEO-backed domains).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const TOOL_MODULES: ToolModule<any>[] = [
   describeCapabilities,
   listWebsitesTool,
   exportDataset,
-  auditSite
+  auditSite,
+  getSearchPerformance,
+  getWebsiteAnalytics
 ];
 
 /**

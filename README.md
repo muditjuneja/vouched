@@ -18,14 +18,23 @@ below.
 
 ## Status
 
-Implemented so far:
+**The free tier is complete** (`core`, `audit`, `gsc`, `analytics` — zero
+paid vendors):
 - **`core`** (M1): `describe_capabilities`, `list_websites`, `export_dataset`.
 - **`audit`** (M2): `audit_site` — a bounded, robots.txt-aware self-crawl
   (meta/heading/image/indexability/broken-internal-link checks, issue
-  clustering, a simple site-health score). No paid keys needed.
+  clustering, a simple site-health score).
+- **`gsc` + `analytics`** (M3): `get_search_performance` and
+  `get_website_analytics`, via hand-rolled Google OAuth (no `googleapis`
+  SDK — see `docs/ARCHITECTURE.md`) and plain `fetch` against the official
+  Search Console / GA4 Data REST APIs. To connect an account, add a row to
+  the `websites` D1 table (see `migrations/0001_init.sql`) with its
+  `gsc_site_url`/`ga4_property_id`, then visit
+  `https://<your-worker>/oauth/google/start?scope=webmaster_console&setup_token=<MCP_BEARER_TOKEN>`
+  (and again with `scope=analytics_property`) to grant access.
 
-Everything else (`gsc`, `analytics`, then the DataForSEO-backed domains) is
-tracked but not yet built — `describe_capabilities` reports
+Everything else (the DataForSEO-backed `seo`/`serp`/`backlinks`/`ai_visibility`
+domains) is tracked but not yet built — `describe_capabilities` reports
 `implemented: false` for those tools honestly rather than pretending they
 exist.
 

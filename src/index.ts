@@ -1,4 +1,5 @@
 import { createMcpHandler } from "agents/mcp/server";
+import { handleOAuthCallback, handleOAuthStart } from "./auth/oauth-routes";
 import { buildMcpServer } from "./mcp/server";
 import type { Env } from "./types/env";
 
@@ -28,6 +29,16 @@ export default {
 
     if (url.pathname === "/" || url.pathname === "/health") {
       return new Response("mcp-seo-toolkit: ok\n", { status: 200 });
+    }
+
+    // Browser-hit routes for the Google consent flow — outside the MCP
+    // endpoint's bearer-header gate by necessity (a browser redirect can't
+    // carry it), so handleOAuthStart enforces its own setup_token check.
+    if (url.pathname === "/oauth/google/start") {
+      return handleOAuthStart(request, env);
+    }
+    if (url.pathname === "/oauth/google/callback") {
+      return handleOAuthCallback(request, env);
     }
 
     if (!env.MCP_BEARER_TOKEN) {

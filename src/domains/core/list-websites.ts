@@ -1,24 +1,21 @@
 import { z } from "zod";
-import { hasAnyToken } from "../../db/google-tokens";
+import { checkConnectionState, type ConnectionState } from "../../auth/google-oauth";
 import { listWebsites as queryWebsites } from "../../db/websites";
 import { propertyEntityId } from "../../envelope/entities";
 import { envelope } from "../../envelope/builder";
 import type { Env } from "../../types/env";
 import type { ToolModule } from "../types";
 
-type ConnectionState = "connected" | "not_connected";
-
 async function connectionState(
-  db: D1Database,
+  env: Env,
   configured: string | null,
   scopeGroup: "webmaster_console" | "analytics_property"
 ): Promise<ConnectionState> {
   if (!configured) return "not_connected";
-  // NOTE: this only checks *some* token exists for the scope group, not that
-  // it's specifically valid for this website's property, or unexpired — M3
-  // (Google OAuth) adds real per-property refresh/validity checks and the
-  // "reconnect_required" state on top of this.
-  return (await hasAnyToken(db, scopeGroup)) ? "connected" : "not_connected";
+  // NOTE: v1 doesn't bind a specific Google account to a specific website —
+  // see getAnyToken's doc comment — so this reports whether *some* connected
+  // account can serve this scope group, not this exact property specifically.
+  return checkConnectionState(env, scopeGroup);
 }
 
 async function handler(_args: Record<string, never>, env: Env) {
@@ -34,8 +31,8 @@ async function handler(_args: Record<string, never>, env: Env) {
 
   for (const site of websites) {
     const [searchConsole, websiteAnalytics] = await Promise.all([
-      connectionState(env.DB, site.gsc_site_url, "webmaster_console"),
-      connectionState(env.DB, site.ga4_property_id, "analytics_property")
+      connectionState(env, site.gsc_site_url, "webmaster_console"),
+      connectionState(env, site.ga4_property_id, "analytics_property")
     ]);
 
     builder.addEntity({

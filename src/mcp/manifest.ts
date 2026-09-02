@@ -193,7 +193,7 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
     source_classes: ["webmaster_console"],
     requires_connection: "webmaster_console",
     billing: "free",
-    implemented: false
+    implemented: true
   },
   {
     name: "get_website_analytics",
@@ -203,6 +203,6 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
     source_classes: ["analytics_property"],
     requires_connection: "analytics_property",
     billing: "free",
-    implemented: false
+    implemented: true
   }
 ];

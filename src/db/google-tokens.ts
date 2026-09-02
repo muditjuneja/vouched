@@ -34,6 +34,24 @@ export async function getToken(
   return row ?? null;
 }
 
+/**
+ * This is a personal, single-user server — v1 doesn't bind a website to a
+ * specific connected Google account, so "the" token for a scope group is
+ * whichever one was connected/refreshed most recently. Multiple Google
+ * accounts per scope group technically fit the schema but aren't resolved
+ * individually yet; that's a fast-follow if this ever needs it.
+ */
+export async function getAnyToken(
+  db: D1Database,
+  scopeGroup: ScopeGroup
+): Promise<GoogleTokenRow | null> {
+  const row = await db
+    .prepare("SELECT * FROM google_tokens WHERE scope_group = ?1 ORDER BY updated_at DESC LIMIT 1")
+    .bind(scopeGroup)
+    .first<GoogleTokenRow>();
+  return row ?? null;
+}
+
 export async function upsertToken(
   db: D1Database,
   row: Omit<GoogleTokenRow, "updated_at">
