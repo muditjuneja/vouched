@@ -30,17 +30,21 @@ console.log(
 
 const dataforseo = has("DATAFORSEO_LOGIN") && has("DATAFORSEO_PASSWORD");
 console.log(
-  `[${dataforseo ? "x" : " "}] DataForSEO configured — unlocks seo/serp/backlinks/ai_visibility (not yet implemented)`
+  `[${dataforseo ? "x" : " "}] DataForSEO configured — unlocks seo/serp/backlinks/ai_visibility (12 tools)`
 );
 
 const google = has("GOOGLE_OAUTH_CLIENT_ID") && has("GOOGLE_OAUTH_CLIENT_SECRET");
 console.log(
-  `[${google ? "x" : " "}] Google OAuth configured — unlocks gsc/analytics (not yet implemented)`
+  `[${google ? "x" : " "}] Google OAuth client configured — needed before you can connect a Google account for gsc/analytics`
 );
+if (google) {
+  console.log(
+    "    Run the OAuth flow per-scope-group: visit /oauth/google/start?scope=webmaster_console&setup_token=<MCP_BEARER_TOKEN>" +
+      " (and again with scope=analytics_property) on your deployed/dev Worker."
+  );
+}
 
-console.log(
-  `[x] core + audit tiers — free, no keys needed (audit not yet implemented)`
-);
+console.log(`[x] core + audit tiers — free, no keys needed (4 tools)`);
 
 if (!has("MCP_BEARER_TOKEN")) {
   console.log("\nCopy .dev.vars.example to .dev.vars and set at least MCP_BEARER_TOKEN.");

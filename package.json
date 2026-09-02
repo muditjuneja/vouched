@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "db:migrate:local": "wrangler d1 migrations apply mcp-seo-toolkit --local",
     "db:migrate:remote": "wrangler d1 migrations apply mcp-seo-toolkit --remote",
-    "doctor": "tsx scripts/check-env.ts"
+    "doctor": "tsx scripts/check-env.ts",
+    "docs:tools": "tsx scripts/generate-tools-doc.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.30.0",

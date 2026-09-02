@@ -12,9 +12,21 @@ Two tiers, split by what backs them:
   same tool shapes, backed by [DataForSEO](https://dataforseo.com/),
   pay-as-you-go with **your own API key** — this server never marks it up.
 
-See `docs/ARCHITECTURE.md` for the full design and `docs/TOOLS.md` for the
-tool-by-tool manifest. Project name is a placeholder — see "Open decisions"
-below.
+**All 18 of OpenRush's tools are implemented.** See `docs/ARCHITECTURE.md`
+for the full design, `docs/TOOLS.md` for the generated tool-by-tool
+reference, and `docs/OFE_ENVELOPE.md` for the shared response shape every
+tool returns. Project name is a placeholder — see "Open decisions" below.
+
+**Before you rely on this**, three things this sandboxed build couldn't do:
+1. Run `wrangler dev` and `npm test` for real (this sandbox has no network
+   egress to Cloudflare's API and a local workerd/Node mismatch — see
+   "Known limitation" below).
+2. Verify the DataForSEO endpoint wrappers against a real API key — every
+   endpoint *path* is confirmed, but field names in `seo`/`serp`/`backlinks`
+   are DataForSEO's documented conventions, unverified live, and
+   `ai_visibility`'s are a best-effort guess (see Status below).
+3. Confirm a Google Cloud OAuth client + Workers Paid plan before
+   deploying — both are assumed but not yours to set up automatically.
 
 ## Status
 

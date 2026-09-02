@@ -25,15 +25,24 @@ this doc is the quick-reference version.
   `keyword:`, `page:`, `property:`, `backlink:`); `provenance.ts` gives each
   fact a source_class + default confidence; `schema.ts` is the zod schema
   used as every tool's `outputSchema`.
-- **`src/mcp/manifest.ts`** — the full 18-tool target manifest (confirmed
-  against OpenRush's own live `describe_capabilities`), each entry flagged
-  `implemented: true/false` so `describe_capabilities` never claims more
-  than what's actually registered.
+- **`src/mcp/manifest.ts`** — the full 18-tool manifest (confirmed against
+  OpenRush's own live `describe_capabilities`), each entry flagged
+  `implemented` (all 18 now `true`) so `describe_capabilities` never claims
+  more than what's actually registered. `src/mcp/server.ts` separately
+  splits `FREE_TOOL_MODULES` from `DATAFORSEO_TOOL_MODULES` and only
+  registers the latter when `DATAFORSEO_LOGIN`/`PASSWORD` are set — a tool
+  being "implemented" and a tool being "enabled right now" are different
+  questions, both answered honestly.
+- **`src/clients/`** — `dataforseo/` (Basic-auth client, D1-backed cost
+  tracker, one `endpoints/*.ts` file per DataForSEO product area) and
+  `google/` (plain `fetch` wrappers for Search Console + GA4 Data REST).
+- **`src/crawler/`** — the self-crawl behind `audit_site`: robots.txt
+  parsing, a bounded BFS, per-page checks, issue clustering.
 - **`src/db/`** — D1 query helpers. `websites.ts` (tracked sites config),
-  `google_tokens.ts` (OAuth token storage, written by M3). Migrations in
-  `migrations/`.
+  `google_tokens.ts` (OAuth token storage). Migrations in `migrations/`.
 - **`src/resources/store.ts`** — R2-backed `mcpseo://` resource URIs, for
-  datasets too large to inline (`export_dataset` resolves them).
+  datasets too large to inline (`export_dataset` resolves them) — wired up
+  but not yet used by any tool (see `docs/OFE_ENVELOPE.md`).
 
 ## Why Cloudflare, and why this shape
 
@@ -46,4 +55,27 @@ this doc is the quick-reference version.
   endpoint and the Search Console / GA4 Data REST APIs directly.
 - D1 already being load-bearing for config/cost-tracking means real
   `deltas` (diff against a prior observation, stored in the `observations`
-  table) are cheap in v1, not a stub.
+  table) are cheap to add — the table exists from M0, no tool writes to it
+  yet (see `docs/OFE_ENVELOPE.md`'s "what's real vs. deferred" section).
+
+## Future upgrades (documented, not built)
+
+These are deliberately out of scope for the current build — noted here so
+they're a decision to make later, not a gap someone has to rediscover:
+
+- **`@cloudflare/workers-oauth-provider`** in place of the shared bearer
+  token, if this server should be installable as a discoverable MCP
+  connector rather than added manually with `claude mcp add --header`.
+- **Queue-based crawler scaling** — `audit_site` runs a bounded BFS in one
+  Worker invocation (see the subrequest/CPU limits note above); auditing
+  sites with thousands of pages would need enqueuing crawl targets and
+  aggregating results across multiple invocations instead.
+- **Cloudflare's Browser Rendering binding** as an optional upgrade path
+  for `audit_site` against JS-heavy (client-rendered) targets, where a
+  plain `fetch` + cheerio parse sees an empty shell.
+- **Cron Triggers** for periodically refreshing/pre-warming `gsc`/`analytics`
+  data, or expiring stale KV-cached responses if response caching is added.
+- **Per-website Google account binding** — `getAnyToken` (see
+  `src/db/google-tokens.ts`) currently assumes one connected account per
+  scope group; multiple Google accounts owning different tracked websites
+  would need `websites` to record which account each site belongs to.
