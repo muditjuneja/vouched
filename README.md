@@ -52,9 +52,15 @@ are set.
 > `inspect_search_visibility`'s `filters` parameters (the least certain
 > part).
 
-`backlinks` and `ai_visibility` domains are tracked but not yet built —
-`describe_capabilities` reports `implemented: false` for those tools
-honestly rather than pretending they exist.
+**`backlinks` domain** (M7, 2 tools): `inspect_backlinks` (view-selectable:
+authority / referring domains / anchors / individual backlinks — one call,
+not four) and `compare_backlink_gap` (link gap across up to 5 competitors,
+spam-score filtered, with a heuristic earned-link flag). Same field-shape
+caveat as `seo`/`serp` above.
+
+`ai_visibility` is tracked but not yet built — `describe_capabilities`
+reports `implemented: false` for those tools honestly rather than
+pretending they exist.
 
 ## Setup
 

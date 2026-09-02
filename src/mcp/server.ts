@@ -1,6 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/server";
 import { getWebsiteAnalytics } from "../domains/analytics/get-website-analytics";
 import { auditSite } from "../domains/audit/audit-site";
+import { compareBacklinkGap } from "../domains/backlinks/compare-backlink-gap";
+import { inspectBacklinks } from "../domains/backlinks/inspect-backlinks";
 import { describeCapabilities } from "../domains/core/describe-capabilities";
 import { exportDataset } from "../domains/core/export-dataset";
 import { listWebsitesTool } from "../domains/core/list-websites";
@@ -31,8 +33,8 @@ const FREE_TOOL_MODULES: ToolModule<any>[] = [
 
 // Backed by DataForSEO — only registered (and only then advertised by
 // describe_capabilities) when DATAFORSEO_LOGIN/PASSWORD are configured, so
-// the server never lists a tool call it would just fail on. backlinks/
-// ai_visibility domains join this list in M7/M8.
+// the server never lists a tool call it would just fail on. ai_visibility
+// joins this list in M8.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const DATAFORSEO_TOOL_MODULES: ToolModule<any>[] = [
   researchKeywords,
@@ -42,7 +44,9 @@ const DATAFORSEO_TOOL_MODULES: ToolModule<any>[] = [
   inspectKeyword,
   discoverCompetitors,
   inspectDomain,
-  compareKeywordCoverage
+  compareKeywordCoverage,
+  inspectBacklinks,
+  compareBacklinkGap
 ];
 
 /**

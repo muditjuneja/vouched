@@ -152,7 +152,7 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
     source_classes: ["backlink_index"],
     requires_connection: null,
     billing: "dataforseo",
-    implemented: false
+    implemented: true
   },
   {
     name: "compare_backlink_gap",
@@ -163,7 +163,7 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
     source_classes: ["backlink_index"],
     requires_connection: null,
     billing: "dataforseo",
-    implemented: false
+    implemented: true
   },
   {
     name: "discover_ai_citations",
