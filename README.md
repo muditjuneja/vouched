@@ -18,9 +18,16 @@ DataForSEO access, a dashboard, landing/pSEO pages, and xmit.sh for
 transactional email — while self-host (everything below) stays fully
 intact and unaffected, gated behind a `CLOUD_MODE` flag. M10 (migrating the
 Worker onto Hono, which both Dodo's adapter and the planned SSR
-landing/pSEO pages need) is done; self-host behavior is unchanged and still
-fully tested. M11 onward (multi-tenant D1, Clerk, billing, dashboard,
-pSEO, email) are in progress.
+landing/pSEO pages need) and M11 (multi-tenant D1 schema — `tenant_id` on
+every table, new `subscriptions`/`usage_counters` tables, every
+`src/db/*.ts` helper now tenant-scoped defaulting to `null`/self-host) are
+done; self-host behavior is unchanged and still fully tested. **Known
+limitation from M11**: `websites.primary_domain`'s uniqueness constraint
+predates multi-tenancy and is still global — two cloud tenants can't yet
+both track the same domain; fixing it needs a table-rebuild migration
+tested against a real D1 instance first (see
+`migrations/0002_multi_tenant.sql`'s comment). M12 onward (Clerk, billing,
+bundled DataForSEO, dashboard, pSEO, email) are in progress.
 
 **All 18 of OpenRush's tools are implemented.** See `docs/ARCHITECTURE.md`
 for the full design, `docs/TOOLS.md` for the generated tool-by-tool

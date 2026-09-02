@@ -61,7 +61,8 @@ export async function exchangeCodeForTokens(
   env: Env,
   code: string,
   redirectUri: string,
-  scopeGroup: ScopeGroup
+  scopeGroup: ScopeGroup,
+  tenantId: string | null = null
 ): Promise<void> {
   const res = await fetch(TOKEN_ENDPOINT, {
     method: "POST",
@@ -90,7 +91,8 @@ export async function exchangeCodeForTokens(
     scope_group: scopeGroup,
     access_token: tokens.access_token,
     refresh_token: tokens.refresh_token,
-    expires_at: expiresAtFrom(tokens.expires_in)
+    expires_at: expiresAtFrom(tokens.expires_in),
+    tenant_id: tenantId
   });
 }
 
@@ -120,8 +122,12 @@ const EXPIRY_BUFFER_MS = 60_000;
  * nothing is connected at all, and `UpstreamError` if a refresh fails (a
  * revoked/expired refresh_token — this is the "reconnect_required" case).
  */
-export async function getValidAccessToken(env: Env, scopeGroup: ScopeGroup): Promise<string> {
-  const row = await getAnyToken(env.DB, scopeGroup);
+export async function getValidAccessToken(
+  env: Env,
+  scopeGroup: ScopeGroup,
+  tenantId: string | null = null
+): Promise<string> {
+  const row = await getAnyToken(env.DB, scopeGroup, tenantId);
   if (!row) {
     throw new ConnectionRequiredError(scopeGroup);
   }
@@ -137,7 +143,8 @@ export async function getValidAccessToken(env: Env, scopeGroup: ScopeGroup): Pro
     scope_group: scopeGroup,
     access_token: accessToken,
     refresh_token: row.refresh_token,
-    expires_at: newExpiresAt
+    expires_at: newExpiresAt,
+    tenant_id: row.tenant_id
   });
   return accessToken;
 }
@@ -149,15 +156,19 @@ export type ConnectionState = "connected" | "reconnect_required" | "not_connecte
  * only reaches out to Google when the stored token is actually expired, to
  * tell "still fine" apart from "refresh_token was revoked".
  */
-export async function checkConnectionState(env: Env, scopeGroup: ScopeGroup): Promise<ConnectionState> {
-  const row = await getAnyToken(env.DB, scopeGroup);
+export async function checkConnectionState(
+  env: Env,
+  scopeGroup: ScopeGroup,
+  tenantId: string | null = null
+): Promise<ConnectionState> {
+  const row = await getAnyToken(env.DB, scopeGroup, tenantId);
   if (!row) return "not_connected";
 
   const expiresAt = new Date(row.expires_at).getTime();
   if (expiresAt - Date.now() > EXPIRY_BUFFER_MS) return "connected";
 
   try {
-    await getValidAccessToken(env, scopeGroup);
+    await getValidAccessToken(env, scopeGroup, tenantId);
     return "connected";
   } catch {
     return "reconnect_required";
