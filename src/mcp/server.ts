@@ -5,21 +5,44 @@ import { describeCapabilities } from "../domains/core/describe-capabilities";
 import { exportDataset } from "../domains/core/export-dataset";
 import { listWebsitesTool } from "../domains/core/list-websites";
 import { getSearchPerformance } from "../domains/gsc/get-search-performance";
+import { compareKeywordCoverage } from "../domains/seo/compare-keyword-coverage";
+import { discoverCompetitors } from "../domains/seo/discover-competitors";
+import { inspectDomain } from "../domains/seo/inspect-domain";
+import { inspectKeyword } from "../domains/seo/inspect-keyword";
+import { inspectPage } from "../domains/seo/inspect-page";
+import { inspectSearchVisibility } from "../domains/seo/inspect-search-visibility";
+import { researchKeywords } from "../domains/seo/research-keywords";
+import { inspectSerp } from "../domains/serp/inspect-serp";
 import type { ToolModule } from "../domains/types";
 import { ofeEnvelopeSchema } from "../envelope/schema";
 import { ConnectionRequiredError } from "../lib/errors";
-import type { Env } from "../types/env";
+import { hasDataForSEO, type Env } from "../types/env";
 
-// Grows as each milestone lands — see docs/ARCHITECTURE.md and the build
-// plan for what's next (the DataForSEO-backed domains).
+// Free — no keys needed. Grows as each milestone lands.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const TOOL_MODULES: ToolModule<any>[] = [
+const FREE_TOOL_MODULES: ToolModule<any>[] = [
   describeCapabilities,
   listWebsitesTool,
   exportDataset,
   auditSite,
   getSearchPerformance,
   getWebsiteAnalytics
+];
+
+// Backed by DataForSEO — only registered (and only then advertised by
+// describe_capabilities) when DATAFORSEO_LOGIN/PASSWORD are configured, so
+// the server never lists a tool call it would just fail on. backlinks/
+// ai_visibility domains join this list in M7/M8.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const DATAFORSEO_TOOL_MODULES: ToolModule<any>[] = [
+  researchKeywords,
+  inspectPage,
+  inspectSerp,
+  inspectSearchVisibility,
+  inspectKeyword,
+  discoverCompetitors,
+  inspectDomain,
+  compareKeywordCoverage
 ];
 
 /**
@@ -31,7 +54,11 @@ const TOOL_MODULES: ToolModule<any>[] = [
 export function buildMcpServer(env: Env): McpServer {
   const server = new McpServer({ name: "mcp-seo-toolkit", version: "0.1.0" });
 
-  for (const tool of TOOL_MODULES) {
+  const toolModules = hasDataForSEO(env)
+    ? [...FREE_TOOL_MODULES, ...DATAFORSEO_TOOL_MODULES]
+    : FREE_TOOL_MODULES;
+
+  for (const tool of toolModules) {
     server.registerTool(
       tool.name,
       {

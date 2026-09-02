@@ -33,10 +33,28 @@ paid vendors):
   `https://<your-worker>/oauth/google/start?scope=webmaster_console&setup_token=<MCP_BEARER_TOKEN>`
   (and again with `scope=analytics_property`) to grant access.
 
-Everything else (the DataForSEO-backed `seo`/`serp`/`backlinks`/`ai_visibility`
-domains) is tracked but not yet built — `describe_capabilities` reports
-`implemented: false` for those tools honestly rather than pretending they
-exist.
+**DataForSEO-backed tier, `seo` + `serp` domains** (M4-M6, 9 tools):
+`inspect_domain`, `discover_competitors`, `research_keywords`,
+`compare_keyword_coverage`, `inspect_search_visibility`, `inspect_keyword`,
+`inspect_page`, `inspect_serp`. These only register (and only then appear
+in `describe_capabilities`) when `DATAFORSEO_LOGIN`/`DATAFORSEO_PASSWORD`
+are set.
+
+> **Field-shape caveat**: this build has no DataForSEO API key, so while
+> every endpoint *path* used above was confirmed against DataForSEO's own
+> `mcp-server-typescript` repo, the request/response *field names* in
+> `src/clients/dataforseo/endpoints/*.ts` follow documented conventions but
+> are unverified against a live call. Field extraction is written
+> defensively (optional chaining, a `raw` passthrough on facts where it
+> matters) so a wrong guess degrades to `null`/extra fields rather than a
+> crash — but confirm against the real API with your own key before
+> trusting these outputs, especially `inspect_page`'s and
+> `inspect_search_visibility`'s `filters` parameters (the least certain
+> part).
+
+`backlinks` and `ai_visibility` domains are tracked but not yet built —
+`describe_capabilities` reports `implemented: false` for those tools
+honestly rather than pretending they exist.
 
 ## Setup
 

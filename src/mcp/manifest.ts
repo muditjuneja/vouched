@@ -56,7 +56,7 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
     source_classes: ["search_index"],
     requires_connection: null,
     billing: "dataforseo",
-    implemented: false
+    implemented: true
   },
   {
     name: "discover_competitors",
@@ -66,7 +66,7 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
     source_classes: ["search_index"],
     requires_connection: null,
     billing: "dataforseo",
-    implemented: false
+    implemented: true
   },
   {
     name: "research_keywords",
@@ -76,7 +76,7 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
     source_classes: ["search_index"],
     requires_connection: null,
     billing: "dataforseo",
-    implemented: false
+    implemented: true
   },
   {
     name: "compare_keyword_coverage",
@@ -86,7 +86,7 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
     source_classes: ["search_index"],
     requires_connection: null,
     billing: "dataforseo",
-    implemented: false
+    implemented: true
   },
   {
     name: "inspect_search_visibility",
@@ -96,7 +96,7 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
     source_classes: ["search_index", "live_serp"],
     requires_connection: null,
     billing: "dataforseo",
-    implemented: false
+    implemented: true
   },
   {
     name: "inspect_keyword",
@@ -106,7 +106,7 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
     source_classes: ["search_index", "live_serp"],
     requires_connection: null,
     billing: "dataforseo",
-    implemented: false
+    implemented: true
   },
   {
     name: "inspect_page",
@@ -116,7 +116,7 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
     source_classes: ["search_index"],
     requires_connection: null,
     billing: "dataforseo",
-    implemented: false
+    implemented: true
   },
   {
     name: "inspect_serp",
@@ -126,7 +126,7 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
     source_classes: ["live_serp"],
     requires_connection: null,
     billing: "dataforseo",
-    implemented: false
+    implemented: true
   },
   {
     name: "audit_site",
