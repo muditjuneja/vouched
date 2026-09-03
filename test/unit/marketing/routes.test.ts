@@ -25,6 +25,16 @@ describe("marketing routes", () => {
     expect((body.match(/<h1/g) ?? []).length).toBe(1);
   });
 
+  it("every page carries Open Graph / Twitter Card meta for link previews", async () => {
+    const res = await marketing.request("/pricing", {}, fakeEnv());
+    const body = await res.text();
+    expect(body).toContain('property="og:title"');
+    expect(body).toContain('property="og:description"');
+    expect(body).toContain('property="og:url"');
+    expect(body).toContain('name="twitter:card" content="summary"');
+    expect(body).toContain('name="twitter:title"');
+  });
+
   it("GET /pricing shows the real quota-derived plan amounts", async () => {
     const res = await marketing.request("/pricing", {}, fakeEnv());
     expect(res.status).toBe(200);
