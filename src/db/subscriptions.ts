@@ -68,14 +68,34 @@ export async function upsertSubscription(db: D1Database, input: UpsertSubscripti
 }
 
 /**
- * A tenant with no subscriptions row, or one that isn't `active` (pending,
- * on_hold, paused, cancelled, failed, or expired), is treated as the free
- * plan — conservative for now; a grace period for `on_hold`/`failed`
- * before downgrading, coordinated with M18's dunning-email flow so the
- * tenant is warned first, is a fast-follow.
+ * Days past `current_period_end` a payment-failure status (`on_hold` or
+ * `failed`) still keeps its paid plan before falling back to free. Gives a
+ * tenant time to fix their payment method after Dodo's dunning attempts —
+ * coordinated with M18's `notifyPaymentFailed` email, which fires the
+ * moment the status changes, so the tenant is warned right when the grace
+ * period starts, not left to discover it via a sudden downgrade.
  */
-export async function getEffectivePlan(db: D1Database, tenantId: string): Promise<Plan> {
+const PAYMENT_FAILURE_GRACE_DAYS = 3;
+
+/**
+ * A tenant with no subscriptions row is the free plan. `active` is their
+ * real plan. `on_hold`/`failed` (a payment issue, not a deliberate
+ * cancellation) keep their real plan for `PAYMENT_FAILURE_GRACE_DAYS`
+ * past `current_period_end` — Dodo's own dunning retries plus this grace
+ * window give a tenant a real chance to fix their payment method before
+ * losing access, rather than a hard cutoff the instant a charge fails.
+ * `pending` (never activated), `paused`, `cancelled`, and `expired` are
+ * deliberate/terminal states with no ambiguity — free immediately.
+ */
+export async function getEffectivePlan(db: D1Database, tenantId: string, now: Date = new Date()): Promise<Plan> {
   const row = await getSubscription(db, tenantId);
-  if (!row || row.status !== "active") return "free";
-  return row.plan;
+  if (!row) return "free";
+  if (row.status === "active") return row.plan;
+
+  if ((row.status === "on_hold" || row.status === "failed") && row.current_period_end) {
+    const graceEndsAt = new Date(row.current_period_end).getTime() + PAYMENT_FAILURE_GRACE_DAYS * 24 * 60 * 60 * 1000;
+    if (now.getTime() < graceEndsAt) return row.plan;
+  }
+
+  return "free";
 }

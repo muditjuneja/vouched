@@ -96,6 +96,16 @@ webhook payloads arrive as `{type, data}`, not flat fields, when an earlier
 draft of `src/billing/webhook-handlers.ts` assumed the wrong shape — the
 compiler error was the check here, not a guess.
 
+**Payment-failure grace period** (`src/db/subscriptions.ts`'s
+`getEffectivePlan`): an `on_hold`/`failed` subscription (Dodo's dunning
+retrying a failed charge) keeps its real plan for 3 days past
+`current_period_end` before falling back to free — coordinated with
+M18's `notifyPaymentFailed` email, which fires the moment the status
+changes, so the tenant is warned right when the grace period starts
+rather than discovering it via a sudden downgrade. `pending`/`paused`/
+`cancelled`/`expired` are deliberate/terminal states with no such
+ambiguity — free immediately, same as before.
+
 **Still unverified**: no Dodo account was available to actually send a
 webhook or complete a checkout in this sandbox; `@dodopayments/core`'s
 webhook module also documents using Node's `crypto` (works via our

@@ -14,9 +14,13 @@ function LandingPage() {
     <>
       <Hero
         eyebrow="Open source · MIT licensed · MCP-native"
-        heading="SEO and marketing data, as tools your AI agent can call directly"
-        lede="mcp-seo-toolkit is an open-source, self-hostable Model Context Protocol server for SEO and marketing data — keyword research, backlinks, SERP snapshots, AI-visibility, technical site audits, and your own Search Console / GA4 — plus a hosted cloud version if you'd rather not run it yourself."
+        heading="SEO data with receipts, not another black box"
+        lede="Every fact this server returns carries its source, its freshness, and a confidence score — so your AI agent (and you) can tell a real number from a modeled guess. Keyword research, backlinks, SERP, AI-visibility, technical audits, and your own Search Console/GA4, called directly mid-conversation instead of copy-pasted from a dashboard tab."
       >
+        <p class="muted">
+          Built on the <a href="https://modelcontextprotocol.io">Model Context Protocol</a> — an open standard, not a proprietary
+          plugin format only one vendor's agent can use.
+        </p>
         <div class="cta-row">
           <Button href={GITHUB_URL} variant="primary">
             Self-host it free (MIT)
@@ -45,21 +49,24 @@ function LandingPage() {
       </section>
 
       <section>
-        <h2>Why this exists</h2>
+        <h2>The three things that actually get in your way</h2>
         <div class="grid">
-          <Card title="Genuinely open source">
-            <p>MIT licensed, the whole thing — every tool's implementation is readable and forkable, not a black box behind an API key.</p>
-          </Card>
-          <Card title="Zero-markup self-host">
+          <Card title="Closed-source scores you have to take on faith">
             <p>
-              Bring your own DataForSEO key and pay DataForSEO's own pay-as-you-go rate directly. No credit system, no subscription
-              minimum sitting between you and the underlying data cost.
+              Most SEO tools hand you a number with no way to see how it was computed. This one's MIT licensed end to end — read
+              exactly how every tool works, fork it, fix it yourself if something's wrong.
             </p>
           </Card>
-          <Card title="MCP-native, not dashboard-first">
+          <Card title="Credit systems that hide what a query actually costs">
             <p>
-              Every capability is a callable MCP tool with a typed, cited response — built for an AI agent to use in-conversation, not a
-              dashboard you tab over to and copy numbers out of.
+              Bring your own DataForSEO key and pay their real pay-as-you-go rate directly — no credit conversion to do math on, no
+              markup, no subscription minimum sitting between you and the underlying data cost.
+            </p>
+          </Card>
+          <Card title="Tab-switching to a dashboard mid-conversation">
+            <p>
+              Every capability is a callable MCP tool with a typed, cited response — built to be used in-conversation by your AI
+              agent, not a dashboard you alt-tab to and copy numbers out of.
             </p>
           </Card>
         </div>
