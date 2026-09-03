@@ -35,6 +35,12 @@ describe("marketing routes", () => {
     expect(body).toContain('name="twitter:title"');
   });
 
+  it("has a favicon", async () => {
+    const res = await marketing.request("/", {}, fakeEnv());
+    const body = await res.text();
+    expect(body).toContain('rel="icon"');
+  });
+
   it("GET /pricing shows the real quota-derived plan amounts", async () => {
     const res = await marketing.request("/pricing", {}, fakeEnv());
     expect(res.status).toBe(200);

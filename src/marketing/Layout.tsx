@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from "hono/jsx";
-import { BASE_CSS, TOKENS_CSS, renderToString } from "../design";
+import { BASE_CSS, FAVICON_HREF, TOKENS_CSS, renderToString } from "../design";
 import { Footer } from "./components/Footer";
 import { Nav } from "./components/Nav";
 
@@ -78,6 +78,7 @@ function Layout({ title, description, canonicalUrl, children }: PropsWithChildre
         <title>{title}</title>
         <meta name="description" content={description} />
         <link rel="canonical" href={canonicalUrl} />
+        <link rel="icon" href={FAVICON_HREF} />
         {/* No OG/Twitter image — none exists in this repo, and a broken image reference is worse than none. Add one (and og:image/twitter:card="summary_large_image") once real artwork exists. */}
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="mcp-seo-toolkit" />

@@ -6,6 +6,7 @@
  */
 export { TOKENS_CSS } from "./tokens";
 export { BASE_CSS } from "./base-styles";
+export { FAVICON_HREF } from "./favicon";
 export { renderToString } from "./render";
 export { Button, type ButtonProps } from "./components/Button";
 export { Badge, type BadgeProps, type BadgeStatus } from "./components/Badge";

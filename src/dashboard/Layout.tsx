@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from "hono/jsx";
-import { BASE_CSS, TOKENS_CSS, renderToString } from "../design";
+import { BASE_CSS, FAVICON_HREF, TOKENS_CSS, renderToString } from "../design";
 
 /**
  * Layout-only CSS genuinely specific to the dashboard's narrow,
@@ -31,6 +31,7 @@ function Layout({ title, children }: PropsWithChildren<LayoutProps>) {
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{title} — mcp-seo-toolkit</title>
+        <link rel="icon" href={FAVICON_HREF} />
         <style dangerouslySetInnerHTML={{ __html: TOKENS_CSS + BASE_CSS + DASHBOARD_CSS }} />
       </head>
       <body>
