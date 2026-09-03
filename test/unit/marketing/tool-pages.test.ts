@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { TOOL_MANIFEST } from "../../../src/mcp/manifest";
 import { findToolPage, TOOL_PAGES } from "../../../src/marketing/content/tool-pages";
-import { esc } from "../../../src/marketing/html";
-import { renderToolPage, renderToolsIndex } from "../../../src/marketing/pages";
+import { renderToolPage } from "../../../src/marketing/pages/ToolPage";
+import { renderToolsIndex } from "../../../src/marketing/pages/ToolsIndexPage";
+
+/** hono/jsx auto-escapes text children — matches its exact escape set (utils/html.js) so an assertion against raw copy still finds it in rendered output. */
+function jsxEscape(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
 
 describe("pSEO tool page generation", () => {
   it("produces exactly one page per manifest tool", () => {
@@ -35,8 +40,7 @@ describe("pSEO tool page generation", () => {
       const page = findToolPage(entry.name.replace(/_/g, "-"));
       expect(page).toBeDefined();
       const html = renderToolPage(page!, "https://example.com/tools/x");
-      // HTML-escaped in the rendered body — compare against the same escaping.
-      expect(html).toContain(esc(entry.summary));
+      expect(html).toContain(jsxEscape(entry.summary));
       for (const factType of entry.fact_types) {
         expect(html).toContain(factType);
       }

@@ -47,10 +47,14 @@ Done. New migration (`migrations/0002_multi_tenant.sql`): `tenant_id` on
 existing tables, new `subscriptions` and `usage_counters` tables, every
 `src/db/*.ts` helper now tenant-scoped defaulting to `null`/self-host.
 
-**Known limitation**: `websites.primary_domain`'s uniqueness constraint
-predates multi-tenancy and is still global — two cloud tenants can't yet
-both track the same domain; fixing it needs a table-rebuild migration
-tested against a real D1 instance first (see that migration's comment).
+**Known limitation, since fixed**: `websites.primary_domain`'s uniqueness
+constraint predated multi-tenancy and was still global — two cloud
+tenants couldn't both track the same domain. Fixed in
+`migrations/0006_website_domain_uniqueness.sql` (a table rebuild, since
+SQLite/D1 can't ALTER a column constraint in place) with two partial
+unique indexes instead of one compound constraint, so self-host's
+original per-domain dedup guarantee (tenant_id always NULL) isn't
+silently lost in the process — see that migration's comment.
 
 ## M12 — Clerk auth
 
@@ -120,12 +124,12 @@ this build can know or verify) shows tracked websites + their GSC/GA4
 connection state (with connect links), current plan + usage-vs-quota,
 upgrade buttons for Pro/Team (linking to M13's `/billing/checkout`), and
 MCP API key management (create — shown once, exactly like a Stripe/GitHub
-key reveal — list, revoke). Plain server-rendered HTML via hand-written
-escaping (`src/dashboard/html.ts`'s `esc()`) rather than a JSX toolchain
-unrun in this sandbox — deliberately simple, not a placeholder. Landed on
-"medium scope": a control-plane dashboard (accounts, billing, keys,
-connection status) rather than a full analytics replica — actually using
-the SEO tools still happens through Claude/MCP.
+key reveal — list, revoke). Server-rendered via real JSX components
+(`hono/jsx` — see the "Design system" section below); auto-escaped by the
+JSX runtime rather than a hand-rolled `esc()`. Landed on "medium scope": a
+control-plane dashboard (accounts, billing, keys, connection status)
+rather than a full analytics replica — actually using the SEO tools still
+happens through Claude/MCP.
 
 **Not verified**: no live Clerk/Dodo account to click through the real flow
 end-to-end.
@@ -148,6 +152,46 @@ being pre-generated at deploy time or edge-cached; since the underlying
 content never changes per-request, that's a future optimization, not a
 correctness gap.
 
+## Design system
+
+Marketing and the dashboard both render through real JSX components
+(`hono/jsx` — a Hono built-in, zero extra dependencies; `tsconfig.json`
+sets `jsx: "react-jsx"` / `jsxImportSource: "hono/jsx"`) composed from a
+shared `src/design/` package, not two independently hand-rolled
+stylesheets. Originally (M15/M16) each surface built its own HTML via
+string templates with its own colors/fonts/components, which drifted in
+concrete ways (different base font size, a `.callout` radius that
+differed under the same class name, no accent-colored buttons on the
+dashboard, two different dark-mode mechanisms). Fixed by:
+
+- `src/design/tokens.ts` — the one color system (light/dark custom
+  properties, `prefers-color-scheme` + a `data-theme` override hook),
+  including `--status-*` tokens for badge colors.
+- `src/design/base-styles.ts` — shared typography/component CSS
+  (headings, `.btn`/`.btn-primary`, `.badge`, `.callout`, `.card`,
+  tables, form inputs) both surfaces render identically.
+- `src/design/components/*.tsx` — small, tested, reusable components
+  (`Button`, `Badge`, `Callout`, `Card`, `Table`) — see
+  `test/unit/design/components.test.tsx`.
+- `src/design/render.ts` — `renderToString()`, narrowing `hono/jsx`'s
+  `string | Promise<string>` render result down to a plain `string` for
+  every page-level render function (every component in this build is
+  synchronous, so this is always a plain string in practice).
+
+Each surface keeps its own `Layout.tsx` (`src/marketing/Layout.tsx`,
+`src/dashboard/Layout.tsx`) for what's genuinely different — marketing's
+wide public layout with SEO metadata (title/description/canonical) vs.
+the dashboard's narrow authenticated shell — composing the shared tokens/
+base CSS plus a small amount of surface-only CSS. Both directories follow
+the same shape: `Layout.tsx`, `components/*.tsx` (surface-specific pieces
+— `Nav`/`Footer`/`Hero`/`PricingCard` for marketing;
+`ConnectionBadge`/`WebsitesSection`/`BillingSection`/`ApiKeysSection` for
+the dashboard), and `pages/*.tsx` (one file per route, composing
+components — no more 400+-line files with every page's markup crammed
+into one). `test/unit/design/shared-tokens.test.ts` asserts both surfaces
+actually embed the identical token block, not two independently-defined
+`--accent` values.
+
 ## M17 — Cloud hardening
 
 Done.
@@ -157,6 +201,9 @@ Done.
   via `RATE_LIMIT_PER_MINUTE` (default 60/tenant/minute). Chose a D1 counter
   over Cloudflare's native Rate Limiting binding since the latter's
   `wrangler.jsonc` config couldn't be verified working in this sandbox.
+  Self-cleaning: every call also prunes that tenant's own buckets older
+  than 5 minutes, so the table doesn't grow forever without needing a
+  Cron Trigger (which this build doesn't have).
 - **Billing-failure alerting** (`src/lib/alerts.ts`): `sendAdminAlert`
   posts a `{text, content}` body (Slack- and Discord-webhook compatible) to
   `ADMIN_ALERT_WEBHOOK_URL` when a Dodo subscription goes `on_hold` or

@@ -3,14 +3,12 @@ import type { Env } from "../types/env";
 import { findComparisonPage } from "./content/comparisons";
 import { findIndustryPage } from "./content/industries";
 import { findToolPage } from "./content/tool-pages";
-import {
-  renderComparison,
-  renderIndustryPage,
-  renderLanding,
-  renderPricing,
-  renderToolPage,
-  renderToolsIndex
-} from "./pages";
+import { renderComparison } from "./pages/ComparisonPage";
+import { renderIndustryPage } from "./pages/IndustryPage";
+import { renderLanding } from "./pages/LandingPage";
+import { renderPricing } from "./pages/PricingPage";
+import { renderToolPage } from "./pages/ToolPage";
+import { renderToolsIndex } from "./pages/ToolsIndexPage";
 import { renderRobotsTxt, renderSitemapXml } from "./sitemap";
 
 /**

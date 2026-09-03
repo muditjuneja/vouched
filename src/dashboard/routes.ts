@@ -10,7 +10,10 @@ import { MONTHLY_QUOTA_USD } from "../billing/quotas";
 import { markNotifiedOnce, markNotifiedWithCooldown } from "../email/dedup";
 import { notifyApiKeyIssued, notifyReconnectRequired, notifyWelcome } from "../email/notifications";
 import { hasGoogleOAuth, isCloudMode, type Env } from "../types/env";
-import { renderApiKeyCreated, renderDashboard, renderSignInRequired, type DashboardWebsite } from "./pages";
+import { renderApiKeyCreated } from "./pages/ApiKeyCreatedPage";
+import { renderDashboard } from "./pages/DashboardPage";
+import { renderSignInRequired } from "./pages/SignInRequiredPage";
+import type { DashboardWebsite } from "./types";
 
 const RECONNECT_NUDGE_COOLDOWN_HOURS = 24;
 

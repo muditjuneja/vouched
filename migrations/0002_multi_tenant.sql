@@ -5,15 +5,11 @@
 -- WHERE clauses throughout so a NULL tenant_id still matches correctly —
 -- `= NULL` is never true in SQL.
 
--- KNOWN LIMITATION (not fixed here): `websites.primary_domain` carries a
--- global UNIQUE constraint from migration 0001, predating multi-tenancy.
--- SQLite/D1 can't ALTER a column constraint in place, only via a
--- create-new-table-and-copy rebuild — risky to do unverified in this
--- sandbox (no working `wrangler d1 execute` here, see README). Practical
--- effect: two different cloud tenants cannot both track the exact same
--- domain. Fix in a follow-up migration: rebuild the table with
--- UNIQUE(tenant_id, primary_domain) instead, tested against a real D1
--- instance first.
+-- `websites.primary_domain` carries a global UNIQUE constraint from
+-- migration 0001, predating multi-tenancy — two different cloud tenants
+-- couldn't both track the exact same domain. Fixed in
+-- migrations/0006_website_domain_uniqueness.sql (a table rebuild, since
+-- SQLite/D1 can't ALTER a column constraint in place).
 ALTER TABLE websites ADD COLUMN tenant_id TEXT;
 ALTER TABLE google_tokens ADD COLUMN tenant_id TEXT;
 ALTER TABLE cost_log ADD COLUMN tenant_id TEXT;
