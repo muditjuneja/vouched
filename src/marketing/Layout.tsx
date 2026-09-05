@@ -17,28 +17,55 @@ const MARKETING_CSS = `
     display: flex; align-items: center; justify-content: space-between;
     max-width: 1080px; margin: 0 auto; padding: 1.1rem 1.25rem;
     border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--bg) 80%, transparent);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   }
-  .nav .brand { font-weight: 700; text-decoration: none; color: var(--text); }
-  .nav-links { display: flex; gap: 1.25rem; flex-wrap: wrap; }
-  .nav-links a { text-decoration: none; color: var(--text); font-size: 0.95rem; }
+  .nav .brand { font-weight: 800; letter-spacing: -0.01em; text-decoration: none; color: var(--text); }
+  .nav-links { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+  .nav-links a { text-decoration: none; color: var(--text); font-size: 0.92rem; font-weight: 500; }
   .nav-links a:hover { color: var(--accent); }
+  .nav-links a.btn { font-size: 0.88rem; padding: 0.5rem 1rem; }
   main { max-width: 1080px; margin: 0 auto; padding: 0 1.25rem 3rem; }
-  section { margin: 2.75rem 0; }
-  section:first-of-type { margin-top: 2.5rem; }
+  section { margin: 4rem 0; }
+  section:first-of-type { margin-top: 0; }
   p { max-width: 68ch; }
-  .lede { font-size: 1.15rem; color: var(--muted); max-width: 60ch; }
-  .eyebrow {
-    text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.78rem;
-    font-weight: 700; color: var(--accent); margin: 0 0 0.6rem;
+  .lede { font-size: 1.2rem; color: var(--muted); max-width: 58ch; }
+
+  .hero {
+    position: relative; padding: 4.5rem 0 3.5rem; overflow: hidden;
+    margin: 0 -1.25rem; padding-left: 1.25rem; padding-right: 1.25rem;
   }
+  .hero::before, .hero::after {
+    content: ""; position: absolute; z-index: -1; border-radius: 50%; filter: blur(90px); opacity: 0.35;
+  }
+  .hero::before { width: 26rem; height: 26rem; background: var(--accent); top: -10rem; left: -6rem; }
+  .hero::after { width: 22rem; height: 22rem; background: var(--accent-2); top: -4rem; right: -4rem; }
+  .hero-grid { display: grid; gap: 3rem; grid-template-columns: 1.1fr 1fr; align-items: center; }
+  .hero-stats { display: flex; gap: 2rem; flex-wrap: wrap; margin-top: 2.25rem; }
+  .hero-stat strong { display: block; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.01em; }
+  .hero-stat span { font-size: 0.85rem; color: var(--muted); }
+  .gradient-text {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  @media (max-width: 860px) {
+    .hero-grid { grid-template-columns: 1fr; }
+  }
+
   ul, ol { padding-left: 1.3rem; }
   li { margin-bottom: 0.4rem; }
   .cta-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
   .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
   .pricing-grid { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-  .price-card { border: 1px solid var(--border); border-radius: 14px; padding: 1.5rem; background: var(--card-bg); }
-  .price-card.featured { border-color: var(--accent); border-width: 2px; }
-  .price-amount { font-size: 2rem; font-weight: 700; margin: 0.4rem 0 0.9rem; }
+  .price-card {
+    border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.75rem;
+    background: var(--card-bg); box-shadow: var(--shadow-sm);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .price-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+  .price-card.featured { border-color: var(--accent); border-width: 2px; box-shadow: var(--shadow-glow); }
+  .price-amount { font-size: 2.25rem; font-weight: 800; letter-spacing: -0.02em; margin: 0.5rem 0 0.9rem; }
   .price-amount small { font-size: 0.95rem; font-weight: 500; color: var(--muted); }
   table.compare th, table.compare td { vertical-align: top; }
   table.compare th { background: var(--bg-alt); }

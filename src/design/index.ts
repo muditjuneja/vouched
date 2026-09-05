@@ -12,4 +12,5 @@ export { Button, type ButtonProps } from "./components/Button";
 export { Badge, type BadgeProps, type BadgeStatus } from "./components/Badge";
 export { Callout } from "./components/Callout";
 export { Card, type CardProps } from "./components/Card";
+export { CodeWindow, type CodeWindowProps } from "./components/CodeWindow";
 export { Table, type TableProps } from "./components/Table";

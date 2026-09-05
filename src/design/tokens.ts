@@ -12,6 +12,11 @@
  * `--status-*` tokens carry what used to be dashboard's hardcoded badge
  * colors (`#1a7f37`/`#9a6700`/`#6e7781`) — same visual values, now defined
  * once instead of embedded in a stylesheet no other surface could reuse.
+ *
+ * `--accent-2` (a violet paired with the blue `--accent`) backs the
+ * gradient text/glow treatment on the marketing hero; `--shadow-*` and
+ * `--radius-*` give every card/button/callout consistent depth and
+ * corner rounding instead of ad hoc per-component values.
  */
 export const TOKENS_CSS = `
   :root {
@@ -22,6 +27,7 @@ export const TOKENS_CSS = `
     --muted: #5b6270;
     --border: #e3e5ea;
     --accent: #2952e3;
+    --accent-2: #7c3aed;
     --accent-contrast: #ffffff;
     --card-bg: #ffffff;
     --status-good-bg: #1a7f37;
@@ -30,27 +36,44 @@ export const TOKENS_CSS = `
     --status-warn-text: #ffffff;
     --status-neutral-bg: #6e7781;
     --status-neutral-text: #ffffff;
+    --shadow-sm: 0 1px 2px rgba(16, 20, 30, 0.06);
+    --shadow-md: 0 8px 24px rgba(16, 20, 30, 0.08);
+    --shadow-lg: 0 20px 48px rgba(16, 20, 30, 0.12);
+    --shadow-glow: 0 0 0 1px rgba(41, 82, 227, 0.08), 0 8px 24px rgba(41, 82, 227, 0.18);
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #0f1115;
-      --bg-alt: #161920;
-      --text: #eef0f4;
-      --muted: #9aa1b0;
-      --border: #262a33;
-      --accent: #6f8dff;
-      --accent-contrast: #0f1115;
-      --card-bg: #161920;
+      --bg: #08090c;
+      --bg-alt: #121319;
+      --text: #f3f4f8;
+      --muted: #9096a6;
+      --border: #21232c;
+      --accent: #7c9bff;
+      --accent-2: #a78bfa;
+      --accent-contrast: #08090c;
+      --card-bg: #101118;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+      --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.55);
+      --shadow-glow: 0 0 0 1px rgba(124, 155, 255, 0.15), 0 8px 32px rgba(124, 155, 255, 0.22);
     }
   }
   :root[data-theme="dark"] {
-    --bg: #0f1115;
-    --bg-alt: #161920;
-    --text: #eef0f4;
-    --muted: #9aa1b0;
-    --border: #262a33;
-    --accent: #6f8dff;
-    --accent-contrast: #0f1115;
-    --card-bg: #161920;
+    --bg: #08090c;
+    --bg-alt: #121319;
+    --text: #f3f4f8;
+    --muted: #9096a6;
+    --border: #21232c;
+    --accent: #7c9bff;
+    --accent-2: #a78bfa;
+    --accent-contrast: #08090c;
+    --card-bg: #101118;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.55);
+    --shadow-glow: 0 0 0 1px rgba(124, 155, 255, 0.15), 0 8px 32px rgba(124, 155, 255, 0.22);
   }
 `;

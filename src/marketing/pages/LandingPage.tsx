@@ -1,6 +1,7 @@
-import { Button, Card } from "../../design";
+import { Button, Card, CodeWindow } from "../../design";
 import { TOOL_MANIFEST } from "../../mcp/manifest";
 import { Hero } from "../components/Hero";
+import { ChatIcon, CodeIcon, ReceiptIcon } from "../components/icons";
 import { TOOL_PAGES } from "../content/tool-pages";
 import { renderPage } from "../Layout";
 import { GITHUB_URL } from "../github-url";
@@ -9,24 +10,97 @@ const FREE_DOMAINS = new Set(["core", "audit", "gsc", "analytics"]);
 const FREE_TOOL_COUNT = TOOL_MANIFEST.filter((t) => FREE_DOMAINS.has(t.domain)).length;
 const DATAFORSEO_TOOL_COUNT = TOOL_MANIFEST.length - FREE_TOOL_COUNT;
 
+/** A real (trimmed) example of the OFE envelope shape every tool returns — see docs/OFE_ENVELOPE.md. Shown as the hero's "product shot" since no image pipeline exists in this repo. */
+function ExampleCall() {
+  return (
+    <CodeWindow title="research_keywords('vector database')">
+      {"{\n"}
+      {"  "}
+      <span class="tok-key">"domain"</span>
+      <span class="tok-punc">: </span>
+      <span class="tok-str">"seo"</span>
+      <span class="tok-punc">,</span>
+      {"\n  "}
+      <span class="tok-key">"facts"</span>
+      <span class="tok-punc">: [{"{"}</span>
+      {"\n    "}
+      <span class="tok-key">"type"</span>
+      <span class="tok-punc">: </span>
+      <span class="tok-str">"seo.keyword"</span>
+      <span class="tok-punc">,</span>
+      {"\n    "}
+      <span class="tok-key">"value"</span>
+      <span class="tok-punc">: {"{"} </span>
+      <span class="tok-key">"volume"</span>
+      <span class="tok-punc">: </span>
+      <span class="tok-num">8100</span>
+      <span class="tok-punc"> {"}"},</span>
+      {"\n    "}
+      <span class="tok-key">"provenance"</span>
+      <span class="tok-punc">: {"{"}</span>
+      {"\n      "}
+      <span class="tok-key">"source_class"</span>
+      <span class="tok-punc">: </span>
+      <span class="tok-str">"search_index"</span>
+      <span class="tok-punc">,</span>
+      {"\n      "}
+      <span class="tok-key">"confidence"</span>
+      <span class="tok-punc">: </span>
+      <span class="tok-num">0.92</span>
+      <span class="tok-punc">,</span>
+      {"\n      "}
+      <span class="tok-comment">// not "trust me" — a real number</span>
+      {"\n    "}
+      <span class="tok-punc">{"}"}</span>
+      {"\n  "}
+      <span class="tok-punc">{"}"}]</span>
+      {"\n"}
+      <span class="tok-punc">{"}"}</span>
+    </CodeWindow>
+  );
+}
+
 function LandingPage() {
   return (
     <>
       <Hero
         eyebrow="Open source · MIT licensed · MCP-native"
-        heading="SEO data with receipts, not another black box"
-        lede="Every fact this server returns carries its source, its freshness, and a confidence score — so your AI agent (and you) can tell a real number from a modeled guess. Keyword research, backlinks, SERP, AI-visibility, technical audits, and your own Search Console/GA4, called directly mid-conversation instead of copy-pasted from a dashboard tab."
+        heading={
+          <>
+            SEO data with <span class="gradient-text">receipts</span>, not another black box
+          </>
+        }
+        lede="Every fact this server returns carries its source, its freshness, and a confidence score — so your AI agent (and you) can tell a real number from a modeled guess. Called directly mid-conversation, not copy-pasted from a dashboard tab."
+        visual={<ExampleCall />}
       >
-        <p class="muted">
-          Built on the <a href="https://modelcontextprotocol.io">Model Context Protocol</a> — an open standard, not a proprietary
-          plugin format only one vendor's agent can use.
-        </p>
         <div class="cta-row">
           <Button href={GITHUB_URL} variant="primary">
             Self-host it free (MIT)
           </Button>
           <Button href="/dashboard">Use the hosted cloud version</Button>
         </div>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <strong>18</strong>
+            <span>MCP tools</span>
+          </div>
+          <div class="hero-stat">
+            <strong>8</strong>
+            <span>data domains</span>
+          </div>
+          <div class="hero-stat">
+            <strong>MIT</strong>
+            <span>fully open source</span>
+          </div>
+          <div class="hero-stat">
+            <strong>$0</strong>
+            <span>markup, self-hosted</span>
+          </div>
+        </div>
+        <p class="muted" style="margin-top:1.5rem">
+          Built on the <a href="https://modelcontextprotocol.io">Model Context Protocol</a> — an open standard, not a proprietary
+          plugin format only one vendor's agent can use.
+        </p>
       </Hero>
 
       <section>
@@ -51,19 +125,19 @@ function LandingPage() {
       <section>
         <h2>The three things that actually get in your way</h2>
         <div class="grid">
-          <Card title="Closed-source scores you have to take on faith">
+          <Card icon={<CodeIcon />} title="Closed-source scores you have to take on faith">
             <p>
               Most SEO tools hand you a number with no way to see how it was computed. This one's MIT licensed end to end — read
               exactly how every tool works, fork it, fix it yourself if something's wrong.
             </p>
           </Card>
-          <Card title="Credit systems that hide what a query actually costs">
+          <Card icon={<ReceiptIcon />} title="Credit systems that hide what a query actually costs">
             <p>
               Bring your own DataForSEO key and pay their real pay-as-you-go rate directly — no credit conversion to do math on, no
               markup, no subscription minimum sitting between you and the underlying data cost.
             </p>
           </Card>
-          <Card title="Tab-switching to a dashboard mid-conversation">
+          <Card icon={<ChatIcon />} title="Tab-switching to a dashboard mid-conversation">
             <p>
               Every capability is a callable MCP tool with a typed, cited response — built to be used in-conversation by your AI
               agent, not a dashboard you alt-tab to and copy numbers out of.
