@@ -5,7 +5,7 @@ export interface ButtonProps {
   href?: string;
   variant?: "primary" | "secondary";
   type?: "button" | "submit";
-  /** Rare, deliberate escape hatch — only used for the one native `confirm()` prompt (revoking an API key). Never used to embed tenant-controlled text. */
+  /** Rare, deliberate escape hatch, only used for the one native `confirm()` prompt (revoking an API key). Never used to embed tenant-controlled text. */
   onclick?: string;
 }
 

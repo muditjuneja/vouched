@@ -4,14 +4,15 @@
  * own palette independently (marketing had 8 semantic custom properties
  * with a `data-theme` override hook; dashboard had 14 scattered short-hex
  * literals passed straight to the native CSS `light-dark()` function with
- * no override hook) — they drifted, and dashboard couldn't be told to
+ * no override hook), so they drifted, and dashboard couldn't be told to
  * ignore the system theme. This is the fix: one token set, one theming
  * mechanism (custom properties + `prefers-color-scheme` + a `data-theme`
  * attribute override), consumed by both.
  *
  * `--status-*` tokens carry what used to be dashboard's hardcoded badge
- * colors (`#1a7f37`/`#9a6700`/`#6e7781`) — same visual values, now defined
- * once instead of embedded in a stylesheet no other surface could reuse.
+ * colors (`#1a7f37`/`#9a6700`/`#6e7781`), the same visual values, now
+ * defined once instead of embedded in a stylesheet no other surface could
+ * reuse.
  *
  * `--accent-2` (a violet paired with the blue `--accent`) backs the
  * gradient text/glow treatment on the marketing hero; `--shadow-*` and

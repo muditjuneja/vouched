@@ -1,5 +1,5 @@
 /**
- * Barrel export for the shared design system — the tokens/base styles and
+ * Barrel export for the shared design system: the tokens/base styles and
  * small components every rendered surface (marketing, dashboard) composes
  * pages from. Import from here (`../design`), not the individual files,
  * except where a file itself needs to avoid a circular import.

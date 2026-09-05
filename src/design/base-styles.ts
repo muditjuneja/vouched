@@ -1,9 +1,9 @@
 /**
- * Shared typography/component CSS — the rules that should render
+ * Shared typography/component CSS: the rules that should render
  * identically wherever they're used, regardless of which surface (wide
  * marketing site vs. narrow authenticated dashboard) hosts them. Layout
  * concerns (page width, nav/header shape, page-specific grids) are NOT
- * here — those stay genuinely different per surface and live in each
+ * here: those stay genuinely different per surface and live in each
  * surface's own stylesheet. See src/design/components/ for the JSX
  * components that use these class names.
  */
@@ -94,7 +94,7 @@ export const BASE_CSS = `
     border: 1px solid var(--border); background: transparent; color: inherit;
   }
 
-  /* CodeWindow — deliberately fixed-dark regardless of page theme, like a
+  /* CodeWindow: deliberately fixed-dark regardless of page theme, like a
      real editor/terminal screenshot, so it reads consistently in both. */
   .code-window {
     border-radius: var(--radius-md); overflow: hidden; background: #0b0d12;

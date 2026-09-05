@@ -5,8 +5,8 @@ import { Nav } from "./components/Nav";
 
 /**
  * Layout-only CSS specific to the marketing site's wide, public, crawlable
- * shape (hero sections, nav/footer, pricing/comparison/tool-index grids) —
- * everything else (colors, type scale, buttons, badges, tables, callouts,
+ * shape (hero sections, nav/footer, pricing/comparison/tool-index grids).
+ * Everything else (colors, type scale, buttons, badges, tables, callouts,
  * forms) comes from src/design's shared tokens/base styles. See
  * src/dashboard/Layout.tsx for the other surface's (narrow, authenticated)
  * equivalent.
@@ -47,7 +47,7 @@ const MARKETING_CSS = `
   .gradient-text {
     /* Solid, legible fallback color first. Only browsers that actually
        support clipping the background to the text (near-universal today,
-       but not guaranteed) get color: transparent — without this @supports
+       but not guaranteed) get color: transparent. Without this @supports
        guard, a browser lacking background-clip: text would render fully
        transparent text on a transparent background: an invisible headline. */
     color: var(--accent);
@@ -96,14 +96,14 @@ const MARKETING_CSS = `
     .nav { flex-direction: column; align-items: flex-start; gap: 0.6rem; }
   }
 
-  /* Full-bleed tinted band for section rhythm — breaks out of main's padding the same way .hero does. */
+  /* Full-bleed tinted band for section rhythm, breaks out of main's padding the same way .hero does. */
   .band {
     margin: 4rem -1.25rem; padding: 3.5rem 1.25rem; background: var(--bg-alt);
   }
 
   .domain-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
   .domain-tile { display: flex; gap: 0.75rem; align-items: flex-start; }
-  /* Smaller than the default .card-icon (2.5rem) — .card-icon was sized for a
+  /* Smaller than the default .card-icon (2.5rem): .card-icon was sized for a
      handful of icons per row in a wide card grid; at the domain grid's denser
      7-tile packing the full-size square read as oversized next to a 1rem h3.
      Same gradient chip treatment, just scaled down. */
@@ -118,7 +118,20 @@ const MARKETING_CSS = `
   .compare-yes svg { width: 1em; height: 1em; vertical-align: -0.15em; margin-right: 0.3em; }
   .compare-no { color: var(--muted); }
 
-  /* Scroll-reveal — progressive enhancement only. If JS never runs, .js-anim
+  /* The "How it works" steps reuse .card-icon's gradient chip with a plain
+     digit instead of an svg (Card's icon prop accepts any child), just
+     sizing the number legibly inside that same chip. */
+  .step-num { font-weight: 800; font-size: 1.05rem; }
+
+  /* Anchor target for the hero/footer's "quickstart" links. Without this,
+     the sticky nav (position: sticky, ~4.5rem tall) would cover the top of
+     the section right after the jump. */
+  #quickstart { scroll-margin-top: 5.5rem; }
+  .quickstart-grid { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); align-items: start; }
+  .quickstart-grid .code-window { margin: 0; }
+  .steps-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-top: 1.5rem; }
+
+  /* Scroll-reveal, progressive enhancement only. If JS never runs, .js-anim
      is never added to <html>, so this rule never applies and content is
      visible by default. The hero is excluded: above-the-fold content should
      never depend on JS/a scroll event to become visible. */
@@ -128,7 +141,7 @@ const MARKETING_CSS = `
   }
   /* Printing (and "save as PDF") never fires scroll/intersection events, so
      without this override every section below whatever the viewport height
-     happened to be at print time would print blank — a real, verified
+     happened to be at print time would print blank, a real, verified
      failure mode, not a hypothetical one. Print output must always show
      everything regardless of animation state. */
   @media print {
@@ -163,15 +176,17 @@ const SCROLL_REVEAL_SCRIPT = `
 `;
 
 export interface LayoutProps {
-  /** Full `<title>` text — already specific to the page, e.g. "Pricing — mcp-seo-toolkit". */
+  /** Full `<title>` text, already specific to the page, e.g. "Pricing · mcp-seo-toolkit". */
   title: string;
-  /** Goes verbatim into `<meta name="description">` — keep it real and specific per page. */
+  /** Goes verbatim into `<meta name="description">`, keep it real and specific per page. */
   description: string;
   /** Absolute URL for `<link rel="canonical">`. */
   canonicalUrl: string;
+  /** Whether this deployment has cloud mode enabled (`isCloudMode(c.env)`), threaded down into `Nav`/`Footer` so neither ever links to a `/dashboard` 404 on a self-host-only deployment. */
+  cloudMode: boolean;
 }
 
-function Layout({ title, description, canonicalUrl, children }: PropsWithChildren<LayoutProps>) {
+function Layout({ title, description, canonicalUrl, cloudMode, children }: PropsWithChildren<LayoutProps>) {
   return (
     <html lang="en">
       <head>
@@ -184,7 +199,7 @@ function Layout({ title, description, canonicalUrl, children }: PropsWithChildre
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-        {/* No OG/Twitter image — none exists in this repo, and a broken image reference is worse than none. Add one (and og:image/twitter:card="summary_large_image") once real artwork exists. */}
+        {/* No OG/Twitter image: none exists in this repo, and a broken image reference is worse than none. Add one (and og:image/twitter:card="summary_large_image") once real artwork exists. */}
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="mcp-seo-toolkit" />
         <meta property="og:title" content={title} />
@@ -196,16 +211,16 @@ function Layout({ title, description, canonicalUrl, children }: PropsWithChildre
         <style dangerouslySetInnerHTML={{ __html: TOKENS_CSS + BASE_CSS + MARKETING_CSS }} />
       </head>
       <body>
-        <Nav />
+        <Nav cloudMode={cloudMode} />
         <main>{children}</main>
-        <Footer />
+        <Footer cloudMode={cloudMode} />
         <script dangerouslySetInnerHTML={{ __html: SCROLL_REVEAL_SCRIPT }} />
       </body>
     </html>
   );
 }
 
-/** Every marketing page renders through this — `children` must contain exactly one `<h1>` (each page's own tests assert this). */
+/** Every marketing page renders through this: `children` must contain exactly one `<h1>` (each page's own tests assert this). */
 export function renderPage(props: PropsWithChildren<LayoutProps>): string {
   return "<!doctype html>" + renderToString(<Layout {...props} />);
 }

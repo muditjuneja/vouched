@@ -5,7 +5,7 @@ export interface BadgeProps {
   label: string;
 }
 
-/** A small colored pill — connection state, subscription state, anything status-shaped. */
+/** A small colored pill: connection state, subscription state, anything status-shaped. */
 export function Badge({ status, label }: BadgeProps) {
   return <span class={`badge badge-${status}`}>{label}</span>;
 }

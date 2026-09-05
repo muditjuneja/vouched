@@ -6,11 +6,11 @@ import { renderPage } from "../Layout";
 
 function billingNote(billing: ToolPageContent["entry"]["billing"]): string {
   return billing === "free"
-    ? "Free — part of the zero-paid-vendor free tier. No DataForSEO account or API key needed."
+    ? "Free: part of the zero-paid-vendor free tier. No DataForSEO account or API key needed."
     : "Part of the DataForSEO-backed tier. Self-host with your own DataForSEO API key (billed by DataForSEO directly, zero markup), or use it bundled on a hosted cloud plan.";
 }
 
-function ToolPage({ page }: { page: ToolPageContent }) {
+function ToolPage({ page, cloudMode }: { page: ToolPageContent; cloudMode: boolean }) {
   const { entry, title } = page;
   const domainLabel = DOMAIN_LABELS[entry.domain] ?? entry.domain;
 
@@ -37,12 +37,12 @@ function ToolPage({ page }: { page: ToolPageContent }) {
             ))}
           </ul>
         ) : (
-          <p class="muted">This tool doesn't emit typed facts itself — it's a capability/listing tool, not a data pull.</p>
+          <p class="muted">This tool doesn't emit typed facts itself; it's a capability/listing tool, not a data pull.</p>
         )}
         {entry.source_classes.length > 0 ? (
           <p>
-            Backed by: <code>{entry.source_classes.join(", ")}</code>. Every fact carries its own provenance — source class, method,
-            freshness, and a confidence score — so you can judge how much to trust it instead of taking an unlabeled number on faith.
+            Backed by: <code>{entry.source_classes.join(", ")}</code>. Every fact carries its own provenance (source class, method,
+            freshness, and a confidence score), so you can judge how much to trust it instead of taking an unlabeled number on faith.
           </p>
         ) : null}
       </section>
@@ -53,7 +53,7 @@ function ToolPage({ page }: { page: ToolPageContent }) {
         {entry.requires_connection ? (
           <p>
             Requires connecting your own Google {entry.requires_connection === "webmaster_console" ? "Search Console" : "Analytics"}{" "}
-            property first — this is your own first-party data, not a modeled estimate.
+            property first; this is your own first-party data, not a modeled estimate.
           </p>
         ) : null}
       </section>
@@ -62,7 +62,7 @@ function ToolPage({ page }: { page: ToolPageContent }) {
         <Button href={GITHUB_URL} variant="primary">
           Self-host it (MIT license)
         </Button>
-        <Button href="/dashboard">Try it on the cloud plan</Button>
+        {cloudMode ? <Button href="/dashboard">Try it on the cloud plan</Button> : <Button href="/pricing">See pricing</Button>}
       </section>
 
       <section>
@@ -74,11 +74,12 @@ function ToolPage({ page }: { page: ToolPageContent }) {
   );
 }
 
-export function renderToolPage(page: ToolPageContent, canonicalUrl: string): string {
+export function renderToolPage(page: ToolPageContent, canonicalUrl: string, cloudMode: boolean): string {
   return renderPage({
-    title: `${page.title} — mcp-seo-toolkit`,
+    title: `${page.title} · mcp-seo-toolkit`,
     description: page.metaDescription,
     canonicalUrl,
-    children: <ToolPage page={page} />
+    cloudMode,
+    children: <ToolPage page={page} cloudMode={cloudMode} />
   });
 }

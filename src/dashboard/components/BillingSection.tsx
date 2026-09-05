@@ -23,7 +23,7 @@ export function BillingSection({ data }: { data: DashboardData }) {
         Current plan: <strong>{data.plan}</strong>
       </p>
       {data.plan === "free" ? (
-        <p class="muted">Free doesn't include bundled DataForSEO access — self-host with your own key, or upgrade below.</p>
+        <p class="muted">Free doesn't include bundled DataForSEO access. Self-host with your own key, or upgrade below.</p>
       ) : (
         <p>
           DataForSEO usage this period: ${data.usageUsd.toFixed(2)} / ${data.quotaUsd.toFixed(2)} ({pct}%)

@@ -1,7 +1,8 @@
 /**
- * Minimal inline stroke icons for the pain-point cards — no icon library
- * dependency, just enough visual weight to stop the cards from being pure
- * text. Sized/colored by the .card-icon wrapper (src/design/base-styles.ts).
+ * Minimal inline stroke icons for the pain-point cards, with no icon
+ * library dependency, just enough visual weight to stop the cards from
+ * being pure text. Sized/colored by the .card-icon wrapper
+ * (src/design/base-styles.ts).
  */
 
 export function CodeIcon() {
@@ -104,7 +105,7 @@ export function CheckIcon() {
   );
 }
 
-/** A closed padlock — used for "closed-source, take-it-on-faith" scoring, not CodeIcon's `< >` brackets (which reads as "code/developer", not "closed"). */
+/** A closed padlock, used for "closed-source, take-it-on-faith" scoring, not CodeIcon's `< >` brackets (which reads as "code/developer", not "closed"). */
 export function LockIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

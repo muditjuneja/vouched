@@ -11,6 +11,7 @@ import { markNotifiedOnce, markNotifiedWithCooldown } from "../email/dedup";
 import { notifyApiKeyIssued, notifyReconnectRequired, notifyWelcome } from "../email/notifications";
 import { hasGoogleOAuth, isCloudMode, type Env } from "../types/env";
 import { renderApiKeyCreated } from "./pages/ApiKeyCreatedPage";
+import { renderCloudDisabled } from "./pages/CloudDisabledPage";
 import { renderDashboard } from "./pages/DashboardPage";
 import { renderSignInRequired } from "./pages/SignInRequiredPage";
 import type { DashboardWebsite } from "./types";
@@ -29,12 +30,19 @@ type DashboardEnv = { Bindings: Env; Variables: { tenantId: string } };
 
 export const dashboard = new Hono<DashboardEnv>();
 
-// Every /dashboard/* route needs cloud mode plus a signed-in tenant —
+// Every /dashboard/* route needs cloud mode plus a signed-in tenant, so
 // this is the one place both gates live, rather than repeating them per
 // route (matches /billing/checkout and /webhooks/dodo's own guards).
 dashboard.use("*", async (c, next) => {
   if (!isCloudMode(c.env)) {
-    return c.text("not found", 404);
+    // Still a 404 (the route genuinely doesn't exist on this deployment),
+    // but with a real, on-brand explanation instead of a bare "not found"
+    // string, for anyone who lands here directly (a stale bookmark, a
+    // search-indexed link) on a self-host deployment. The marketing site
+    // itself never links here when cloud mode is off (see
+    // src/marketing/routes.ts and src/marketing/components/Nav.tsx); this
+    // is only the safety net for a visitor who arrives some other way.
+    return c.html(renderCloudDisabled(), 404);
   }
   const session = await verifyClerkSession(c.req.raw, c.env);
   if (!session) {
@@ -48,7 +56,7 @@ dashboard.get("/", async (c) => {
   const tenantId = c.get("tenantId");
   const env = c.env;
 
-  // Approximates "signup complete" as "first dashboard visit" — no Clerk
+  // Approximates "signup complete" as "first dashboard visit": no Clerk
   // user.created webhook exists in this build (out of scope to add one
   // just for this welcome email).
   if (await markNotifiedOnce(env.DB, tenantId, "welcome")) {

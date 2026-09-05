@@ -3,7 +3,7 @@ import { marketing } from "../../../src/marketing/routes";
 import { TOOL_PAGES } from "../../../src/marketing/content/tool-pages";
 import type { Env } from "../../../src/types/env";
 
-// The marketing sub-app needs no D1/R2/auth at all — every response is
+// The marketing sub-app needs no D1/R2/auth at all; every response is
 // built from static data (the manifest + hand-written copy), so unlike
 // the dashboard's route tests, these exercise real page bodies end to
 // end, not just a gate. A bare `{}` cast stands in for Env since no

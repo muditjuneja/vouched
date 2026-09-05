@@ -6,7 +6,8 @@ export interface PricingCardProps {
   price: string;
   priceNote: string;
   ctaLabel: string;
-  ctaHref: string;
+  /** Null when this plan isn't reachable on the current deployment (e.g. a cloud plan on a self-host-only instance): the card renders without a CTA in that case, since the accompanying explanatory text already covers why. */
+  ctaHref: string | null;
   featured?: boolean;
   primaryCta?: boolean;
 }
@@ -20,9 +21,11 @@ export function PricingCard({ name, price, priceNote, ctaLabel, ctaHref, feature
         <small>{priceNote}</small>
       </p>
       {children}
-      <Button href={ctaHref} variant={primaryCta ? "primary" : "secondary"}>
-        {ctaLabel}
-      </Button>
+      {ctaHref ? (
+        <Button href={ctaHref} variant={primaryCta ? "primary" : "secondary"}>
+          {ctaLabel}
+        </Button>
+      ) : null}
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { TOKENS_CSS } from "../../../src/design/tokens";
 /**
  * Proves marketing and the dashboard actually share one design system
  * instead of each hand-rolling its own colors (the drift this whole
- * rewrite fixed) — both rendered pages must embed the exact same
+ * rewrite fixed); both rendered pages must embed the exact same
  * TOKENS_CSS block, not two independently-defined `--accent` values.
  */
 describe("shared design tokens", () => {
@@ -20,7 +20,7 @@ describe("shared design tokens", () => {
       googleOAuthConfigured: false,
       dodoConfigured: false
     });
-    const marketingHtml = renderLanding("https://example.com/");
+    const marketingHtml = renderLanding("https://example.com/", true);
 
     expect(dashboardHtml).toContain(TOKENS_CSS);
     expect(marketingHtml).toContain(TOKENS_CSS);

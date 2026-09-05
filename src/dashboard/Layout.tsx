@@ -3,7 +3,7 @@ import { BASE_CSS, FAVICON_HREF, TOKENS_CSS, renderToString } from "../design";
 
 /**
  * Layout-only CSS genuinely specific to the dashboard's narrow,
- * authenticated control-panel shape — everything else (colors, type
+ * authenticated control-panel shape: everything else (colors, type
  * scale, buttons, badges, tables, forms) comes from src/design's shared
  * tokens/base styles. See src/marketing/Layout.tsx for the other surface's
  * (wide, public) equivalent.
@@ -30,7 +30,7 @@ function Layout({ title, children }: PropsWithChildren<LayoutProps>) {
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>{title} — mcp-seo-toolkit</title>
+        <title>{title} · mcp-seo-toolkit</title>
         <link rel="icon" href={FAVICON_HREF} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
@@ -48,7 +48,7 @@ function Layout({ title, children }: PropsWithChildren<LayoutProps>) {
   );
 }
 
-/** Every dashboard page renders through this — one page-level `<h1>` inside `children`, matching the same rule marketing's Layout enforces. */
+/** Every dashboard page renders through this: one page-level `<h1>` inside `children`, matching the same rule marketing's Layout enforces. */
 export function renderPage(props: PropsWithChildren<LayoutProps>): string {
   return "<!doctype html>" + renderToString(<Layout {...props} />);
 }

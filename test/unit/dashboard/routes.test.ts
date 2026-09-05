@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { dashboard } from "../../../src/dashboard/routes";
 import type { Env } from "../../../src/types/env";
 
-// Only the gate behavior in dashboard.use("*", ...) is covered here — it
+// Only the gate behavior in dashboard.use("*", ...) is covered here; it
 // runs before any D1 access, so it's testable without a real D1 binding
 // (unavailable in this sandbox, see README). The routes behind the gate
 // (listing websites, creating API keys, etc.) touch D1 and are exercised

@@ -5,10 +5,10 @@ import { GITHUB_URL } from "../github-url";
 import { renderPage } from "../Layout";
 import { Button } from "../../design";
 
-function ComparisonPage({ page }: { page: ComparisonPageContent }) {
+function ComparisonPage({ page, cloudMode }: { page: ComparisonPageContent; cloudMode: boolean }) {
   return (
     <>
-      <Hero eyebrow="Comparison" heading={page.title.replace(/ — .*/, "")} lede={page.intro} />
+      <Hero eyebrow="Comparison" heading={page.title.replace(/ vs\.? .*/i, "")} lede={page.intro} />
 
       <section>
         <h2>Structural comparison</h2>
@@ -28,17 +28,18 @@ function ComparisonPage({ page }: { page: ComparisonPageContent }) {
         <Button href={GITHUB_URL} variant="primary">
           Self-host mcp-seo-toolkit
         </Button>
-        <Button href="/pricing">See pricing</Button>
+        {cloudMode ? <Button href="/dashboard">Try the cloud version</Button> : <Button href="/pricing">See pricing</Button>}
       </section>
     </>
   );
 }
 
-export function renderComparison(page: ComparisonPageContent, canonicalUrl: string): string {
+export function renderComparison(page: ComparisonPageContent, canonicalUrl: string, cloudMode: boolean): string {
   return renderPage({
     title: page.title,
     description: page.metaDescription,
     canonicalUrl,
-    children: <ComparisonPage page={page} />
+    cloudMode,
+    children: <ComparisonPage page={page} cloudMode={cloudMode} />
   });
 }

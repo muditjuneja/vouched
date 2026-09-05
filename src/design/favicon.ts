@@ -1,6 +1,6 @@
 /**
  * No static-asset pipeline exists in this Worker (no R2/KV-backed public
- * dir, no `wrangler.jsonc` assets binding) — an inline SVG data URI is the
+ * dir, no `wrangler.jsonc` assets binding), so an inline SVG data URI is the
  * only favicon option that needs no deploy-time asset step. A rounded
  * square in the brand accent color with a checkmark, echoing the "SEO
  * data with receipts" positioning (see the landing page hero).

@@ -1,16 +1,16 @@
 import type { Child, PropsWithChildren } from "hono/jsx";
 
 export interface HeroProps {
-  /** Usually plain text, but the tool-page hero needs an inline `<code>` — so this accepts any JSX child, not just a string. */
+  /** Usually plain text, but the tool-page hero needs an inline `<code>`, so this accepts any JSX child, not just a string. */
   eyebrow: Child;
   /** Usually plain text; the landing page wraps part of it in a `<span class="gradient-text">`. */
   heading: Child;
   lede?: string;
-  /** An optional visual (e.g. a <CodeWindow>) rendered beside the copy in a two-column layout — only the landing page uses this; every other page stays single-column. */
+  /** An optional visual (e.g. a <CodeWindow>) rendered beside the copy in a two-column layout: only the landing page uses this, every other page stays single-column. */
   visual?: Child;
 }
 
-/** The `<section class="hero">` every page opens with — eyebrow, the page's one `<h1>`, an optional lede, then anything else (a CTA row) as children. */
+/** The `<section class="hero">` every page opens with: eyebrow, the page's one `<h1>`, an optional lede, then anything else (a CTA row) as children. */
 export function Hero({ eyebrow, heading, lede, visual, children }: PropsWithChildren<HeroProps>) {
   const copy = (
     <div>

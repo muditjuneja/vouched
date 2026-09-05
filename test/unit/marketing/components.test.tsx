@@ -8,14 +8,14 @@ import { CheckIcon, LockIcon, SearchIcon } from "../../../src/marketing/componen
 
 /**
  * Round 2 added/changed these components (Nav's Sign-in button, the icon
- * set, PricingCard/ToolCard) with no direct unit coverage of their own —
+ * set, PricingCard/ToolCard) with no direct unit coverage of their own;
  * only indirect coverage through full-page route tests. These pin the
  * actual markup so a future edit can't silently drop the sign-in link,
  * break a card link, or regress the decorative-icon accessibility fix.
  */
 describe("Nav", () => {
   it("links to /dashboard for both the nav item set and the Sign in button", () => {
-    const html = renderToString(<Nav />);
+    const html = renderToString(<Nav cloudMode />);
     expect(html).toContain('href="/"');
     expect(html).toContain('href="/tools"');
     expect(html).toContain('href="/pricing"');
@@ -27,7 +27,7 @@ describe("Nav", () => {
 
 describe("Footer", () => {
   it("links every product/compare/use-case route it advertises", () => {
-    const html = renderToString(<Footer />);
+    const html = renderToString(<Footer cloudMode />);
     for (const href of ["/pricing", "/tools", "/dashboard", "/vs/ahrefs", "/vs/semrush", "/vs/open-seo", "/for/agencies", "/for/indie-hackers", "/sitemap.xml"]) {
       expect(html).toContain(`href="${href}"`);
     }

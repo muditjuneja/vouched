@@ -1,14 +1,14 @@
 import { Callout } from "../../design";
 import { renderPage } from "../Layout";
 
-/** The one-time reveal page for a newly created API key — never shown again after this. */
+/** The one-time reveal page for a newly created API key, never shown again after this. */
 function ApiKeyCreatedPage({ plaintext }: { plaintext: string }) {
   return (
     <>
       <h1>Your new API key</h1>
       <Callout>
         <p>
-          <strong>Copy this now</strong> — it won't be shown again.
+          <strong>Copy this now</strong>, it won't be shown again.
         </p>
         <p class="key">{plaintext}</p>
       </Callout>

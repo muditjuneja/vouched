@@ -3,7 +3,7 @@ import { INDUSTRY_PAGES } from "./content/industries";
 import { TOOL_PAGES } from "./content/tool-pages";
 
 /**
- * Every real, crawlable marketing route — derived from the same content
+ * Every real, crawlable marketing route, derived from the same content
  * data the pages themselves render from, so the sitemap can never list a
  * page that doesn't exist or omit one that does. Static routes are the
  * only hand-maintained part; everything generated from `TOOL_MANIFEST`

@@ -12,7 +12,7 @@ export function WebsitesSection({ data }: { data: DashboardData }) {
     <section>
       <h2>Websites</h2>
       {data.websites.length === 0 ? (
-        <p class="muted">No websites tracked yet — add one below to unlock audit/gsc/analytics tools for it.</p>
+        <p class="muted">No websites tracked yet. Add one below to unlock audit/gsc/analytics tools for it.</p>
       ) : (
         <Table headers={["Site", "Search Console", "Analytics"]}>
           {data.websites.map(({ row, gsc, ga4 }) => (

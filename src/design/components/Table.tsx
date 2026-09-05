@@ -2,7 +2,7 @@ import type { PropsWithChildren } from "hono/jsx";
 
 export interface TableProps {
   headers: string[];
-  /** Extra class(es) on the `<table>` itself — e.g. marketing's "compare" for its wider comparison-table styling. */
+  /** Extra class(es) on the `<table>` itself, e.g. marketing's "compare" for its wider comparison-table styling. */
   class?: string;
 }
 

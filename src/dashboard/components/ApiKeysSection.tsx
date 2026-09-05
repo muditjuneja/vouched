@@ -6,7 +6,7 @@ export function ApiKeysSection({ data }: { data: DashboardData }) {
     <section>
       <h2>MCP API keys</h2>
       <p class="muted">
-        Use one of these to connect this server to Claude/an MCP client — add it as <code>Authorization: Bearer &lt;key&gt;</code>. Each
+        Use one of these to connect this server to Claude/an MCP client: add it as <code>Authorization: Bearer &lt;key&gt;</code>. Each
         key is shown once, at creation.
       </p>
       {data.apiKeys.length > 0 && (

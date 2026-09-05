@@ -4,7 +4,7 @@ import type { IndustryPage as IndustryPageContent } from "../content/industries"
 import { GITHUB_URL } from "../github-url";
 import { renderPage } from "../Layout";
 
-function IndustryPage({ page }: { page: IndustryPageContent }) {
+function IndustryPage({ page, cloudMode }: { page: IndustryPageContent; cloudMode: boolean }) {
   return (
     <>
       <Hero eyebrow="Use case" heading={page.heading} lede={page.lede} />
@@ -32,17 +32,18 @@ function IndustryPage({ page }: { page: IndustryPageContent }) {
         <Button href={GITHUB_URL} variant="primary">
           Self-host it
         </Button>
-        <Button href="/pricing">See pricing</Button>
+        {cloudMode ? <Button href="/dashboard">Try the cloud version</Button> : <Button href="/pricing">See pricing</Button>}
       </section>
     </>
   );
 }
 
-export function renderIndustryPage(page: IndustryPageContent, canonicalUrl: string): string {
+export function renderIndustryPage(page: IndustryPageContent, canonicalUrl: string, cloudMode: boolean): string {
   return renderPage({
     title: page.title,
     description: page.metaDescription,
     canonicalUrl,
-    children: <IndustryPage page={page} />
+    cloudMode,
+    children: <IndustryPage page={page} cloudMode={cloudMode} />
   });
 }

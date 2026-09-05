@@ -4,7 +4,7 @@ import { findToolPage, TOOL_PAGES } from "../../../src/marketing/content/tool-pa
 import { renderToolPage } from "../../../src/marketing/pages/ToolPage";
 import { renderToolsIndex } from "../../../src/marketing/pages/ToolsIndexPage";
 
-/** hono/jsx auto-escapes text children — matches its exact escape set (utils/html.js) so an assertion against raw copy still finds it in rendered output. */
+/** hono/jsx auto-escapes text children; matches its exact escape set (utils/html.js) so an assertion against raw copy still finds it in rendered output. */
 function jsxEscape(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
@@ -39,7 +39,7 @@ describe("pSEO tool page generation", () => {
     for (const entry of TOOL_MANIFEST) {
       const page = findToolPage(entry.name.replace(/_/g, "-"));
       expect(page).toBeDefined();
-      const html = renderToolPage(page!, "https://example.com/tools/x");
+      const html = renderToolPage(page!, "https://example.com/tools/x", true);
       expect(html).toContain(jsxEscape(entry.summary));
       for (const factType of entry.fact_types) {
         expect(html).toContain(factType);
@@ -60,15 +60,15 @@ describe("pSEO tool page generation", () => {
     const freePage = findToolPage(freeTool.name.replace(/_/g, "-"))!;
     const paidPage = findToolPage(paidTool.name.replace(/_/g, "-"))!;
 
-    const freeHtml = renderToolPage(freePage, "https://example.com/tools/free");
-    const paidHtml = renderToolPage(paidPage, "https://example.com/tools/paid");
+    const freeHtml = renderToolPage(freePage, "https://example.com/tools/free", true);
+    const paidHtml = renderToolPage(paidPage, "https://example.com/tools/paid", true);
 
     expect(freeHtml).toContain("No DataForSEO account or API key needed");
     expect(paidHtml).toContain("DataForSEO-backed tier");
   });
 
   it("the tools index page links to every tool page and has exactly one h1", () => {
-    const html = renderToolsIndex("https://example.com/tools");
+    const html = renderToolsIndex("https://example.com/tools", true);
     for (const page of TOOL_PAGES) {
       expect(html).toContain(`href="${page.path}"`);
     }

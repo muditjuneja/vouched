@@ -2,7 +2,7 @@ import { TOOL_MANIFEST, type ToolManifestEntry } from "../../mcp/manifest";
 
 /**
  * Generates one pSEO landing page per real MCP tool, straight from
- * `TOOL_MANIFEST` (the same source `describe_capabilities` reads) — no
+ * `TOOL_MANIFEST` (the same source `describe_capabilities` reads); no
  * hardcoded per-tool copy to drift out of sync with what the product
  * actually does. Adding a 19th tool to the manifest gets it a page here
  * for free; renaming one only requires the manifest to change, not this

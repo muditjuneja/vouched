@@ -7,7 +7,7 @@ export interface ToolCardProps {
   summary: string;
 }
 
-/** One card in the `/tools` index grid — domain label, tool name, summary, linking to its own page. */
+/** One card in the `/tools` index grid: domain label, tool name, summary, linking to its own page. */
 export function ToolCard({ href, domainLabel, title, summary }: ToolCardProps) {
   return (
     <Card href={href}>

@@ -7,13 +7,13 @@ import { renderLanding } from "../../../src/marketing/pages/LandingPage";
  * (`seo.keyword`, not `seo.keyword_opportunity`) and an invented
  * confidence number (0.92) instead of search_index's real 0.75 default
  * (src/envelope/provenance.ts). It's now generated from a small line/token
- * table — these pin both the real field names (matching
+ * table; these pin both the real field names (matching
  * src/domains/seo/research-keywords.ts and docs/OFE_ENVELOPE.md) and the
  * absence of the old wrong values, so a future edit can't quietly
  * reintroduce either.
  */
-describe("renderLanding — ExampleCall accuracy", () => {
-  const html = renderLanding("https://example.com/");
+describe("renderLanding: ExampleCall accuracy", () => {
+  const html = renderLanding("https://example.com/", true);
 
   it("uses the real fact type and the real data field name", () => {
     expect(html).toContain("seo.keyword_opportunity");
@@ -33,8 +33,8 @@ describe("renderLanding — ExampleCall accuracy", () => {
   });
 });
 
-describe("renderLanding — domain icon grid", () => {
-  const html = renderLanding("https://example.com/");
+describe("renderLanding: domain icon grid", () => {
+  const html = renderLanding("https://example.com/", true);
 
   it("renders all 7 domain tiles with a scaled-down, aria-hidden icon each", () => {
     expect(html).toContain("domain-grid");
@@ -53,8 +53,8 @@ describe("renderLanding — domain icon grid", () => {
   });
 });
 
-describe("renderLanding — scroll-reveal robustness", () => {
-  const html = renderLanding("https://example.com/");
+describe("renderLanding: scroll-reveal robustness", () => {
+  const html = renderLanding("https://example.com/", true);
 
   it("never leaves a section permanently invisible: has a print override and a JS reveal-all fallback", () => {
     expect(html).toContain("@media print");
@@ -66,9 +66,9 @@ describe("renderLanding — scroll-reveal robustness", () => {
   });
 });
 
-describe("renderLanding — dead CSS removed", () => {
+describe("renderLanding: dead CSS removed", () => {
   it("no longer ships the unused .wrap utility class", () => {
-    const html = renderLanding("https://example.com/");
+    const html = renderLanding("https://example.com/", true);
     expect(html).not.toContain(".wrap {");
     expect(html).not.toContain(".band > .wrap");
   });

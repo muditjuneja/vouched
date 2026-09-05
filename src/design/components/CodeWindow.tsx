@@ -5,7 +5,7 @@ export interface CodeWindowProps {
 }
 
 /**
- * A styled "code screenshot" — macOS-style window chrome around a
+ * A styled "code screenshot": macOS-style window chrome around a
  * monospace block. Used where a real product shot would otherwise go
  * (no image pipeline/design assets exist in this repo); pass pre-built
  * `<span>` children for basic syntax coloring (see the marketing hero's
