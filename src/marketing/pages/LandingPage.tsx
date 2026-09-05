@@ -5,8 +5,8 @@ import { Hero } from "../components/Hero";
 import {
   BarChartIcon,
   ChatIcon,
-  CodeIcon,
   LinkIcon,
+  LockIcon,
   ReceiptIcon,
   SearchIcon,
   ShieldIcon,
@@ -42,54 +42,73 @@ const FREE_DOMAINS = new Set(["core", "audit", "gsc", "analytics"]);
 const FREE_TOOL_COUNT = TOOL_MANIFEST.filter((t) => FREE_DOMAINS.has(t.domain)).length;
 const DATAFORSEO_TOOL_COUNT = TOOL_MANIFEST.length - FREE_TOOL_COUNT;
 
-/** A real (trimmed) example of the OFE envelope shape every tool returns — see docs/OFE_ENVELOPE.md. Shown as the hero's "product shot" since no image pipeline exists in this repo. */
-function ExampleCall() {
+/**
+ * Small data-driven token/line renderer for the hero's syntax-highlighted
+ * JSON example — one `{ indent, tokens }` per line instead of the several
+ * dozen individually hand-placed `<span class="tok-*">` / `{"\n  "}` string
+ * literals this replaced (easy to typo a token class or miscount a brace,
+ * hard to review, painful to extend by even one field). Indentation is
+ * plain text (spaces carry no color either way); only the genuinely
+ * colored pieces — keys, strings, numbers, punctuation, comments — become
+ * `.tok-*` spans, matching the classes already in src/design/base-styles.ts.
+ */
+type Token = { text: string; cls: "key" | "str" | "num" | "punc" | "comment" };
+const key = (text: string): Token => ({ text, cls: "key" });
+const str = (text: string): Token => ({ text, cls: "str" });
+const num = (text: string): Token => ({ text, cls: "num" });
+const punc = (text: string): Token => ({ text, cls: "punc" });
+const comment = (text: string): Token => ({ text, cls: "comment" });
+
+interface Line {
+  indent: number;
+  tokens: Token[];
+}
+
+function renderLines(lines: Line[]): Child {
   return (
-    <CodeWindow title="research_keywords('vector database')">
-      {"{\n"}
-      {"  "}
-      <span class="tok-key">"domain"</span>
-      <span class="tok-punc">: </span>
-      <span class="tok-str">"seo"</span>
-      <span class="tok-punc">,</span>
-      {"\n  "}
-      <span class="tok-key">"facts"</span>
-      <span class="tok-punc">: [{"{"}</span>
-      {"\n    "}
-      <span class="tok-key">"type"</span>
-      <span class="tok-punc">: </span>
-      <span class="tok-str">"seo.keyword"</span>
-      <span class="tok-punc">,</span>
-      {"\n    "}
-      <span class="tok-key">"value"</span>
-      <span class="tok-punc">: {"{"} </span>
-      <span class="tok-key">"volume"</span>
-      <span class="tok-punc">: </span>
-      <span class="tok-num">8100</span>
-      <span class="tok-punc"> {"}"},</span>
-      {"\n    "}
-      <span class="tok-key">"provenance"</span>
-      <span class="tok-punc">: {"{"}</span>
-      {"\n      "}
-      <span class="tok-key">"source_class"</span>
-      <span class="tok-punc">: </span>
-      <span class="tok-str">"search_index"</span>
-      <span class="tok-punc">,</span>
-      {"\n      "}
-      <span class="tok-key">"confidence"</span>
-      <span class="tok-punc">: </span>
-      <span class="tok-num">0.92</span>
-      <span class="tok-punc">,</span>
-      {"\n      "}
-      <span class="tok-comment">// not "trust me" — a real number</span>
-      {"\n    "}
-      <span class="tok-punc">{"}"}</span>
-      {"\n  "}
-      <span class="tok-punc">{"}"}]</span>
-      {"\n"}
-      <span class="tok-punc">{"}"}</span>
-    </CodeWindow>
+    <>
+      {lines.map((line, i) => (
+        <>
+          {i > 0 ? "\n" : ""}
+          {"  ".repeat(line.indent)}
+          {line.tokens.map((tok) => (
+            <span class={`tok-${tok.cls}`}>{tok.text}</span>
+          ))}
+        </>
+      ))}
+    </>
   );
+}
+
+/**
+ * A real (trimmed) example of the OFE envelope shape every tool returns —
+ * field names and the fact `type` match docs/OFE_ENVELOPE.md and
+ * src/domains/seo/research-keywords.ts exactly (`data`, not an invented
+ * `value`; `seo.keyword_opportunity`, not `seo.keyword`). The 0.75
+ * confidence is `search_index`'s real default from
+ * src/envelope/provenance.ts, not a made-up number. Shown as the hero's
+ * "product shot" since no image pipeline exists in this repo.
+ */
+const EXAMPLE_LINES: Line[] = [
+  { indent: 0, tokens: [punc("{")] },
+  { indent: 1, tokens: [key('"domain"'), punc(": "), str('"seo"'), punc(",")] },
+  { indent: 1, tokens: [key('"facts"'), punc(": [{")] },
+  { indent: 2, tokens: [key('"type"'), punc(": "), str('"seo.keyword_opportunity"'), punc(",")] },
+  { indent: 2, tokens: [key('"data"'), punc(": {")] },
+  { indent: 3, tokens: [key('"keyword"'), punc(": "), str('"vector database"'), punc(",")] },
+  { indent: 3, tokens: [key('"search_volume"'), punc(": "), num("8100")] },
+  { indent: 2, tokens: [punc("},")] },
+  { indent: 2, tokens: [key('"provenance"'), punc(": {")] },
+  { indent: 3, tokens: [key('"source_class"'), punc(": "), str('"search_index"'), punc(",")] },
+  { indent: 3, tokens: [key('"confidence"'), punc(": "), num("0.75"), punc(",")] },
+  { indent: 3, tokens: [comment('// not "trust me" — a real number')] },
+  { indent: 2, tokens: [punc("}")] },
+  { indent: 1, tokens: [punc("}]")] },
+  { indent: 0, tokens: [punc("}")] }
+];
+
+function ExampleCall() {
+  return <CodeWindow title="research_keywords('vector database')">{renderLines(EXAMPLE_LINES)}</CodeWindow>;
 }
 
 function LandingPage() {
@@ -157,7 +176,7 @@ function LandingPage() {
       <section class="band">
         <h2>The three things that actually get in your way</h2>
         <div class="grid">
-          <Card icon={<CodeIcon />} title="Closed-source scores you have to take on faith">
+          <Card icon={<LockIcon />} title="Closed-source scores you have to take on faith">
             <p>
               Most SEO tools hand you a number with no way to see how it was computed. This one's MIT licensed end to end — read
               exactly how every tool works, fork it, fix it yourself if something's wrong.

@@ -12,7 +12,6 @@ import { Nav } from "./components/Nav";
  * equivalent.
  */
 const MARKETING_CSS = `
-  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 1.25rem; }
   .nav {
     display: flex; align-items: center; justify-content: space-between;
     max-width: 1080px; margin: 0 auto; padding: 1.1rem 1.25rem;
@@ -46,8 +45,17 @@ const MARKETING_CSS = `
   .hero-stat strong { display: block; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.01em; }
   .hero-stat span { font-size: 0.85rem; color: var(--muted); }
   .gradient-text {
+    /* Solid, legible fallback color first. Only browsers that actually
+       support clipping the background to the text (near-universal today,
+       but not guaranteed) get color: transparent — without this @supports
+       guard, a browser lacking background-clip: text would render fully
+       transparent text on a transparent background: an invisible headline. */
+    color: var(--accent);
     background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    -webkit-background-clip: text; background-clip: text; color: transparent;
+    -webkit-background-clip: text; background-clip: text;
+  }
+  @supports (background-clip: text) or (-webkit-background-clip: text) {
+    .gradient-text { color: transparent; }
   }
   @media (max-width: 860px) {
     .hero-grid { grid-template-columns: 1fr; }
@@ -92,11 +100,17 @@ const MARKETING_CSS = `
   .band {
     margin: 4rem -1.25rem; padding: 3.5rem 1.25rem; background: var(--bg-alt);
   }
-  .band > .wrap { padding: 0; }
 
   .domain-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
-  .domain-tile { display: flex; gap: 0.9rem; align-items: flex-start; }
-  .domain-tile .card-icon { flex-shrink: 0; margin-bottom: 0; }
+  .domain-tile { display: flex; gap: 0.75rem; align-items: flex-start; }
+  /* Smaller than the default .card-icon (2.5rem) — .card-icon was sized for a
+     handful of icons per row in a wide card grid; at the domain grid's denser
+     7-tile packing the full-size square read as oversized next to a 1rem h3.
+     Same gradient chip treatment, just scaled down. */
+  .domain-tile .card-icon {
+    flex-shrink: 0; margin-bottom: 0; width: 2.1rem; height: 2.1rem; border-radius: var(--radius-sm);
+  }
+  .domain-tile .card-icon svg { width: 1.05rem; height: 1.05rem; }
   .domain-tile h3 { margin-bottom: 0.25rem; font-size: 1rem; }
   .domain-tile p { font-size: 0.92rem; margin-bottom: 0; }
 
@@ -112,12 +126,21 @@ const MARKETING_CSS = `
     .js-anim section:not(.hero) { opacity: 0; transform: translateY(18px); transition: opacity 0.5s ease, transform 0.5s ease; }
     .js-anim section:not(.hero).in-view { opacity: 1; transform: none; }
   }
+  /* Printing (and "save as PDF") never fires scroll/intersection events, so
+     without this override every section below whatever the viewport height
+     happened to be at print time would print blank — a real, verified
+     failure mode, not a hypothetical one. Print output must always show
+     everything regardless of animation state. */
+  @media print {
+    .js-anim section:not(.hero) { opacity: 1 !important; transform: none !important; }
+  }
 `;
 
 const SCROLL_REVEAL_SCRIPT = `
 (function () {
   if (!window.IntersectionObserver) return;
   document.documentElement.classList.add('js-anim');
+  var sections = document.querySelectorAll('main section:not(.hero)');
   var io = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
       if (entry.isIntersecting) {
@@ -126,7 +149,16 @@ const SCROLL_REVEAL_SCRIPT = `
       }
     });
   }, { threshold: 0.12 });
-  document.querySelectorAll('main section').forEach(function (s) { io.observe(s); });
+  sections.forEach(function (s) { io.observe(s); });
+  // Safety net, not a content gate: a section that never scrolls into view
+  // in a live browser tab (a full-page screenshot/archival tool that never
+  // dispatches real scroll events, an unusual navigation path) must still
+  // end up visible. A normal scrolling reader always triggers the observer
+  // well before this fires, so the progressive-reveal effect is unaffected.
+  window.setTimeout(function () {
+    sections.forEach(function (s) { s.classList.add('in-view'); });
+    io.disconnect();
+  }, 1500);
 })();
 `;
 
