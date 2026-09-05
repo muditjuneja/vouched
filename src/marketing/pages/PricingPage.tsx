@@ -2,9 +2,19 @@ import { Card, Table } from "../../design";
 import { MONTHLY_QUOTA_USD } from "../../billing/quotas";
 import { TOOL_MANIFEST } from "../../mcp/manifest";
 import { Hero } from "../components/Hero";
+import { CheckIcon } from "../components/icons";
 import { PricingCard } from "../components/PricingCard";
 import { GITHUB_URL } from "../github-url";
 import { renderPage } from "../Layout";
+
+/** A checkmark instead of the word "Yes" — more scannable in a comparison table. */
+function Yes() {
+  return (
+    <span class="compare-yes">
+      <CheckIcon /> Yes
+    </span>
+  );
+}
 
 function PricingPage() {
   return (
@@ -62,15 +72,27 @@ function PricingPage() {
           </tr>
           <tr>
             <td>All 18 MCP tools</td>
-            <td>Yes</td>
-            <td>Yes</td>
-            <td>Yes</td>
+            <td>
+              <Yes />
+            </td>
+            <td>
+              <Yes />
+            </td>
+            <td>
+              <Yes />
+            </td>
           </tr>
           <tr>
             <td>Free-tier tools (core/audit/gsc/analytics)</td>
-            <td>Yes, no paid vendor</td>
-            <td>Yes</td>
-            <td>Yes</td>
+            <td>
+              <Yes /> no paid vendor
+            </td>
+            <td>
+              <Yes />
+            </td>
+            <td>
+              <Yes />
+            </td>
           </tr>
           <tr>
             <td>DataForSEO access</td>
@@ -80,9 +102,13 @@ function PricingPage() {
           </tr>
           <tr>
             <td>Dashboard (sites, usage, API keys)</td>
-            <td>— (self-managed)</td>
-            <td>Yes</td>
-            <td>Yes</td>
+            <td class="compare-no">— self-managed</td>
+            <td>
+              <Yes />
+            </td>
+            <td>
+              <Yes />
+            </td>
           </tr>
           <tr>
             <td>Source code</td>

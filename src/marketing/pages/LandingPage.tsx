@@ -1,10 +1,42 @@
+import type { Child } from "hono/jsx";
 import { Button, Card, CodeWindow } from "../../design";
 import { TOOL_MANIFEST } from "../../mcp/manifest";
 import { Hero } from "../components/Hero";
-import { ChatIcon, CodeIcon, ReceiptIcon } from "../components/icons";
+import {
+  BarChartIcon,
+  ChatIcon,
+  CodeIcon,
+  LinkIcon,
+  ReceiptIcon,
+  SearchIcon,
+  ShieldIcon,
+  SparkleIcon,
+  TargetIcon,
+  TrendingUpIcon
+} from "../components/icons";
 import { TOOL_PAGES } from "../content/tool-pages";
 import { renderPage } from "../Layout";
 import { GITHUB_URL } from "../github-url";
+
+interface DomainSummary {
+  icon: Child;
+  name: string;
+  description: string;
+}
+
+const DOMAIN_SUMMARIES: DomainSummary[] = [
+  { icon: <SearchIcon />, name: "core", description: "Capability discovery, tracked-site listing, dataset export." },
+  { icon: <ShieldIcon />, name: "audit", description: "A bounded, robots.txt-aware self-crawl with a site-health score." },
+  {
+    icon: <TrendingUpIcon />,
+    name: "seo",
+    description: "Domain snapshots, competitor discovery, keyword research and gap analysis, search-visibility tracking."
+  },
+  { icon: <TargetIcon />, name: "serp", description: "Live SERP snapshots for a single query." },
+  { icon: <LinkIcon />, name: "backlinks", description: "Link profile inspection and backlink-gap analysis across competitors." },
+  { icon: <SparkleIcon />, name: "ai_visibility", description: "Which sources AI answers cite in your category, and how your domain shows up in them." },
+  { icon: <BarChartIcon />, name: "gsc / analytics", description: "Your own Search Console and GA4 data, first-party, no modeling." }
+];
 
 const FREE_DOMAINS = new Set(["core", "audit", "gsc", "analytics"]);
 const FREE_TOOL_COUNT = TOOL_MANIFEST.filter((t) => FREE_DOMAINS.has(t.domain)).length;
@@ -122,7 +154,7 @@ function LandingPage() {
         </div>
       </section>
 
-      <section>
+      <section class="band">
         <h2>The three things that actually get in your way</h2>
         <div class="grid">
           <Card icon={<CodeIcon />} title="Closed-source scores you have to take on faith">
@@ -152,30 +184,18 @@ function LandingPage() {
           Every fact any tool returns carries its own provenance — source class, method, freshness, and a confidence score — instead of
           an unlabeled number you have to trust blind.
         </p>
-        <ul>
-          <li>
-            <strong>core</strong> — capability discovery, tracked-site listing, dataset export.
-          </li>
-          <li>
-            <strong>audit</strong> — a bounded, robots.txt-aware self-crawl with a site-health score.
-          </li>
-          <li>
-            <strong>seo</strong> — domain snapshots, competitor discovery, keyword research and gap analysis, search-visibility tracking.
-          </li>
-          <li>
-            <strong>serp</strong> — live SERP snapshots for a single query.
-          </li>
-          <li>
-            <strong>backlinks</strong> — link profile inspection and backlink-gap analysis across competitors.
-          </li>
-          <li>
-            <strong>ai_visibility</strong> — which sources AI answers cite in your category, and how your domain shows up in them.
-          </li>
-          <li>
-            <strong>gsc</strong> / <strong>analytics</strong> — your own Search Console and GA4 data, first-party, no modeling.
-          </li>
-        </ul>
-        <p>
+        <div class="domain-grid">
+          {DOMAIN_SUMMARIES.map((domain) => (
+            <div class="domain-tile">
+              <span class="card-icon">{domain.icon}</span>
+              <div>
+                <h3>{domain.name}</h3>
+                <p>{domain.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p style="margin-top:1.5rem">
           <a href="/tools">Browse all {TOOL_PAGES.length} tools →</a>
         </p>
       </section>

@@ -8,7 +8,9 @@ export function Nav() {
         <a href="/tools">Tools</a>
         <a href="/pricing">Pricing</a>
         <a href="/vs/ahrefs">Compare</a>
-        <a href="/dashboard">Sign in</a>
+        <a class="btn" href="/dashboard">
+          Sign in
+        </a>
       </div>
     </nav>
   );

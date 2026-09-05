@@ -13,7 +13,7 @@ export const BASE_CSS = `
     margin: 0;
     background: var(--bg);
     color: var(--text);
-    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font: 16px/1.6 "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
   a { color: var(--accent); }
@@ -22,7 +22,7 @@ export const BASE_CSS = `
     line-height: 1.08; margin: 0 0 0.9rem;
   }
   h1:first-of-type { margin-top: 0; }
-  h2 { font-size: 1.6rem; font-weight: 750; letter-spacing: -0.01em; margin: 1.75rem 0 0.9rem; }
+  h2 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.01em; margin: 1.75rem 0 0.9rem; }
   h3 { font-size: 1.1rem; font-weight: 700; margin: 0 0 0.4rem; }
   p { margin: 0 0 0.9rem; }
   .muted { color: var(--muted); }

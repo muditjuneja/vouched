@@ -76,15 +76,58 @@ const MARKETING_CSS = `
     font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em;
     color: var(--accent); font-weight: 700; margin-bottom: 0.35rem;
   }
-  .site-footer { border-top: 1px solid var(--border); margin-top: 3rem; padding: 2.5rem 1.25rem 3rem; }
+  .site-footer { border-top: 1px solid var(--border); margin-top: 3rem; padding: 3rem 1.25rem 3rem; background: var(--bg-alt); }
   .footer-grid { max-width: 1080px; margin: 0 auto; display: grid; gap: 1.75rem; grid-template-columns: 2fr 1fr 1fr 1fr; }
+  .footer-grid .brand { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; margin: 0 0 0.6rem; }
   .footer-grid a { display: block; text-decoration: none; color: var(--text); font-size: 0.92rem; margin-bottom: 0.45rem; }
+  .footer-grid a:hover { color: var(--accent); }
   .footer-heading { font-weight: 700; font-size: 0.85rem; margin: 0 0 0.6rem; }
   .footnote { max-width: 1080px; margin: 1.75rem auto 0; padding-top: 1.25rem; border-top: 1px solid var(--border); }
   @media (max-width: 640px) {
     .footer-grid { grid-template-columns: 1fr 1fr; }
     .nav { flex-direction: column; align-items: flex-start; gap: 0.6rem; }
   }
+
+  /* Full-bleed tinted band for section rhythm — breaks out of main's padding the same way .hero does. */
+  .band {
+    margin: 4rem -1.25rem; padding: 3.5rem 1.25rem; background: var(--bg-alt);
+  }
+  .band > .wrap { padding: 0; }
+
+  .domain-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .domain-tile { display: flex; gap: 0.9rem; align-items: flex-start; }
+  .domain-tile .card-icon { flex-shrink: 0; margin-bottom: 0; }
+  .domain-tile h3 { margin-bottom: 0.25rem; font-size: 1rem; }
+  .domain-tile p { font-size: 0.92rem; margin-bottom: 0; }
+
+  .compare-yes { color: var(--status-good-bg); font-weight: 700; }
+  .compare-yes svg { width: 1em; height: 1em; vertical-align: -0.15em; margin-right: 0.3em; }
+  .compare-no { color: var(--muted); }
+
+  /* Scroll-reveal — progressive enhancement only. If JS never runs, .js-anim
+     is never added to <html>, so this rule never applies and content is
+     visible by default. The hero is excluded: above-the-fold content should
+     never depend on JS/a scroll event to become visible. */
+  @media (prefers-reduced-motion: no-preference) {
+    .js-anim section:not(.hero) { opacity: 0; transform: translateY(18px); transition: opacity 0.5s ease, transform 0.5s ease; }
+    .js-anim section:not(.hero).in-view { opacity: 1; transform: none; }
+  }
+`;
+
+const SCROLL_REVEAL_SCRIPT = `
+(function () {
+  if (!window.IntersectionObserver) return;
+  document.documentElement.classList.add('js-anim');
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('main section').forEach(function (s) { io.observe(s); });
+})();
 `;
 
 export interface LayoutProps {
@@ -106,6 +149,9 @@ function Layout({ title, description, canonicalUrl, children }: PropsWithChildre
         <meta name="description" content={description} />
         <link rel="canonical" href={canonicalUrl} />
         <link rel="icon" href={FAVICON_HREF} />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
         {/* No OG/Twitter image — none exists in this repo, and a broken image reference is worse than none. Add one (and og:image/twitter:card="summary_large_image") once real artwork exists. */}
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="mcp-seo-toolkit" />
@@ -121,6 +167,7 @@ function Layout({ title, description, canonicalUrl, children }: PropsWithChildre
         <Nav />
         <main>{children}</main>
         <Footer />
+        <script dangerouslySetInnerHTML={{ __html: SCROLL_REVEAL_SCRIPT }} />
       </body>
     </html>
   );

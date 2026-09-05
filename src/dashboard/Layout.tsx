@@ -32,6 +32,9 @@ function Layout({ title, children }: PropsWithChildren<LayoutProps>) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{title} — mcp-seo-toolkit</title>
         <link rel="icon" href={FAVICON_HREF} />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
         <style dangerouslySetInnerHTML={{ __html: TOKENS_CSS + BASE_CSS + DASHBOARD_CSS }} />
       </head>
       <body>
