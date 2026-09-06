@@ -3,7 +3,7 @@ import type { DashboardData } from "../types";
 
 export function ApiKeysSection({ data }: { data: DashboardData }) {
   return (
-    <section>
+    <section class="panel">
       <h2>MCP API keys</h2>
       <p class="muted">
         Use one of these to connect this server to Claude/an MCP client: add it as <code>Authorization: Bearer &lt;key&gt;</code>. Each
@@ -13,10 +13,14 @@ export function ApiKeysSection({ data }: { data: DashboardData }) {
         <Table headers={["Label", "Created", "Last used", ""]}>
           {data.apiKeys.map((key) => (
             <tr>
-              <td>{key.label ?? "(unlabeled)"}</td>
-              <td class="muted">{key.created_at}</td>
-              <td class="muted">{key.last_used_at ?? "never used"}</td>
-              <td>
+              <td data-label="Label">{key.label ?? "(unlabeled)"}</td>
+              <td class="muted" data-label="Created">
+                {key.created_at}
+              </td>
+              <td class="muted" data-label="Last used">
+                {key.last_used_at ?? "never used"}
+              </td>
+              <td data-label="Action">
                 <form
                   method="post"
                   action={`/dashboard/api-keys/${key.key_id}/revoke`}

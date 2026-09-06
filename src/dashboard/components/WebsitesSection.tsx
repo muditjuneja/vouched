@@ -9,7 +9,7 @@ function ConnectLink({ scope, show }: { scope: "webmaster_console" | "analytics_
 
 export function WebsitesSection({ data }: { data: DashboardData }) {
   return (
-    <section>
+    <section class="panel">
       <h2>Websites</h2>
       {data.websites.length === 0 ? (
         <p class="muted">No websites tracked yet. Add one below to unlock audit/gsc/analytics tools for it.</p>
@@ -17,15 +17,15 @@ export function WebsitesSection({ data }: { data: DashboardData }) {
         <Table headers={["Site", "Search Console", "Analytics"]}>
           {data.websites.map(({ row, gsc, ga4 }) => (
             <tr>
-              <td>
+              <td data-label="Site">
                 {row.name}
                 <div class="muted">{row.primary_domain}</div>
               </td>
-              <td>
+              <td data-label="Search Console">
                 <ConnectionBadge state={gsc} />
                 <ConnectLink scope="webmaster_console" show={gsc !== "connected" && data.googleOAuthConfigured && Boolean(row.gsc_site_url)} />
               </td>
-              <td>
+              <td data-label="Analytics">
                 <ConnectionBadge state={ga4} />
                 <ConnectLink scope="analytics_property" show={ga4 !== "connected" && data.googleOAuthConfigured && Boolean(row.ga4_property_id)} />
               </td>

@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "mcp-seo-toolkit",
+  "name": "vouched-seo-mcp",
   "main": "src/index.ts",
   "compatibility_date": "2026-06-11",
   "compatibility_flags": ["nodejs_compat"],
@@ -10,7 +10,7 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "mcp-seo-toolkit",
+      "database_name": "vouched-seo-mcp",
       "database_id": "REPLACE_WITH_D1_DATABASE_ID",
       "migrations_dir": "migrations"
     }
@@ -20,7 +20,7 @@
   "r2_buckets": [
     {
       "binding": "DATASETS",
-      "bucket_name": "mcp-seo-toolkit-datasets"
+      "bucket_name": "vouched-seo-mcp-datasets"
     }
   ]
 

@@ -1,13 +1,13 @@
 import type { Child } from "hono/jsx";
-import { Button, Card, CodeWindow } from "../../design";
+import { MONTHLY_QUOTA_USD } from "../../billing/quotas";
+import { Button, Card, CodeWindow, Table } from "../../design";
 import { TOOL_MANIFEST } from "../../mcp/manifest";
+import { DISPLAY_NAME, MCP_SERVER_NAME, cloudCtaHref } from "../brand";
 import { Hero } from "../components/Hero";
+import { LiveFeed } from "../components/LiveFeed";
 import {
   BarChartIcon,
-  ChatIcon,
   LinkIcon,
-  LockIcon,
-  ReceiptIcon,
   SearchIcon,
   ShieldIcon,
   SparkleIcon,
@@ -15,8 +15,8 @@ import {
   TrendingUpIcon
 } from "../components/icons";
 import { TOOL_PAGES } from "../content/tool-pages";
-import { renderPage } from "../Layout";
 import { GITHUB_URL } from "../github-url";
+import { renderPage } from "../Layout";
 
 interface DomainSummary {
   icon: Child;
@@ -38,237 +38,82 @@ const DOMAIN_SUMMARIES: DomainSummary[] = [
   { icon: <BarChartIcon />, name: "gsc / analytics", description: "Your own Search Console and GA4 data, first-party, no modeling." }
 ];
 
-const FREE_DOMAINS = new Set(["core", "audit", "gsc", "analytics"]);
-const FREE_TOOL_COUNT = TOOL_MANIFEST.filter((t) => FREE_DOMAINS.has(t.domain)).length;
-const DATAFORSEO_TOOL_COUNT = TOOL_MANIFEST.length - FREE_TOOL_COUNT;
-
-/**
- * Small data-driven token/line renderer for the hero's syntax-highlighted
- * JSON example: one `{ indent, tokens }` per line instead of dozens of
- * individually hand-placed `<span class="tok-*">` / `{"\n  "}` string
- * literals (easy to typo a token class or miscount a brace, hard to
- * review, painful to extend by even one field). Indentation is plain text
- * (spaces carry no color either way); only the genuinely colored pieces,
- * keys, strings, numbers, punctuation, comments, become `.tok-*` spans,
- * matching the classes already in src/design/base-styles.ts.
- */
-type Token = { text: string; cls: "key" | "str" | "num" | "punc" | "comment" };
-const key = (text: string): Token => ({ text, cls: "key" });
-const str = (text: string): Token => ({ text, cls: "str" });
-const num = (text: string): Token => ({ text, cls: "num" });
-const punc = (text: string): Token => ({ text, cls: "punc" });
-const comment = (text: string): Token => ({ text, cls: "comment" });
-
-interface Line {
-  indent: number;
-  tokens: Token[];
-}
-
-function renderLines(lines: Line[]): Child {
-  return (
-    <>
-      {lines.map((line, i) => (
-        <>
-          {i > 0 ? "\n" : ""}
-          {"  ".repeat(line.indent)}
-          {line.tokens.map((tok) => (
-            <span class={`tok-${tok.cls}`}>{tok.text}</span>
-          ))}
-        </>
-      ))}
-    </>
-  );
-}
-
-/**
- * A real (trimmed) example of the OFE envelope shape every tool returns.
- * Field names and the fact `type` match docs/OFE_ENVELOPE.md and
- * src/domains/seo/research-keywords.ts exactly (`data`, not an invented
- * `value`; `seo.keyword_opportunity`, not `seo.keyword`). The 0.75
- * confidence is `search_index`'s real default from
- * src/envelope/provenance.ts, not a made-up number. Shown as the hero's
- * "product shot" since no image pipeline exists in this repo.
- */
-const EXAMPLE_LINES: Line[] = [
-  { indent: 0, tokens: [punc("{")] },
-  { indent: 1, tokens: [key('"domain"'), punc(": "), str('"seo"'), punc(",")] },
-  { indent: 1, tokens: [key('"facts"'), punc(": [{")] },
-  { indent: 2, tokens: [key('"type"'), punc(": "), str('"seo.keyword_opportunity"'), punc(",")] },
-  { indent: 2, tokens: [key('"data"'), punc(": {")] },
-  { indent: 3, tokens: [key('"keyword"'), punc(": "), str('"vector database"'), punc(",")] },
-  { indent: 3, tokens: [key('"search_volume"'), punc(": "), num("8100")] },
-  { indent: 2, tokens: [punc("},")] },
-  { indent: 2, tokens: [key('"provenance"'), punc(": {")] },
-  { indent: 3, tokens: [key('"source_class"'), punc(": "), str('"search_index"'), punc(",")] },
-  { indent: 3, tokens: [key('"confidence"'), punc(": "), num("0.75"), punc(",")] },
-  { indent: 3, tokens: [comment('// not "trust me", a real number')] },
-  { indent: 2, tokens: [punc("}")] },
-  { indent: 1, tokens: [punc("}]")] },
-  { indent: 0, tokens: [punc("}")] }
-];
-
-function ExampleCall() {
-  return <CodeWindow title="research_keywords('vector database')">{renderLines(EXAMPLE_LINES)}</CodeWindow>;
-}
-
 const DEPLOY_COMMANDS = `npm install
-wrangler d1 create mcp-seo-toolkit
+wrangler d1 create ${MCP_SERVER_NAME}
 npm run db:migrate:local
 cp .dev.vars.example .dev.vars
 npm run dev`;
 
-const CONNECT_COMMAND = `claude mcp add --transport http mcp-seo-toolkit \\
+const CONNECT_COMMAND = `claude mcp add --transport http ${MCP_SERVER_NAME} \\
   http://localhost:8787/mcp \\
   --header "Authorization: Bearer <your MCP_BEARER_TOKEN>"`;
 
 interface Step {
-  icon: Child;
   title: string;
   description: string;
 }
 
 const HOW_IT_WORKS: Step[] = [
   {
-    icon: <span class="step-num">1</span>,
-    title: "Run it",
-    description: "Self-host your own copy on Cloudflare Workers, or sign in to the hosted cloud version. Same 18 tools either way."
+    title: "Connect MCP",
+    description:
+      "Add Vouched to Claude, Cursor, or any Model Context Protocol client. Same 18 tools on Cloud or self-host."
   },
   {
-    icon: <span class="step-num">2</span>,
-    title: "Connect it",
-    description: 'Add it to Claude Code (or any MCP client) with one command, an Authorization header, and it shows up as callable tools.'
+    title: "Ask in the conversation",
+    description:
+      "Research a keyword, snapshot a SERP, inspect backlinks, audit a site, or pull GSC/GA4 without leaving the chat."
   },
   {
-    icon: <span class="step-num">3</span>,
-    title: "Ask for it",
-    description: "Your AI agent calls a tool mid-conversation. Keyword research, a backlink check, a technical audit: no tab-switching."
-  },
-  {
-    icon: <span class="step-num">4</span>,
-    title: "Get a real fact back",
-    description: "Every result carries its source, freshness, and a confidence score, so you can tell a real number from a modeled guess."
+    title: "Get facts with provenance",
+    description:
+      "Each fact includes source class, method, timestamp, and a confidence score (a published default per source, not a calibrated probability)."
   }
 ];
 
 function LandingPage({ cloudMode }: { cloudMode: boolean }) {
+  const cloudHref = cloudCtaHref(cloudMode);
+
   return (
     <>
       <Hero
-        eyebrow="Open source · MIT licensed · MCP-native"
+        eyebrow="Open-source MCP for SEO data"
         heading={
           <>
-            SEO data with <span class="gradient-text">receipts</span>, not another black box
+            <span class="hero-line">SEO facts your agent can</span>
+            <span class="punch">
+              vouch for
+              <svg class="punch-rule" viewBox="0 0 320 22" aria-hidden="true" focusable="false">
+                <path d="M4 14 C 36 6, 72 18, 110 11 S 186 5, 228 13 S 286 18, 316 9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+                <path d="M18 16 C 70 19, 130 8, 190 15 S 270 20, 308 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity="0.55" />
+              </svg>
+            </span>
           </>
         }
-        lede="Every fact this server returns carries its source, its freshness, and a confidence score, so your AI agent (and you) can tell a real number from a modeled guess. Called directly mid-conversation, not copy-pasted from a dashboard tab."
-        visual={<ExampleCall />}
+        lede="The same 18 tools whether we run Vouched Cloud or you self-host Community. Cite keywords, SERPs, backlinks, audits, and GSC/GA4 from Claude or Cursor — with source, freshness, and a confidence score on every fact."
+        visual={<LiveFeed />}
       >
         <div class="cta-row">
-          <Button href={GITHUB_URL} variant="primary">
-            Self-host it free (MIT)
+          <Button href={cloudHref} variant="primary">
+            Start on Cloud
           </Button>
-          {cloudMode ? (
-            <Button href="/dashboard">Use the hosted cloud version</Button>
-          ) : (
-            <Button href="#quickstart">See the quickstart</Button>
-          )}
+          <a class="cta-text" href="#self-host">
+            Self-host Community
+          </a>
         </div>
-        <div class="hero-stats">
-          <div class="hero-stat">
-            <strong>18</strong>
-            <span>MCP tools</span>
-          </div>
-          <div class="hero-stat">
-            <strong>8</strong>
-            <span>data domains</span>
-          </div>
-          <div class="hero-stat">
-            <strong>MIT</strong>
-            <span>fully open source</span>
-          </div>
-          <div class="hero-stat">
-            <strong>$0</strong>
-            <span>markup, self-hosted</span>
-          </div>
+        <div class="hero-chips">
+          <span>MIT</span>
+          <span>18 MCP tools</span>
+          <span>$0 to self-host</span>
         </div>
-        <p class="muted" style="margin-top:1.5rem">
-          Built on the <a href="https://modelcontextprotocol.io">Model Context Protocol</a>, an open standard, not a proprietary plugin
-          format only one vendor's agent can use.
-        </p>
       </Hero>
 
-      <section id="quickstart">
-        <h2>Get it running in a few minutes</h2>
-        <p>Real commands, not a sales pitch. Clone it, point it at a Cloudflare account, and it's live.</p>
-        <div class="quickstart-grid">
-          <CodeWindow title="1. Deploy it">{DEPLOY_COMMANDS}</CodeWindow>
-          <CodeWindow title="2. Connect it">{CONNECT_COMMAND}</CodeWindow>
-        </div>
-        <p class="muted" style="margin-top:1.5rem">
-          Full setup, including deploying to production and connecting Google Search Console/Analytics, is in the{" "}
-          <a href={GITHUB_URL}>self-host guide</a>.
-        </p>
-      </section>
-
       <section>
-        <h2>How it works</h2>
-        <div class="steps-grid">
-          {HOW_IT_WORKS.map((step) => (
-            <Card icon={step.icon} title={step.title}>
-              <p>{step.description}</p>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      <section>
-        <h2>Two tiers, split honestly by what backs them</h2>
-        <div class="grid">
-          <Card title="Free tier: zero paid vendors">
-            <p>
-              <code>core</code>, <code>audit</code>, <code>gsc</code>, <code>analytics</code>: {FREE_TOOL_COUNT} tools backed by official
-              Google APIs (Search Console, GA4) plus a self-crawl. No DataForSEO account, no API key, nothing to pay for.
-            </p>
-          </Card>
-          <Card title="DataForSEO-backed tier: bring your own key">
-            <p>
-              <code>seo</code>, <code>serp</code>, <code>backlinks</code>, <code>ai_visibility</code>: {DATAFORSEO_TOOL_COUNT} tools,
-              same shapes, backed by <a href="https://dataforseo.com/">DataForSEO</a>, pay-as-you-go with your own API key. Self-hosted,
-              this server never marks it up.
-            </p>
-          </Card>
-        </div>
-      </section>
-
-      <section class="band">
-        <h2>The three things that actually get in your way</h2>
-        <div class="grid">
-          <Card icon={<LockIcon />} title="Closed-source scores you have to take on faith">
-            <p>
-              Most SEO tools hand you a number with no way to see how it was computed. This one's MIT licensed end to end: read exactly
-              how every tool works, fork it, fix it yourself if something's wrong.
-            </p>
-          </Card>
-          <Card icon={<ReceiptIcon />} title="Credit systems that hide what a query actually costs">
-            <p>
-              Bring your own DataForSEO key and pay their real pay-as-you-go rate directly. No credit conversion to do math on, no
-              markup, no subscription minimum sitting between you and the underlying data cost.
-            </p>
-          </Card>
-          <Card icon={<ChatIcon />} title="Tab-switching to a dashboard mid-conversation">
-            <p>
-              Every capability is a callable MCP tool with a typed, cited response, built to be used in-conversation by your AI agent,
-              not a dashboard you alt-tab to and copy numbers out of.
-            </p>
-          </Card>
-        </div>
-      </section>
-
-      <section>
-        <h2>All 18 tools, across 8 domains</h2>
+        <p class="chapter">01 — Product</p>
+        <h2>What the agent can do</h2>
         <p>
-          Every fact any tool returns carries its own provenance: source class, method, freshness, and a confidence score, instead of an
-          unlabeled number you have to trust blind.
+          Product capabilities, not deploy docs. Every tool returns a typed envelope: facts plus provenance so you can show where a
+          number came from.
         </p>
         <div class="domain-grid">
           {DOMAIN_SUMMARIES.map((domain) => (
@@ -287,24 +132,170 @@ function LandingPage({ cloudMode }: { cloudMode: boolean }) {
       </section>
 
       <section>
+        <p class="chapter">02 — In the conversation</p>
+        <h2>How it works</h2>
+        <ol class="chapter-steps">
+          {HOW_IT_WORKS.map((step, index) => (
+            <li>
+              <span class="step-idx">{String(index + 1).padStart(2, "0")}</span>
+              <div>
+                <h3>{step.title}</h3>
+                <p>{step.description}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section id="self-host">
+        <p class="chapter">03 — How you run it</p>
+        <h2>Choose Cloud or self-host</h2>
+        <p>
+          Same tools either way. The split is who operates the Worker and who holds the DataForSEO key — not which signals exist.
+        </p>
+        <div class="deploy-grid">
+          <Card title="Vouched Cloud">
+            <p>We run it. Bundled DataForSEO, dashboard, keys, and quotas. Fastest path if you do not want to operate a Worker.</p>
+            <p class="muted">Pick this when you want to start in minutes.</p>
+            <div class="cta-row">
+              <Button href={cloudHref} variant="primary">
+                Start on Cloud
+              </Button>
+            </div>
+          </Card>
+          <Card title="Self-hosted Community">
+            <p>MIT, your Cloudflare Worker, bring-your-own DataForSEO key, zero markup. Full control.</p>
+            <p class="muted">Pick this when you want cost control and to run it yourself.</p>
+            <div id="quickstart">
+              <CodeWindow title="Community quickstart">{`${DEPLOY_COMMANDS}
+
+# then connect it
+${CONNECT_COMMAND}`}</CodeWindow>
+            </div>
+            <p class="muted" style="margin-top:1rem">
+              Full setup is in the <a href={GITHUB_URL}>self-host guide</a>.
+            </p>
+          </Card>
+        </div>
+      </section>
+
+      <section>
+        <p class="chapter">04 — Price</p>
         <h2>Pricing</h2>
-        <p>Self-host is free forever. The hosted cloud version bundles DataForSEO access into a flat monthly plan so you don't need your own API key.</p>
+        <p>Community is $0. Cloud is a flat monthly quota, not credits.</p>
+        <div class="pricing-rail">
+          <div>
+            <p class="rail-name">Community</p>
+            <p class="price-amount">
+              ${MONTHLY_QUOTA_USD.free} <small>/mo</small>
+            </p>
+            <p>Self-host. All {TOOL_MANIFEST.length} tools. BYOK for DataForSEO-backed calls.</p>
+          </div>
+          <div>
+            <p class="rail-name">Cloud Pro</p>
+            <p class="price-amount">
+              ${MONTHLY_QUOTA_USD.pro} <small>/mo</small>
+            </p>
+            <p>Hosted. Bundled DataForSEO up to the Pro quota.</p>
+          </div>
+          <div>
+            <p class="rail-name">Cloud Team</p>
+            <p class="price-amount">
+              ${MONTHLY_QUOTA_USD.team} <small>/mo</small>
+            </p>
+            <p>Same hosted product, larger bundled allowance.</p>
+          </div>
+        </div>
         <p>
           <a href="/pricing">See full pricing →</a>
         </p>
       </section>
 
       <section>
+        <p class="chapter">05 — Open vs closed</p>
+        <h2>vs OpenRush</h2>
+        <Table class="compare" headers={["", DISPLAY_NAME, "OpenRush"]}>
+          <tr>
+            <td>Source</td>
+            <td>MIT, you can read every tool</td>
+            <td>Closed</td>
+          </tr>
+          <tr>
+            <td>Where it runs</td>
+            <td>Cloud or self-host</td>
+            <td>Hosted only</td>
+          </tr>
+          <tr>
+            <td>Pricing shape</td>
+            <td>Community $0 + BYOK, or flat Cloud quota</td>
+            <td>Credits ($10 / 1,000)</td>
+          </tr>
+        </Table>
+        <p class="muted">
+          OpenRush credit price from their public site, 6 Sep 2026. Their docs and marketing disagree on some per-tool credit costs
+          (e.g. discover_competitors). We are not claiming feature-for-feature index parity.
+        </p>
+        <p>
+          <a href="/vs/open-seo">Full comparison →</a>
+        </p>
+      </section>
+
+      <section class="faq">
+        <p class="chapter">06 — Questions</p>
+        <h2>Frequently asked</h2>
+        <details>
+          <summary>Cloud or self-host — which should I pick?</summary>
+          <p>
+            Same 18 tools. Cloud means we operate the Worker and bundle DataForSEO. Community means you run the Worker and bring your
+            own key. Speed vs control and cost.
+          </p>
+        </details>
+        <details>
+          <summary>Do I need a DataForSEO key?</summary>
+          <p>
+            Only for the DataForSEO-backed domains (<code>seo</code>, <code>serp</code>, <code>backlinks</code>,{" "}
+            <code>ai_visibility</code>). That is a capability split, not Cloud vs Community: self-host with BYOK, or Cloud with
+            bundled access. Audits, GSC, and GA4 need no paid vendor.
+          </p>
+        </details>
+        <details>
+          <summary>Is Cloud the same code?</summary>
+          <p>Yes. Hosting, keys, quotas, and a dashboard sit on the same MIT codebase.</p>
+        </details>
+        <details>
+          <summary>Can I switch later?</summary>
+          <p>Yes. Clone the repo and deploy Community whenever you want; MCP clients point at a different URL.</p>
+        </details>
+        <details>
+          <summary>What does “receipts” or provenance actually mean?</summary>
+          <p>
+            Every fact ships <code>source_class</code>, <code>method</code>, <code>observed_at</code>, and a{" "}
+            <code>confidence</code> number. Confidence is a published default per source class (for example search_index is 0.75),
+            not a statistical estimate of whether a volume number is “right.”
+          </p>
+        </details>
+        <details>
+          <summary>Which MCP clients work?</summary>
+          <p>Anything that speaks MCP over HTTP with a bearer token: Claude, Cursor, and other clients with custom MCP servers.</p>
+        </details>
+        <details>
+          <summary>How is this different from OpenRush?</summary>
+          <p>
+            OpenRush is closed and credit-metered. Vouched is MIT, self-hostable, and Cloud is a flat quota. Dataset URIs stay{" "}
+            <code>mcpseo://</code> for compatibility.
+          </p>
+        </details>
+      </section>
+
+      <section>
         <h2>Get started</h2>
         <div class="cta-row">
-          <Button href={GITHUB_URL} variant="primary">
-            Read the README and self-host it
+          <Button href={cloudHref} variant="primary">
+            Start on Cloud
           </Button>
-          {cloudMode ? (
-            <Button href="/dashboard">Sign in / start on the cloud plan</Button>
-          ) : (
-            <Button href="#quickstart">Jump to the quickstart</Button>
-          )}
+          <a class="cta-text" href="#self-host">
+            Self-host Community
+          </a>
         </div>
       </section>
     </>
@@ -313,9 +304,9 @@ function LandingPage({ cloudMode }: { cloudMode: boolean }) {
 
 export function renderLanding(canonicalUrl: string, cloudMode: boolean): string {
   return renderPage({
-    title: "mcp-seo-toolkit: open-source MCP server for SEO data",
+    title: `${DISPLAY_NAME}: SEO facts your agent can vouch for`,
     description:
-      "Open-source (MIT), self-hostable MCP server for SEO and marketing data: keyword research, backlinks, SERP, AI-visibility, technical audits, and your own Search Console/GA4. Also available hosted.",
+      "Open-source MCP server for SEO and marketing data. Same 18 tools on Vouched Cloud or self-hosted Community — keyword research, backlinks, SERP, audits, GSC/GA4, with provenance on every fact.",
     canonicalUrl,
     cloudMode,
     children: <LandingPage cloudMode={cloudMode} />

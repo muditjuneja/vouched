@@ -16,7 +16,7 @@ function groupByDomain(pages: ToolPageContent[]): Map<string, ToolPageContent[]>
 function ToolsIndexPage({ byDomain }: { byDomain: Map<string, ToolPageContent[]> }) {
   return (
     <>
-      <Hero eyebrow="Tool reference" heading={`All ${TOOL_PAGES.length} MCP tools`} lede="Every tool mcp-seo-toolkit offers, grouped by domain. Each one returns a typed, cited fact envelope, not free text." />
+      <Hero eyebrow="Tool reference" heading={`All ${TOOL_PAGES.length} MCP tools`} lede="Every tool Vouched offers, grouped by domain. Each one returns a typed, cited fact envelope, not free text." />
       {[...byDomain.entries()].map(([domain, pages]) => (
         <section>
           <h2>{DOMAIN_LABELS[domain] ?? domain}</h2>
@@ -34,8 +34,8 @@ function ToolsIndexPage({ byDomain }: { byDomain: Map<string, ToolPageContent[]>
 export function renderToolsIndex(canonicalUrl: string, cloudMode: boolean): string {
   const byDomain = groupByDomain(TOOL_PAGES);
   return renderPage({
-    title: `All ${TOOL_PAGES.length} tools · mcp-seo-toolkit`,
-    description: `Reference for every MCP tool mcp-seo-toolkit offers across ${byDomain.size} domains: keyword research, backlinks, SERP, AI-visibility, technical audits, Search Console, and GA4.`,
+    title: `All ${TOOL_PAGES.length} tools · Vouched`,
+    description: `Reference for every MCP tool Vouched offers across ${byDomain.size} domains: keyword research, backlinks, SERP, AI-visibility, technical audits, Search Console, and GA4.`,
     canonicalUrl,
     cloudMode,
     children: <ToolsIndexPage byDomain={byDomain} />

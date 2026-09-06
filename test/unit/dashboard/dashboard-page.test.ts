@@ -21,6 +21,8 @@ describe("renderDashboard", () => {
     expect((html.match(/<h1/g) ?? []).length).toBe(1);
     // each section still gets its own heading, one level down.
     expect((html.match(/<h2/g) ?? []).length).toBe(3);
+    expect(html).toContain('class="dash"');
+    expect(html).toContain("Cloud");
   });
 
   it("lists a tracked website with escaped, tenant-controlled text safe from injection", () => {

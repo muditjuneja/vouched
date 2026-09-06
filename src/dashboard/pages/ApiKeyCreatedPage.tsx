@@ -1,4 +1,5 @@
 import { Callout } from "../../design";
+import { MCP_SERVER_NAME } from "../../lib/product";
 import { renderPage } from "../Layout";
 
 /** The one-time reveal page for a newly created API key, never shown again after this. */
@@ -14,7 +15,7 @@ function ApiKeyCreatedPage({ plaintext }: { plaintext: string }) {
       </Callout>
       <p>Add it to your MCP client, e.g.:</p>
       <pre class="key">
-        {`claude mcp add --transport http mcp-seo-toolkit https://<your-worker>/mcp \\\n  --header "Authorization: Bearer ${plaintext}"`}
+        {`claude mcp add --transport http ${MCP_SERVER_NAME} https://<your-worker>/mcp \\\n  --header "Authorization: Bearer ${plaintext}"`}
       </pre>
       <p>
         <a href="/dashboard">← Back to dashboard</a>

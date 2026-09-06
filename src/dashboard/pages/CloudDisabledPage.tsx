@@ -1,4 +1,5 @@
 import { Callout } from "../../design";
+import { DISPLAY_NAME } from "../../lib/product";
 import { GITHUB_URL } from "../../marketing/github-url";
 import { renderPage } from "../Layout";
 
@@ -17,7 +18,7 @@ function CloudDisabledPage() {
     <>
       <h1>No cloud dashboard here</h1>
       <p>
-        This is a self-hosted deployment of <strong>mcp-seo-toolkit</strong>, and the hosted cloud dashboard (sign-in, billing, a managed
+        This is a self-hosted deployment of <strong>{DISPLAY_NAME}</strong>, and the hosted cloud dashboard (sign-in, billing, a managed
         DataForSEO key) isn't enabled on it. That's expected: self-host mode has no dashboard by design, only the MCP server itself.
       </p>
       <Callout>

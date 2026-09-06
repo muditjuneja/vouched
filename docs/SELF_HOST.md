@@ -9,7 +9,7 @@ ever engages.
 
 ```bash
 npm install
-wrangler d1 create mcp-seo-toolkit        # then paste the database_id into wrangler.jsonc
+wrangler d1 create vouched-seo-mcp        # then paste the database_id into wrangler.jsonc
 npm run db:migrate:local
 cp .dev.vars.example .dev.vars            # fill in MCP_BEARER_TOKEN at minimum
 npm run dev
@@ -18,14 +18,14 @@ npm run dev
 Add it to Claude Code:
 
 ```bash
-claude mcp add --transport http mcp-seo-toolkit http://localhost:8787/mcp \
+claude mcp add --transport http vouched-seo-mcp http://localhost:8787/mcp \
   --header "Authorization: Bearer <your MCP_BEARER_TOKEN>"
 ```
 
 Deploying:
 
 ```bash
-wrangler r2 bucket create mcp-seo-toolkit-datasets
+wrangler r2 bucket create vouched-seo-mcp-datasets
 wrangler secret put MCP_BEARER_TOKEN
 npm run db:migrate:remote
 npm run deploy

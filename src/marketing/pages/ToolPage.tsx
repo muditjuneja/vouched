@@ -76,7 +76,7 @@ function ToolPage({ page, cloudMode }: { page: ToolPageContent; cloudMode: boole
 
 export function renderToolPage(page: ToolPageContent, canonicalUrl: string, cloudMode: boolean): string {
   return renderPage({
-    title: `${page.title} · mcp-seo-toolkit`,
+    title: `${page.title} · Vouched`,
     description: page.metaDescription,
     canonicalUrl,
     cloudMode,

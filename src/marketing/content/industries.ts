@@ -19,15 +19,15 @@ export interface IndustryPage {
 export const INDUSTRY_PAGES: IndustryPage[] = [
   {
     slug: "agencies",
-    title: "mcp-seo-toolkit for agencies: self-hosted SEO data, no per-seat markup",
+    title: "Vouched for agencies: self-hosted SEO data, no per-seat markup",
     metaDescription:
-      "SEO/marketing agencies running multiple client sites through Claude or another MCP client: self-host mcp-seo-toolkit and pay DataForSEO directly, no per-client markup.",
+      "SEO/marketing agencies running multiple client sites through Claude or another MCP client: self-host Vouched and pay DataForSEO directly, no per-client markup.",
     heading: "For agencies",
     lede: "Run every client's keyword research, backlink audits, and technical audits through the same MCP tools your team already uses inside Claude, without a per-seat SaaS bill stacked on top of the underlying data cost.",
     body: [
       "An agency juggling several client domains usually ends up paying for SEO tool " +
         "seats per analyst, on top of the vendor's own data costs. Self-hosting " +
-        "mcp-seo-toolkit removes that markup layer: you supply your own DataForSEO " +
+        "Vouched removes that markup layer: you supply your own DataForSEO " +
         "API key, and every keyword-research or backlink-gap call is billed at " +
         "DataForSEO's own pay-as-you-go rate, with nothing added on top.",
       "Because every tool call returns the same OFE envelope, typed facts with " +
@@ -44,9 +44,9 @@ export const INDUSTRY_PAGES: IndustryPage[] = [
   },
   {
     slug: "indie-hackers",
-    title: "mcp-seo-toolkit for indie hackers: free self-host, pay only for what you use",
+    title: "Vouched for indie hackers: free self-host, pay only for what you use",
     metaDescription:
-      "Solo builders and indie hackers: run SEO research and site audits from Claude with mcp-seo-toolkit's free self-host tier, no subscription required.",
+      "Solo builders and indie hackers: run SEO research and site audits from Claude with Vouched's free self-host tier, no subscription required.",
     heading: "For indie hackers",
     lede: "You don't need an SEO-suite subscription to find keywords, check your backlink profile, or catch a broken title tag. The free tier does all of that with zero paid vendors, and DataForSEO's pay-as-you-go pricing means the paid tools cost only what you actually query.",
     body: [

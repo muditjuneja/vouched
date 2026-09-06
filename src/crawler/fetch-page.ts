@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import type { CheerioAPI } from "cheerio";
+import { AUDIT_UA } from "../lib/product";
 
 export interface FetchedPage {
   url: string;
@@ -18,7 +19,7 @@ export interface FetchedPage {
 export async function fetchPage(url: string): Promise<FetchedPage> {
   try {
     const res = await fetch(url, {
-      headers: { "user-agent": "mcp-seo-toolkit-audit/0.1" },
+      headers: { "user-agent": AUDIT_UA },
       redirect: "follow"
     });
     const contentType = res.headers.get("content-type");

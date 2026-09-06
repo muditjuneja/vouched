@@ -20,6 +20,7 @@ import { inspectSerp } from "../domains/serp/inspect-serp";
 import type { ToolModule } from "../domains/types";
 import { ofeEnvelopeSchema } from "../envelope/schema";
 import { ConnectionRequiredError, QuotaExceededError } from "../lib/errors";
+import { MCP_SERVER_NAME } from "../lib/product";
 import { hasDataForSEO, type Env } from "../types/env";
 
 // Free — no keys needed. Grows as each milestone lands.
@@ -68,7 +69,7 @@ const DATAFORSEO_TOOL_MODULES: ToolModule<any>[] = [
  * currently need it.
  */
 export function buildMcpServer(env: Env, tenantId: string | null = null): McpServer {
-  const server = new McpServer({ name: "mcp-seo-toolkit", version: "0.1.0" });
+  const server = new McpServer({ name: MCP_SERVER_NAME, version: "0.1.0" });
   const requestEnv: Env = { ...env, __tenantId: tenantId };
 
   const toolModules = hasDataForSEO(env)

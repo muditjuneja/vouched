@@ -94,9 +94,9 @@ describe("mcp-api-keys round trip", () => {
     const db = fakeApiKeysDb();
     const created = await createApiKey(db, "tenant-1", "my laptop");
 
-    expect(created.plaintext).toMatch(/^mst_[0-9a-f]+$/);
+    expect(created.plaintext).toMatch(/^vsm_[0-9a-f]+$/);
     expect(await verifyApiKey(db, created.plaintext)).toBe("tenant-1");
-    expect(await verifyApiKey(db, "mst_not_a_real_key")).toBeNull();
+    expect(await verifyApiKey(db, "vsm_not_a_real_key")).toBeNull();
     expect(await verifyApiKey(db, "totally-wrong-prefix")).toBeNull();
   });
 

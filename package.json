@@ -1,5 +1,5 @@
 {
-  "name": "mcp-seo-toolkit",
+  "name": "vouched-seo-mcp",
   "description": "Open-source, self-hosted MCP server for SEO/marketing data on Cloudflare Workers — free GSC/GA4/site-audit tools plus optional DataForSEO-backed keyword/backlink/SERP/AI-visibility tools.",
   "private": true,
   "type": "module",
@@ -12,8 +12,8 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "db:migrate:local": "wrangler d1 migrations apply mcp-seo-toolkit --local",
-    "db:migrate:remote": "wrangler d1 migrations apply mcp-seo-toolkit --remote",
+    "db:migrate:local": "wrangler d1 migrations apply vouched-seo-mcp --local",
+    "db:migrate:remote": "wrangler d1 migrations apply vouched-seo-mcp --remote",
     "doctor": "tsx scripts/check-env.ts",
     "docs:tools": "tsx scripts/generate-tools-doc.ts"
   },

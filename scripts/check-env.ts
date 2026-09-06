@@ -5,6 +5,7 @@
  * mirrors `.dev.vars`/secrets naming exactly.
  */
 import { readFileSync, existsSync } from "node:fs";
+import { DISPLAY_NAME } from "../src/lib/product";
 
 function loadDevVars(): Record<string, string> {
   if (!existsSync(".dev.vars")) return {};
@@ -22,7 +23,7 @@ function loadDevVars(): Record<string, string> {
 const vars = { ...loadDevVars(), ...process.env };
 const has = (key: string) => Boolean(vars[key]);
 
-console.log("mcp-seo-toolkit — environment check\n");
+console.log(`${DISPLAY_NAME} — environment check\n`);
 
 console.log(
   `[${has("MCP_BEARER_TOKEN") ? "x" : " "}] MCP_BEARER_TOKEN set — required for the server to accept any request`

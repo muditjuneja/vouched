@@ -3,6 +3,7 @@ import type { ScopeGroup } from "../db/google-tokens";
 import type { Plan } from "../db/subscriptions";
 import type { Env } from "../types/env";
 import { sendEmail } from "./client";
+import { DISPLAY_NAME } from "../lib/product";
 
 /**
  * Every function here resolves the tenant's email itself (via Clerk — see
@@ -20,7 +21,7 @@ async function sendToTenant(env: Env, tenantId: string, subject: string, html: s
 }
 
 function wrap(title: string, bodyHtml: string): string {
-  return `<h1>${title}</h1>${bodyHtml}<p>— mcp-seo-toolkit</p>`;
+  return `<h1>${title}</h1>${bodyHtml}<p>— ${DISPLAY_NAME}</p>`;
 }
 
 /** Sent on a tenant's first dashboard visit — see the dashboard route's markNotifiedOnce("welcome") gate. */
@@ -28,7 +29,7 @@ export async function notifyWelcome(env: Env, tenantId: string): Promise<boolean
   return sendToTenant(
     env,
     tenantId,
-    "Welcome to mcp-seo-toolkit",
+    `Welcome to ${DISPLAY_NAME}`,
     wrap(
       "Welcome aboard",
       "<p>Your account is ready. Connect a website's Search Console/Analytics from the dashboard, or start calling the SEO tools straight from your MCP client with the API key you create there.</p>"

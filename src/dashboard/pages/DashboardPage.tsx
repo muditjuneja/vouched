@@ -7,6 +7,7 @@ import type { DashboardData } from "../types";
 function DashboardPage({ data }: { data: DashboardData }) {
   return (
     <>
+      <p class="kicker">Cloud</p>
       <h1>Dashboard</h1>
       <WebsitesSection data={data} />
       <BillingSection data={data} />
