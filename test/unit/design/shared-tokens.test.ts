@@ -16,6 +16,7 @@ describe("shared design tokens", () => {
       plan: "free",
       usageUsd: 0,
       quotaUsd: 0,
+      walletBalanceUsd: 0,
       apiKeys: [],
       googleOAuthConfigured: false,
       dodoConfigured: false

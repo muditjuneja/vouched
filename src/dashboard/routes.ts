@@ -3,7 +3,7 @@ import { verifyClerkSession } from "../auth/clerk";
 import { checkConnectionState, type ConnectionState } from "../auth/google-oauth";
 import type { ScopeGroup } from "../db/google-tokens";
 import { createApiKey, listApiKeys, revokeApiKey } from "../db/mcp-api-keys";
-import { getEffectivePlan } from "../db/subscriptions";
+import { getEffectivePlan, getWalletBalance } from "../db/subscriptions";
 import { getUsage } from "../db/usage-counters";
 import { addWebsite, listWebsites } from "../db/websites";
 import { MONTHLY_QUOTA_USD } from "../billing/quotas";
@@ -83,6 +83,7 @@ dashboard.get("/", async (c) => {
   const plan = await getEffectivePlan(env.DB, tenantId);
   const usage = await getUsage(env.DB, tenantId);
   const apiKeys = await listApiKeys(env.DB, tenantId);
+  const walletBalanceUsd = await getWalletBalance(env.DB, tenantId);
 
   return c.html(
     renderDashboard({
@@ -90,6 +91,7 @@ dashboard.get("/", async (c) => {
       plan,
       usageUsd: usage?.cost_incurred_usd ?? 0,
       quotaUsd: MONTHLY_QUOTA_USD[plan],
+      walletBalanceUsd,
       apiKeys,
       googleOAuthConfigured: hasGoogleOAuth(env),
       dodoConfigured: Boolean(env.DODO_API_KEY)

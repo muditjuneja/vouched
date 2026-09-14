@@ -152,6 +152,13 @@ function PricingPage({ cloudMode }: { cloudMode: boolean }) {
           <Card title="Can I switch from cloud to self-host later?">
             <p>Yes, it's the same MIT-licensed codebase. Clone the repo and deploy your own copy whenever you want.</p>
           </Card>
+          <Card title="What happens once I use up my plan's included quota?">
+            <p>
+              Add credit to your prepaid overage wallet from the dashboard, and DataForSEO-backed calls keep working past your monthly quota,
+              billed at cost plus a small markup, no plan upgrade needed. It works standalone too: skip the subscription entirely and pay
+              straight from the wallet.
+            </p>
+          </Card>
         </div>
       </section>
     </>

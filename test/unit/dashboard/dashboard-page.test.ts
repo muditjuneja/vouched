@@ -8,6 +8,7 @@ function fakeData(overrides: Partial<DashboardData> = {}): DashboardData {
     plan: "free",
     usageUsd: 0,
     quotaUsd: 0,
+    walletBalanceUsd: 0,
     apiKeys: [],
     googleOAuthConfigured: false,
     dodoConfigured: false,
@@ -19,8 +20,8 @@ describe("renderDashboard", () => {
   it("renders exactly one <h1> even though it composes three sections", () => {
     const html = renderDashboard(fakeData());
     expect((html.match(/<h1/g) ?? []).length).toBe(1);
-    // each section still gets its own heading, one level down.
-    expect((html.match(/<h2/g) ?? []).length).toBe(3);
+    // WebsitesSection (1) + BillingSection (2: plan/usage, overage wallet) + ApiKeysSection (1), each one level down from the page's single <h1>.
+    expect((html.match(/<h2/g) ?? []).length).toBe(4);
   });
 
   it("lists a tracked website with escaped, tenant-controlled text safe from injection", () => {

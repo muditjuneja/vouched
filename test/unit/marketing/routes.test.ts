@@ -48,8 +48,8 @@ describe("marketing routes", () => {
     expect(body).toContain("Free (self-host)");
     expect(body).toContain("Pro (cloud)");
     expect(body).toContain("Team (cloud)");
-    expect(body).toContain("$10");
-    expect(body).toContain("$50");
+    expect(body).toContain("$4");
+    expect(body).toContain("$20");
   });
 
   it("GET /tools lists every real tool", async () => {

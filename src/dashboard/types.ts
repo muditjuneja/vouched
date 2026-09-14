@@ -14,6 +14,7 @@ export interface DashboardData {
   plan: Plan;
   usageUsd: number;
   quotaUsd: number;
+  walletBalanceUsd: number;
   apiKeys: McpApiKeyRow[];
   googleOAuthConfigured: boolean;
   dodoConfigured: boolean;

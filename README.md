@@ -45,15 +45,16 @@ Two tiers, split by what backs them:
 
 ## Status
 
-M0-M18 are complete and pushed: the full 18-tool self-hosted server, plus
+M0-M19 are complete and pushed: the full 18-tool self-hosted server, plus
 the entire cloud pivot (Hono migration, multi-tenant D1, Clerk auth, Dodo
-billing, bundled-DataForSEO quota enforcement, a dashboard, landing/pSEO
-pages, rate limiting, admin alerting, and transactional email via xmit.sh).
-Every external integration built without a live account to test against in
-this sandbox (DataForSEO field shapes, Clerk, Dodo, xmit.sh) has its
-unverified assumptions called out explicitly in code comments and in the
-docs above — confirm against the real service before trusting those
-specific claims.
+billing, bundled-DataForSEO quota enforcement with a real margin, a
+prepaid overage wallet for usage beyond a plan's bundled quota, a
+dashboard, landing/pSEO pages, rate limiting, admin alerting, and
+transactional email via xmit.sh). Every external integration built
+without a live account to test against in this sandbox (DataForSEO field
+shapes, Clerk, Dodo, xmit.sh) has its unverified assumptions called out
+explicitly in code comments and in the docs above; confirm against the
+real service before trusting those specific claims.
 
 Also see the **[known sandbox limitation](docs/SELF_HOST.md#known-limitation-of-some-sandboxed-dev-environments)**
 affecting `wrangler dev`/`deploy` and `@cloudflare/vitest-pool-workers` in

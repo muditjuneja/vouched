@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  handlePaymentSucceeded,
   handleSubscriptionActive,
   handleSubscriptionCancelled,
   handleSubscriptionFailed,
   handleSubscriptionOnHold,
   planFromProductId,
   tenantIdFromMetadata,
+  type PaymentWebhookPayload,
   type SubscriptionWebhookPayload
 } from "../../../src/billing/webhook-handlers";
 import type { Env } from "../../../src/types/env";
@@ -13,9 +15,10 @@ import type { Env } from "../../../src/types/env";
 vi.mock("../../../src/email/notifications", () => ({
   notifyPaymentReceipt: vi.fn(),
   notifyPaymentFailed: vi.fn(),
-  notifySubscriptionCancelled: vi.fn()
+  notifySubscriptionCancelled: vi.fn(),
+  notifyWalletTopup: vi.fn()
 }));
-import { notifyPaymentFailed, notifyPaymentReceipt, notifySubscriptionCancelled } from "../../../src/email/notifications";
+import { notifyPaymentFailed, notifyPaymentReceipt, notifySubscriptionCancelled, notifyWalletTopup } from "../../../src/email/notifications";
 
 function fakeEnv(overrides: Partial<Env> = {}): Env {
   return {
@@ -102,5 +105,109 @@ describe("Dodo event handlers' lifecycle-email calls", () => {
   it("sends no email when the payload has no tenant_id in metadata", async () => {
     await handleSubscriptionActive(fakeEnv(), fakePayload({ metadata: undefined }));
     expect(notifyPaymentReceipt).not.toHaveBeenCalled();
+  });
+});
+
+/** A tiny in-memory fake of wallet_ledger + subscriptions.wallet_balance_usd, enough to exercise creditWallet's real idempotency logic through handlePaymentSucceeded. */
+function fakeWalletDb() {
+  const appliedPaymentIds = new Set<string>();
+  const balances = new Map<string, number>();
+
+  const db = {
+    prepare(sql: string) {
+      return {
+        bind(...args: unknown[]) {
+          return {
+            async run() {
+              if (sql.startsWith("INSERT OR IGNORE INTO wallet_ledger")) {
+                const [, , dodoPaymentId] = args as [string, number, string];
+                if (appliedPaymentIds.has(dodoPaymentId)) return { success: true, meta: { changes: 0 } };
+                appliedPaymentIds.add(dodoPaymentId);
+                return { success: true, meta: { changes: 1 } };
+              }
+              if (sql.startsWith("INSERT INTO subscriptions")) {
+                const [tenantId, amountUsd] = args as [string, number];
+                balances.set(tenantId, (balances.get(tenantId) ?? 0) + amountUsd);
+                return { success: true, meta: { changes: 1 } };
+              }
+              return { success: true, meta: { changes: 1 } };
+            }
+          };
+        }
+      };
+    }
+  };
+
+  return { db: db as unknown as D1Database, balances };
+}
+
+function fakePaymentPayload(overrides: Partial<PaymentWebhookPayload["data"]> = {}): PaymentWebhookPayload {
+  return {
+    type: "payment.succeeded",
+    data: {
+      payment_id: "pay_123",
+      total_amount: 1000, // $10.00, assumed cents
+      product_cart: [{ product_id: "prod_wallet_topup", quantity: 1 }],
+      customer: { customer_id: "cust_1" },
+      metadata: { tenant_id: "user_1" },
+      ...overrides
+    }
+  };
+}
+
+describe("handlePaymentSucceeded", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("credits the wallet and sends a top-up email when the cart contains the wallet top-up product", async () => {
+    const { db, balances } = fakeWalletDb();
+    const env = fakeEnv({ DB: db, DODO_PRODUCT_ID_WALLET_TOPUP: "prod_wallet_topup" });
+
+    await handlePaymentSucceeded(env, fakePaymentPayload());
+
+    expect(balances.get("user_1")).toBe(10);
+    expect(notifyWalletTopup).toHaveBeenCalledWith(env, "user_1", 10);
+  });
+
+  it("ignores a retried webhook delivery for the same payment_id (no double-credit)", async () => {
+    const { db, balances } = fakeWalletDb();
+    const env = fakeEnv({ DB: db, DODO_PRODUCT_ID_WALLET_TOPUP: "prod_wallet_topup" });
+
+    await handlePaymentSucceeded(env, fakePaymentPayload());
+    await handlePaymentSucceeded(env, fakePaymentPayload());
+
+    expect(balances.get("user_1")).toBe(10); // not 20
+    expect(notifyWalletTopup).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores a subscription's periodic invoice payment (cart doesn't contain the wallet top-up product)", async () => {
+    const { db, balances } = fakeWalletDb();
+    const env = fakeEnv({ DB: db, DODO_PRODUCT_ID_WALLET_TOPUP: "prod_wallet_topup" });
+
+    await handlePaymentSucceeded(env, fakePaymentPayload({ product_cart: [{ product_id: "prod_pro_123", quantity: 1 }] }));
+
+    expect(balances.size).toBe(0);
+    expect(notifyWalletTopup).not.toHaveBeenCalled();
+  });
+
+  it("does nothing when the deployment has no wallet top-up product configured", async () => {
+    const { db, balances } = fakeWalletDb();
+    const env = fakeEnv({ DB: db, DODO_PRODUCT_ID_WALLET_TOPUP: undefined });
+
+    await handlePaymentSucceeded(env, fakePaymentPayload());
+
+    expect(balances.size).toBe(0);
+    expect(notifyWalletTopup).not.toHaveBeenCalled();
+  });
+
+  it("does nothing when the payload has no tenant_id in metadata", async () => {
+    const { db, balances } = fakeWalletDb();
+    const env = fakeEnv({ DB: db, DODO_PRODUCT_ID_WALLET_TOPUP: "prod_wallet_topup" });
+
+    await handlePaymentSucceeded(env, fakePaymentPayload({ metadata: undefined }));
+
+    expect(balances.size).toBe(0);
+    expect(notifyWalletTopup).not.toHaveBeenCalled();
   });
 });

@@ -114,16 +114,25 @@ webhook module also documents using Node's `crypto` (works via our
 ## M14 — Bundled DataForSEO + quota enforcement
 
 Done. In cloud mode with a resolved tenant, every DataForSEO call
-(`src/clients/dataforseo/client.ts`'s `dfsLivePost` — the single chokepoint
+(`src/clients/dataforseo/client.ts`'s `dfsLivePost`, the single chokepoint
 all `seo`/`serp`/`backlinks`/`ai_visibility` tools funnel through) uses the
 deployment's bundled account (`CLOUD_DATAFORSEO_LOGIN/PASSWORD`, never the
-tenant's own key — cloud has no BYOK path) and checks the tenant's plan
-quota first (`src/billing/quotas.ts` — Free: $0/mo, Pro: $10/mo, Team:
-$50/mo of underlying DataForSEO cost, placeholder amounts to tune against
-real margins). Over quota throws a clear `QuotaExceededError` (same
-error-driven-UX pattern as `ConnectionRequiredError`), never a silent
-block. Self-host is completely unaffected — the quota gate only engages
-when `isCloudMode(env) && tenantId !== null`.
+tenant's own key, cloud has no BYOK path) and checks the tenant's plan
+quota first (`src/billing/quotas.ts`: Free $0/mo, Pro $4/mo, Team $20/mo
+of underlying DataForSEO cost included, roughly 40% of the plan price so
+there's a real ~60% margin on the bundled data itself, leaving room for
+Dodo's processing cut, infra, and support). Over quota throws a clear
+`QuotaExceededError` (same error-driven-UX pattern as
+`ConnectionRequiredError`), unless the tenant has a positive prepaid
+overage wallet balance, see M19. Self-host is completely unaffected, the
+quota gate only engages when `isCloudMode(env) && tenantId !== null`.
+
+*Amendment (post-M18)*: the quota amounts above replace an earlier
+placeholder that set each plan's bundled quota equal to its price
+(Pro $10/mo of quota for $10/mo, Team $50/mo for $50/mo), which was
+literally zero margin on every active subscriber before even counting
+payment-processing fees or infra cost. Caught when the user asked "what
+exactly is our cloud service earning?"
 
 ## M15 — Dashboard UI (medium scope)
 
@@ -275,6 +284,60 @@ snippets of xmit.sh's own pages, not a fetched doc or a live call.
 correcting without a code change. Spike against a real xmit.sh API key
 before trusting this, same caveat treatment as DataForSEO's
 `ai_visibility` endpoints elsewhere in this build.
+
+## M19 — Prepaid overage wallet
+
+Done. Once a tenant is past their plan's bundled DataForSEO quota
+(`MONTHLY_QUOTA_USD`, M14), a call is no longer hard-blocked: it goes
+through as long as their prepaid overage wallet
+(`subscriptions.wallet_balance_usd`, migration `0007_wallet.sql`) has a
+positive balance, then gets debited afterward at real cost times
+`OVERAGE_MARKUP_MULTIPLIER` (`src/billing/quotas.ts`, currently 1.15x, a
+flat convenience markup rather than the ~60% margin baked into the
+bundled quota, closer to a processing-and-margin fee in the spirit of
+OpenRouter's ~5% BYOK pass-through cut). `QuotaExceededError` still
+fires once both the quota and the wallet are exhausted. This works
+independently of plan: even a free-plan tenant with no subscription at
+all can pay purely out of a wallet balance, no upgrade required.
+
+The wallet is funded via a one-time (non-subscription) Dodo checkout
+(`src/billing/dodo-client.ts`'s `startWalletTopup`, a new
+`GET /billing/topup` route in `src/index.ts`, same cloud-mode +
+Clerk-session gate as `/billing/checkout`) against a single "pay what you
+want" Dodo product (`DODO_PRODUCT_ID_WALLET_TOPUP`) with its price
+overridden per checkout via `product_cart[].amount`. Crediting happens on
+Dodo's `payment.succeeded` webhook (`handlePaymentSucceeded`, new in
+`src/billing/webhook-handlers.ts`), guarded so it only fires for a
+top-up (cart contains the wallet product), never for a subscription's own
+periodic invoice payment. Idempotent against a retried webhook delivery:
+`wallet_ledger.dodo_payment_id` carries a unique index, so crediting the
+same payment id twice is a no-op. Debiting is a single atomic conditional
+`UPDATE ... WHERE wallet_balance_usd >= ?`, so two concurrent overage
+calls can't jointly overdraw the balance.
+
+Dashboard shows the wallet balance and a "buy credits" form
+(`BillingSection.tsx`, fixed $10/$25/$100 presets from
+`TOPUP_PRESETS_USD`). A low-balance warning email
+(`notifyLowWalletBalance`) fires at most once per 24h once the balance
+drops under $2, mirroring the quota-threshold warning's dedup pattern.
+
+**Still unverified**: `startWalletTopup`'s assumption that Dodo's
+`product_cart[].amount` and a payment's `total_amount` are both in the
+smallest currency unit (USD cents), matching Stripe-style convention, is
+not confirmed against a live Dodo account, only against the vendored SDK's
+type declarations (which don't state the unit). Confirm before trusting a
+real charge matches what the dashboard's top-up form shows.
+
+**Deliberately not adopted**: Dodo Payments has its own native
+subscription-attached credit/overage system
+(`credit.added`/`credit.deducted`/`CreditBalanceLow`/
+`CreditOverageCharged` webhooks, tied to a per-product "credit
+entitlement" configured in the Dodo dashboard) that could replace this
+whole wallet. Not used here because it needs product-level credit
+entitlement configuration this sandbox has no live account to verify
+against, and the per-call quota check needs a synchronous, cheap local
+D1 lookup regardless of who the system of record is. Worth revisiting
+against a real Dodo account before launch.
 
 ## Verification discipline
 

@@ -4,20 +4,28 @@ import { QuotaExceededError } from "../../../src/lib/errors";
 import type { Env } from "../../../src/types/env";
 
 vi.mock("../../../src/email/notifications", () => ({
-  notifyQuotaWarning: vi.fn()
+  notifyQuotaWarning: vi.fn(),
+  notifyLowWalletBalance: vi.fn()
 }));
-import { notifyQuotaWarning } from "../../../src/email/notifications";
+import { notifyLowWalletBalance, notifyQuotaWarning } from "../../../src/email/notifications";
 
 /**
  * A tiny in-memory fake covering the tables dfsLivePost's call chain
- * touches (subscriptions, usage_counters, cost_log, tenant_notifications)
- * — enough to exercise the real quota-gate and quota-warning-dedup logic
- * without a real D1 binding (unavailable in this sandbox — see README).
+ * touches (subscriptions, including its wallet_balance_usd column and
+ * the wallet_ledger audit trail, usage_counters, cost_log,
+ * tenant_notifications), enough to exercise the real quota gate,
+ * overage-wallet gate, and both notification-dedup shapes without a real
+ * D1 binding (unavailable in this sandbox, see README).
  */
 function fakeDb() {
-  const subscriptions = new Map<string, { plan: string; status: string }>();
+  const subscriptions = new Map<string, { plan: string; status: string; wallet_balance_usd: number }>();
   const usage = new Map<string, number>(); // tenantId -> cost_incurred_usd
-  const notified = new Set<string>(); // "tenantId:noticeKey"
+  const notifiedOnce = new Set<string>(); // "tenantId:noticeKey"
+  const notifiedCooldown = new Map<string, string>(); // "tenantId:noticeKey" -> sent_at ISO
+
+  function sub(tenantId: string) {
+    return subscriptions.get(tenantId);
+  }
 
   const db = {
     prepare(sql: string) {
@@ -25,15 +33,25 @@ function fakeDb() {
         bind(...args: unknown[]) {
           return {
             async first<T>() {
+              if (sql.includes("wallet_balance_usd") && sql.includes("FROM subscriptions")) {
+                const [tenantId] = args as [string];
+                const row = sub(tenantId);
+                return (row ? { wallet_balance_usd: row.wallet_balance_usd } : null) as T | null;
+              }
               if (sql.includes("FROM subscriptions")) {
                 const [tenantId] = args as [string];
-                const sub = subscriptions.get(tenantId);
-                return (sub ? { ...sub, tenant_id: tenantId } : null) as T | null;
+                const row = sub(tenantId);
+                return (row ? { ...row, tenant_id: tenantId } : null) as T | null;
               }
               if (sql.includes("FROM usage_counters")) {
                 const [tenantId] = args as [string, string];
                 const cost = usage.get(tenantId);
                 return (cost === undefined ? null : { cost_incurred_usd: cost }) as T | null;
+              }
+              if (sql.includes("FROM tenant_notifications")) {
+                const [tenantId, noticeKey] = args as [string, string];
+                const sentAt = notifiedCooldown.get(`${tenantId}:${noticeKey}`);
+                return (sentAt === undefined ? null : { sent_at: sentAt }) as T | null;
               }
               throw new Error(`unhandled first(): ${sql}`);
             },
@@ -41,11 +59,29 @@ function fakeDb() {
               if (sql.startsWith("INSERT INTO usage_counters")) {
                 const [tenantId, , cost] = args as [string, string, number];
                 usage.set(tenantId, (usage.get(tenantId) ?? 0) + cost);
-              } else if (sql.startsWith("INSERT OR IGNORE INTO tenant_notifications")) {
+                return { success: true, meta: { changes: 1 } };
+              }
+              if (sql.startsWith("INSERT OR IGNORE INTO tenant_notifications")) {
                 const [tenantId, noticeKey] = args as [string, string];
                 const key = `${tenantId}:${noticeKey}`;
-                if (notified.has(key)) return { success: true, meta: { changes: 0 } };
-                notified.add(key);
+                if (notifiedOnce.has(key)) return { success: true, meta: { changes: 0 } };
+                notifiedOnce.add(key);
+                return { success: true, meta: { changes: 1 } };
+              }
+              if (sql.startsWith("INSERT INTO tenant_notifications") && sql.includes("ON CONFLICT")) {
+                const [tenantId, noticeKey, sentAt] = args as [string, string, string];
+                notifiedCooldown.set(`${tenantId}:${noticeKey}`, sentAt);
+                return { success: true, meta: { changes: 1 } };
+              }
+              if (sql.startsWith("UPDATE subscriptions") && sql.includes("wallet_balance_usd = wallet_balance_usd -")) {
+                const [amountUsd, tenantId] = args as [number, string];
+                const row = sub(tenantId);
+                if (!row || row.wallet_balance_usd < amountUsd) return { success: true, meta: { changes: 0 } };
+                row.wallet_balance_usd -= amountUsd;
+                return { success: true, meta: { changes: 1 } };
+              }
+              if (sql.startsWith("INSERT INTO wallet_ledger")) {
+                return { success: true, meta: { changes: 1 } };
               }
               // cost_log INSERT: nothing to track for these tests.
               return { success: true, meta: { changes: 1 } };
@@ -58,9 +94,14 @@ function fakeDb() {
 
   return {
     db: db as unknown as D1Database,
-    setSubscription: (tenantId: string, plan: string, status = "active") =>
-      subscriptions.set(tenantId, { plan, status }),
-    setUsage: (tenantId: string, costUsd: number) => usage.set(tenantId, costUsd)
+    setSubscription: (tenantId: string, plan: string, status = "active", walletBalanceUsd = 0) =>
+      subscriptions.set(tenantId, { plan, status, wallet_balance_usd: walletBalanceUsd }),
+    setWalletBalance: (tenantId: string, amountUsd: number) => {
+      const existing = sub(tenantId);
+      subscriptions.set(tenantId, existing ? { ...existing, wallet_balance_usd: amountUsd } : { plan: "free", status: "pending", wallet_balance_usd: amountUsd });
+    },
+    setUsage: (tenantId: string, costUsd: number) => usage.set(tenantId, costUsd),
+    walletBalance: (tenantId: string) => sub(tenantId)?.wallet_balance_usd ?? 0
   };
 }
 
@@ -87,7 +128,7 @@ describe("dfsLivePost quota enforcement (cloud mode, bundled access)", () => {
     vi.clearAllMocks();
     fetchSpy.mockReset();
     // mockImplementation (not mockResolvedValue) so each call gets a fresh
-    // Response — a Response's body can only be read once, and some tests
+    // Response: a Response's body can only be read once, and some tests
     // below call dfsLivePost more than once against the same mock.
     fetchSpy.mockImplementation(async () =>
       new Response(
@@ -108,7 +149,7 @@ describe("dfsLivePost quota enforcement (cloud mode, bundled access)", () => {
   });
 
   it("blocks a free-plan tenant before ever calling DataForSEO", async () => {
-    const { db } = fakeDb(); // no subscription row -> free plan
+    const { db } = fakeDb(); // no subscription row -> free plan, no wallet
     const env = fakeEnv(db, { ...cloudOverrides, __tenantId: "tenant-free" });
 
     await expect(dfsLivePost(env, "research_keywords", "/v3/whatever/live", {})).rejects.toThrow(
@@ -120,7 +161,7 @@ describe("dfsLivePost quota enforcement (cloud mode, bundled access)", () => {
   it("allows a pro-plan tenant under quota and records the usage", async () => {
     const { db, setSubscription, setUsage } = fakeDb();
     setSubscription("tenant-pro", "pro");
-    setUsage("tenant-pro", 2); // well under pro's $10 quota
+    setUsage("tenant-pro", 1); // well under pro's $4 quota
     const env = fakeEnv(db, { ...cloudOverrides, __tenantId: "tenant-pro" });
 
     const result = await dfsLivePost(env, "research_keywords", "/v3/whatever/live", {});
@@ -128,10 +169,10 @@ describe("dfsLivePost quota enforcement (cloud mode, bundled access)", () => {
     expect(fetchSpy).toHaveBeenCalledOnce();
   });
 
-  it("blocks a pro-plan tenant who has already hit their quota", async () => {
+  it("blocks a pro-plan tenant who has already hit their quota and has no wallet balance", async () => {
     const { db, setSubscription, setUsage } = fakeDb();
     setSubscription("tenant-pro", "pro");
-    setUsage("tenant-pro", 10); // exactly at pro's $10 quota
+    setUsage("tenant-pro", 4); // exactly at pro's $4 quota
     const env = fakeEnv(db, { ...cloudOverrides, __tenantId: "tenant-pro" });
 
     await expect(dfsLivePost(env, "research_keywords", "/v3/whatever/live", {})).rejects.toThrow(
@@ -152,18 +193,29 @@ describe("dfsLivePost quota enforcement (cloud mode, bundled access)", () => {
   it("warns at 80% of quota and again at 100%, each exactly once per period", async () => {
     const { db, setSubscription, setUsage } = fakeDb();
     setSubscription("tenant-pro", "pro");
-    setUsage("tenant-pro", 7.9); // pro's quota is $10 — this call's $1 cost lands at 8.9 (>80%)
+    setUsage("tenant-pro", 2.9); // pro's quota is $4; a $0.5 call lands at 3.4 (85%)
+    fetchSpy.mockImplementation(async () =>
+      new Response(
+        JSON.stringify({
+          status_code: 20000,
+          status_message: "ok",
+          cost: 0.5,
+          tasks: [{ id: "1", status_code: 20000, status_message: "ok", cost: 0.5, result: [{ hit: true }] }]
+        }),
+        { status: 200 }
+      )
+    );
     const env = fakeEnv(db, { ...cloudOverrides, __tenantId: "tenant-pro" });
 
     await dfsLivePost(env, "research_keywords", "/v3/whatever/live", {});
     expect(notifyQuotaWarning).toHaveBeenCalledTimes(1);
     expect(notifyQuotaWarning).toHaveBeenCalledWith(env, "tenant-pro", 80);
 
-    // A second call in the same period, still under 100% (usage now 9.9/10) — no repeat warning.
+    // A second call, still under 100% (usage now 3.9/4): no repeat warning.
     await dfsLivePost(env, "research_keywords", "/v3/whatever/live", {});
     expect(notifyQuotaWarning).toHaveBeenCalledTimes(1);
 
-    // A third call pushes usage to 10.9/10 (over 100%) — fires the 100% warning once.
+    // A third call pushes usage to 4.4/4 (over 100%): fires the 100% warning once.
     await dfsLivePost(env, "research_keywords", "/v3/whatever/live", {});
     expect(notifyQuotaWarning).toHaveBeenCalledTimes(2);
     expect(notifyQuotaWarning).toHaveBeenLastCalledWith(env, "tenant-pro", 100);
@@ -175,5 +227,89 @@ describe("dfsLivePost quota enforcement (cloud mode, bundled access)", () => {
 
     await expect(dfsLivePost(env, "research_keywords", "/v3/whatever/live", {})).rejects.toThrow(QuotaExceededError);
     expect(notifyQuotaWarning).not.toHaveBeenCalled();
+  });
+});
+
+describe("dfsLivePost overage wallet", () => {
+  const fetchSpy = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    fetchSpy.mockReset();
+    fetchSpy.mockImplementation(async () =>
+      new Response(
+        JSON.stringify({
+          status_code: 20000,
+          status_message: "ok",
+          cost: 1,
+          tasks: [{ id: "1", status_code: 20000, status_message: "ok", cost: 1, result: [{ hit: true }] }]
+        }),
+        { status: 200 }
+      )
+    );
+    vi.stubGlobal("fetch", fetchSpy);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("lets an over-quota pro tenant through when their wallet has balance, and debits cost plus the overage markup", async () => {
+    const { db, setSubscription, setUsage, walletBalance } = fakeDb();
+    setSubscription("tenant-pro", "pro", "active", 5); // $5 in the wallet
+    setUsage("tenant-pro", 4); // already at pro's $4 quota
+    const env = fakeEnv(db, { ...cloudOverrides, __tenantId: "tenant-pro" });
+
+    const result = await dfsLivePost(env, "research_keywords", "/v3/whatever/live", {});
+    expect(result).toEqual([{ hit: true }]);
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    // this call's real cost is $1, debited at $1 * OVERAGE_MARKUP_MULTIPLIER (1.15) = $1.15
+    expect(walletBalance("tenant-pro")).toBeCloseTo(5 - 1.15, 5);
+  });
+
+  it("lets a free-plan tenant with no subscription pay purely from their wallet, no plan needed", async () => {
+    const { db, setWalletBalance, walletBalance } = fakeDb();
+    setWalletBalance("tenant-wallet-only", 10);
+    const env = fakeEnv(db, { ...cloudOverrides, __tenantId: "tenant-wallet-only" });
+
+    const result = await dfsLivePost(env, "research_keywords", "/v3/whatever/live", {});
+    expect(result).toEqual([{ hit: true }]);
+    expect(walletBalance("tenant-wallet-only")).toBeCloseTo(10 - 1.15, 5);
+  });
+
+  it("blocks once both the quota and the wallet are exhausted", async () => {
+    const { db, setSubscription, setUsage } = fakeDb();
+    setSubscription("tenant-pro", "pro", "active", 0);
+    setUsage("tenant-pro", 4);
+    const env = fakeEnv(db, { ...cloudOverrides, __tenantId: "tenant-pro" });
+
+    await expect(dfsLivePost(env, "research_keywords", "/v3/whatever/live", {})).rejects.toThrow(QuotaExceededError);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("warns once the wallet balance drops under the low-balance threshold, debounced by cooldown", async () => {
+    const { db, setSubscription, setUsage } = fakeDb();
+    setSubscription("tenant-pro", "pro", "active", 2.5); // just above the $2 low-balance threshold
+    setUsage("tenant-pro", 4);
+    const env = fakeEnv(db, { ...cloudOverrides, __tenantId: "tenant-pro" });
+
+    // $1 * 1.15 = $1.15 debited -> balance 1.35, under the $2 threshold.
+    await dfsLivePost(env, "research_keywords", "/v3/whatever/live", {});
+    expect(notifyLowWalletBalance).toHaveBeenCalledTimes(1);
+    expect(notifyLowWalletBalance).toHaveBeenCalledWith(env, "tenant-pro", expect.closeTo(1.35, 5));
+
+    // A second overage call still under the threshold: cooldown suppresses a repeat.
+    await dfsLivePost(env, "research_keywords", "/v3/whatever/live", {});
+    expect(notifyLowWalletBalance).toHaveBeenCalledTimes(1);
+  });
+
+  it("never fires the low-balance warning while comfortably above the threshold", async () => {
+    const { db, setSubscription, setUsage } = fakeDb();
+    setSubscription("tenant-pro", "pro", "active", 50);
+    setUsage("tenant-pro", 4);
+    const env = fakeEnv(db, { ...cloudOverrides, __tenantId: "tenant-pro" });
+
+    await dfsLivePost(env, "research_keywords", "/v3/whatever/live", {});
+    expect(notifyLowWalletBalance).not.toHaveBeenCalled();
   });
 });
