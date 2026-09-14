@@ -1,3 +1,5 @@
+import { AUDIT_UA } from "../lib/product";
+
 /**
  * Minimal robots.txt parser — honors `Disallow`/`Allow` prefix rules under
  * `User-agent: *` only (no wildcard/`$` matching, no crawl-delay, no
@@ -45,7 +47,7 @@ export async function fetchRobotsRules(origin: string): Promise<RobotsRules> {
   let rules: Rule[] = [];
   try {
     const res = await fetch(new URL("/robots.txt", origin), {
-      headers: { "user-agent": "mcp-seo-toolkit-audit/0.1" }
+      headers: { "user-agent": AUDIT_UA }
     });
     if (res.ok) {
       rules = parseRobotsTxt(await res.text());

@@ -17,7 +17,8 @@ describe("marketing routes", () => {
     const res = await marketing.request("/", {}, fakeEnv());
     expect(res.status).toBe(200);
     const body = await res.text();
-    expect(body).toContain("mcp-seo-toolkit");
+    expect(body).toContain("Vouched");
+    expect(body).toContain("vouched-seo-mcp");
     expect(body).toContain("Model Context Protocol");
     expect(body).toContain("self-host");
     expect(body).toContain('<meta name="description"');
@@ -45,9 +46,9 @@ describe("marketing routes", () => {
     const res = await marketing.request("/pricing", {}, fakeEnv());
     expect(res.status).toBe(200);
     const body = await res.text();
-    expect(body).toContain("Free (self-host)");
-    expect(body).toContain("Pro (cloud)");
-    expect(body).toContain("Team (cloud)");
+    expect(body).toContain("Community (self-host)");
+    expect(body).toContain("Pro (Cloud)");
+    expect(body).toContain("Team (Cloud)");
     expect(body).toContain("$4");
     expect(body).toContain("$20");
   });

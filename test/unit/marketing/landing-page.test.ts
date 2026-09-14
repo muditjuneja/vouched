@@ -2,34 +2,27 @@ import { describe, expect, it } from "vitest";
 import { renderLanding } from "../../../src/marketing/pages/LandingPage";
 
 /**
- * The hero's ExampleCall used to be hand-placed <span> literals with two
- * real factual bugs baked in: a fact `type` that doesn't exist
- * (`seo.keyword`, not `seo.keyword_opportunity`) and an invented
- * confidence number (0.92) instead of search_index's real 0.75 default
- * (src/envelope/provenance.ts). It's now generated from a small line/token
- * table; these pin both the real field names (matching
- * src/domains/seo/research-keywords.ts and docs/OFE_ENVELOPE.md) and the
- * absence of the old wrong values, so a future edit can't quietly
- * reintroduce either.
+ * The hero used to show a JSON ExampleCall with two factual bugs
+ * (`seo.keyword` instead of `seo.keyword_opportunity`, and invented 0.92
+ * confidence). The live feed must still pin the real fact type and
+ * search_index's 0.75 default from src/envelope/provenance.ts.
  */
-describe("renderLanding: ExampleCall accuracy", () => {
+describe("renderLanding: live-feed accuracy", () => {
   const html = renderLanding("https://example.com/", true);
 
-  it("uses the real fact type and the real data field name", () => {
+  it("uses the real fact type from research_keywords", () => {
     expect(html).toContain("seo.keyword_opportunity");
-    expect(html).toContain("&quot;data&quot;");
-    expect(html).toContain("&quot;search_volume&quot;");
+    expect(html).toContain("research_keywords");
   });
 
-  it("does not contain the old invented type or field name", () => {
+  it("does not contain the old invented type", () => {
+    expect(html).not.toContain("seo.keyword\"");
     expect(html).not.toContain("&quot;seo.keyword&quot;");
-    expect(html).not.toContain("&quot;value&quot;");
-    expect(html).not.toContain("&quot;volume&quot;");
   });
 
   it("uses search_index's real default confidence (0.75), not a made-up number", () => {
-    expect(html).toContain(">0.75<");
-    expect(html).not.toContain(">0.92<");
+    expect(html).toContain("search_index · 0.75");
+    expect(html).not.toContain("seo.keyword_opportunity · search_index · 0.92");
   });
 });
 
@@ -45,11 +38,24 @@ describe("renderLanding: domain icon grid", () => {
     const domainGridSection = html.slice(domainGridStart, domainGridStart + 4000);
     expect(domainGridSection).toContain('aria-hidden="true"');
   });
+});
 
-  it("uses a padlock for the closed-source pain point, not the unrelated code-bracket icon", () => {
-    const bandStart = html.indexOf("Closed-source scores");
-    const cardHtml = html.slice(Math.max(0, bandStart - 400), bandStart);
-    expect(cardHtml).toContain("<rect");
+describe("renderLanding: story split", () => {
+  const html = renderLanding("https://example.com/", true);
+
+  it("sells Cloud and Community as the same tools, different operators", () => {
+    expect(html).toContain("Vouched Cloud");
+    expect(html).toContain("Self-hosted Community");
+    expect(html).toContain("Start on Cloud");
+    expect(html).toContain("#self-host");
+  });
+
+  it("keeps wrangler / claude mcp add under Community, not the hero", () => {
+    const heroEnd = html.indexOf("What the agent can do");
+    const hero = html.slice(0, heroEnd);
+    expect(hero).not.toContain("wrangler d1 create");
+    expect(html).toContain("wrangler d1 create vouched-seo-mcp");
+    expect(html).toContain("claude mcp add --transport http vouched-seo-mcp");
   });
 });
 

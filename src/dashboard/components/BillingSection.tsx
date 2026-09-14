@@ -27,7 +27,7 @@ function TopupForm({ amountUsd }: { amountUsd: number }) {
 export function BillingSection({ data }: { data: DashboardData }) {
   const pct = data.quotaUsd > 0 ? Math.min(100, Math.round((data.usageUsd / data.quotaUsd) * 100)) : 0;
   return (
-    <section>
+    <section class="panel">
       <h2>Plan &amp; usage</h2>
       <p>
         Current plan: <strong>{data.plan}</strong>
@@ -35,14 +35,19 @@ export function BillingSection({ data }: { data: DashboardData }) {
       {data.plan === "free" ? (
         <p class="muted">Free doesn't include bundled DataForSEO access. Self-host with your own key, upgrade below, or pay straight from a prepaid wallet.</p>
       ) : (
-        <p>
-          DataForSEO usage this period: ${data.usageUsd.toFixed(2)} / ${data.quotaUsd.toFixed(2)} ({pct}%)
-        </p>
+        <>
+          <p>
+            DataForSEO usage this period: ${data.usageUsd.toFixed(2)} / ${data.quotaUsd.toFixed(2)} ({pct}%)
+          </p>
+          <div class="meter" aria-hidden="true">
+            <span style={`width:${pct}%`} />
+          </div>
+        </>
       )}
       {data.dodoConfigured ? (
         <>
-          <UpgradeForm plan="pro" priceUsd={MONTHLY_QUOTA_USD.pro} />
-          <UpgradeForm plan="team" priceUsd={MONTHLY_QUOTA_USD.team} />
+          {data.plan === "free" ? <UpgradeForm plan="pro" priceUsd={MONTHLY_QUOTA_USD.pro} /> : null}
+          {data.plan !== "team" ? <UpgradeForm plan="team" priceUsd={MONTHLY_QUOTA_USD.team} /> : null}
         </>
       ) : (
         <p class="muted">Billing isn't configured on this deployment yet.</p>

@@ -21,7 +21,7 @@ describe("Hono app — routes not requiring D1/R2", () => {
   it("GET / serves the marketing landing page", async () => {
     const res = await app.request("/", {}, fakeEnv());
     expect(res.status).toBe(200);
-    expect(await res.text()).toContain("mcp-seo-toolkit");
+    expect(await res.text()).toContain("Vouched");
   });
 
   it("GET /health reports ok", async () => {

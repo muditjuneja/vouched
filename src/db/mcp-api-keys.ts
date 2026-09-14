@@ -1,4 +1,4 @@
-const KEY_PREFIX = "mst_"; // mcp-seo-toolkit — a recognizable, greppable prefix, same idea as Stripe's sk_live_
+import { KEY_PREFIX } from "../lib/product";
 
 export interface McpApiKeyRow {
   key_id: string;

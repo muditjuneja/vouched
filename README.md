@@ -1,43 +1,27 @@
-# mcp-seo-toolkit
+# vouched-seo-mcp (Vouched)
 
-An open-source (MIT), self-hostable MCP server for SEO/marketing data on
-Cloudflare Workers — a genuinely open alternative to commercial tools like
-OpenRush, which despite the name is closed-source and credit-metered. It's
-also available as a hosted cloud product for anyone who'd rather not run
-their own Worker.
+An open-source (MIT) MCP server for SEO/marketing data on Cloudflare
+Workers. Spoken name: **Vouched**. Site: vouchedhq.com. Machine id:
+`vouched-seo-mcp`. Dataset URIs stay `mcpseo://` (OFE-compatible).
 
-Two tiers, split by what backs them:
+SEO facts your agent can cite — same 18 tools whether you run **Vouched
+Cloud** or **self-hosted Community**.
 
-- **Free tier** (`core`, `audit`, `gsc`, `analytics`) — official Google APIs
-  (Search Console, GA4) plus a self-crawl. Zero paid vendors, zero markup.
-- **DataForSEO-backed tier** (`seo`, `serp`, `backlinks`, `ai_visibility`) —
-  same tool shapes, backed by [DataForSEO](https://dataforseo.com/).
-  Self-host it pay-as-you-go with **your own API key** (never marked up),
-  or use the hosted cloud plan, which bundles DataForSEO access into a flat
-  monthly price instead.
+- **Community / self-host** — your Worker, optional BYOK DataForSEO, zero
+  markup. See [`docs/SELF_HOST.md`](docs/SELF_HOST.md).
+- **Cloud** — we run it; bundled DataForSEO; dashboard, keys, quotas.
+  See [`docs/CLOUD.md`](docs/CLOUD.md).
+
+Vendor split (free Google/self-crawl tools vs DataForSEO-backed tools) is
+a capability footnote, not the Cloud vs Community story.
 
 **All 18 tools in OpenRush's manifest are implemented** —
 `describe_capabilities` reports `implemented: true` across the board.
 
-## Two ways to run this
-
-- **Self-host it** — your own Cloudflare account, your own bearer token,
-  optionally your own DataForSEO/Google credentials, `CLOUD_MODE` unset.
-  Free forever. See **[`docs/SELF_HOST.md`](docs/SELF_HOST.md)** for setup,
-  per-domain tool details, and known field-shape caveats.
-- **Use the hosted cloud plan** — Clerk auth, Dodo Payments billing,
-  bundled DataForSEO access metered against a flat Free/Pro/Team quota, a
-  dashboard, and marketing/pSEO pages, all in this same repo behind a
-  `CLOUD_MODE` flag that leaves self-host behavior untouched when unset.
-  See **[`docs/CLOUD.md`](docs/CLOUD.md)** for the full architecture and
-  milestone-by-milestone status.
-
 ## Docs
 
-- [`docs/SELF_HOST.md`](docs/SELF_HOST.md) — self-host setup and free/paid
-  tier details.
-- [`docs/CLOUD.md`](docs/CLOUD.md) — cloud offering architecture, auth,
-  billing, quotas, dashboard, marketing/pSEO, and hardening.
+- [`docs/SELF_HOST.md`](docs/SELF_HOST.md) — self-host setup.
+- [`docs/CLOUD.md`](docs/CLOUD.md) — cloud architecture.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — overall system design.
 - [`docs/TOOLS.md`](docs/TOOLS.md) — generated tool-by-tool reference.
 - [`docs/OFE_ENVELOPE.md`](docs/OFE_ENVELOPE.md) — the shared response
@@ -46,15 +30,12 @@ Two tiers, split by what backs them:
 ## Status
 
 M0-M19 are complete and pushed: the full 18-tool self-hosted server, plus
-the entire cloud pivot (Hono migration, multi-tenant D1, Clerk auth, Dodo
-billing, bundled-DataForSEO quota enforcement with a real margin, a
-prepaid overage wallet for usage beyond a plan's bundled quota, a
-dashboard, landing/pSEO pages, rate limiting, admin alerting, and
-transactional email via xmit.sh). Every external integration built
-without a live account to test against in this sandbox (DataForSEO field
-shapes, Clerk, Dodo, xmit.sh) has its unverified assumptions called out
-explicitly in code comments and in the docs above; confirm against the
-real service before trusting those specific claims.
+the cloud surface (Hono, multi-tenant D1, Clerk, Dodo billing, bundled
+DataForSEO quotas with a real margin, a prepaid overage wallet for usage
+beyond a plan's bundled quota, dashboard, marketing/pSEO). External
+integrations built without a live account in this sandbox have unverified
+assumptions called out in comments and docs; confirm against the real
+service before trusting those claims.
 
 Also see the **[known sandbox limitation](docs/SELF_HOST.md#known-limitation-of-some-sandboxed-dev-environments)**
 affecting `wrangler dev`/`deploy` and `@cloudflare/vitest-pool-workers` in
@@ -62,10 +43,6 @@ network-restricted environments.
 
 ## Open decisions (not settled by this build)
 
-- **Project name** — `mcp-seo-toolkit` is a placeholder throughout; the
-  literal name "OpenRush" is unusable (a commercial product owns it, and an
-  unrelated small OSS repo already uses the name too). See `LICENSE`'s
-  copyright line as well once a real name/owner is picked.
 - **Workers plan** — the crawler (`audit_site`) and multi-call tools like
   `inspect_domain` need the Paid plan's higher CPU/subrequest limits; the
   Free plan's 10ms CPU / 50-subrequest caps won't run them.

@@ -14,14 +14,15 @@ import { CheckIcon, LockIcon, SearchIcon } from "../../../src/marketing/componen
  * break a card link, or regress the decorative-icon accessibility fix.
  */
 describe("Nav", () => {
-  it("links to /dashboard for both the nav item set and the Sign in button", () => {
+  it("links Tools, Pricing, vs OpenRush, and Cloud when cloudMode is on", () => {
     const html = renderToString(<Nav cloudMode />);
     expect(html).toContain('href="/"');
     expect(html).toContain('href="/tools"');
     expect(html).toContain('href="/pricing"');
-    expect(html).toContain('href="/vs/ahrefs"');
+    expect(html).toContain('href="/vs/open-seo"');
     expect(html).toContain('class="btn" href="/dashboard"');
-    expect(html).toContain("Sign in");
+    expect(html).toContain("Cloud");
+    expect(html).toContain("Vouched");
   });
 });
 

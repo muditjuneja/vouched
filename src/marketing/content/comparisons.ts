@@ -41,12 +41,12 @@ export const COMPARISON_PAGES: ComparisonPage[] = [
   {
     slug: "ahrefs",
     competitor: "Ahrefs",
-    title: "mcp-seo-toolkit vs Ahrefs: MCP-native and open source",
+    title: "Vouched vs Ahrefs: MCP-native and open source",
     metaDescription:
-      "How the open-source, self-hostable mcp-seo-toolkit compares to Ahrefs: licensing, hosting, pricing model, and MCP-native access vs a dashboard.",
+      "How the open-source, self-hostable Vouched compares to Ahrefs: licensing, hosting, pricing model, and MCP-native access vs a dashboard.",
     intro:
       "Ahrefs is a long-established, dashboard-first SEO suite with its own crawler and " +
-      "backlink index. mcp-seo-toolkit is a different kind of tool: an open-source MCP " +
+      "backlink index. Vouched is a different kind of tool: an open-source MCP " +
       "server that exposes the same category of data (keywords, backlinks, SERPs, " +
       "technical audits) as callable tools for an AI agent, backed by DataForSEO rather " +
       "than a proprietary index it built itself.",
@@ -56,7 +56,7 @@ export const COMPARISON_PAGES: ComparisonPage[] = [
       MCP_ROW,
       {
         label: "Underlying data",
-        us: "DataForSEO's search/backlink index (third-party, pay-as-you-go), not a proprietary crawler mcp-seo-toolkit built itself.",
+        us: "DataForSEO's search/backlink index (third-party, pay-as-you-go), not a proprietary crawler Vouched built itself.",
         them: "Ahrefs' own proprietary web crawler and link index, built and maintained in-house over many years."
       },
       {
@@ -66,7 +66,7 @@ export const COMPARISON_PAGES: ComparisonPage[] = [
       }
     ],
     caveat:
-      "Ahrefs' index scale and feature depth (built over many years) and mcp-seo-toolkit's " +
+      "Ahrefs' index scale and feature depth (built over many years) and Vouched's " +
       "DataForSEO-backed coverage are not the same thing, and this page doesn't claim " +
       "equivalence. The honest comparison is structural (open vs. closed, self-hostable " +
       "vs. not, MCP-native vs. dashboard-first), not a feature-count contest."
@@ -74,12 +74,12 @@ export const COMPARISON_PAGES: ComparisonPage[] = [
   {
     slug: "semrush",
     competitor: "Semrush",
-    title: "mcp-seo-toolkit vs Semrush: open source and MCP-native",
+    title: "Vouched vs Semrush: open source and MCP-native",
     metaDescription:
-      "How the open-source, self-hostable mcp-seo-toolkit compares to Semrush: licensing, hosting, pricing model, and MCP-native access vs a dashboard suite.",
+      "How the open-source, self-hostable Vouched compares to Semrush: licensing, hosting, pricing model, and MCP-native access vs a dashboard suite.",
     intro:
       "Semrush is a broad, all-in-one marketing suite (SEO, PPC, content, social) delivered " +
-      "as a hosted dashboard. mcp-seo-toolkit is narrower by design, SEO/marketing data " +
+      "as a hosted dashboard. Vouched is narrower by design, SEO/marketing data " +
       "only, and ships as an MCP server plus a thin cloud dashboard, not a full " +
       "marketing-suite replacement.",
     rows: [
@@ -99,18 +99,18 @@ export const COMPARISON_PAGES: ComparisonPage[] = [
     ],
     caveat:
       "Semrush covers far more than SEO data (ads, content, social). This comparison is " +
-      "scoped to the SEO/marketing-data overlap, not a claim that mcp-seo-toolkit replaces " +
+      "scoped to the SEO/marketing-data overlap, not a claim that Vouched replaces " +
       "the whole suite."
   },
   {
     slug: "open-seo",
     competitor: "OpenRush",
-    title: "mcp-seo-toolkit vs OpenRush: actually open source",
+    title: "Vouched vs OpenRush: actually open source",
     metaDescription:
-      "mcp-seo-toolkit was built as a genuinely open alternative to OpenRush: MIT licensed and self-hostable vs. closed-source and credit-metered.",
+      "Vouched was built as a genuinely open alternative to OpenRush: MIT licensed and self-hostable vs. closed-source and credit-metered.",
     intro:
-      "mcp-seo-toolkit started as a direct response to OpenRush: despite the name, OpenRush " +
-      "is closed-source and sold on a credit-metered plan. mcp-seo-toolkit implements the " +
+      "Vouched started as a direct response to OpenRush: despite the name, OpenRush " +
+      "is closed-source and sold on a credit-metered plan. Vouched implements the " +
       "same 18-tool manifest (confirmed against OpenRush's own live describe_capabilities " +
       "response) but is MIT licensed, self-hostable, and on self-host bills you " +
       "directly for the DataForSEO usage you consume with zero markup on top.",
@@ -120,7 +120,7 @@ export const COMPARISON_PAGES: ComparisonPage[] = [
       {
         label: "Pricing model",
         us: "Self-host: free forever, bring your own DataForSEO key, zero markup. Cloud: flat monthly plans with bundled usage.",
-        them: "Credit-metered plans on top of the underlying data cost."
+        them: "Credits at $10 / 1,000 (public pricing fetched 6 Sep 2026). Per-tool credit costs in their docs vs marketing do not always match."
       },
       {
         label: "Tool manifest",
@@ -130,9 +130,9 @@ export const COMPARISON_PAGES: ComparisonPage[] = [
     ],
     caveat:
       "\"OpenRush\" here refers to the commercial product this project was built as an " +
-      "open alternative to (see this project's own README). Current OpenRush pricing " +
-      "specifics aren't reproduced here beyond the closed-source/credit-metered " +
-      "characterization already documented in this repo."
+      "open alternative to (see this project's own README). Credit list price ($10 / 1,000) " +
+      "is from OpenRush's public site on 6 Sep 2026; some per-tool credit costs (for example " +
+      "discover_competitors) differ between their docs and marketing pages."
   }
 ];
 

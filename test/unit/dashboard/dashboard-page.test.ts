@@ -22,6 +22,8 @@ describe("renderDashboard", () => {
     expect((html.match(/<h1/g) ?? []).length).toBe(1);
     // WebsitesSection (1) + BillingSection (2: plan/usage, overage wallet) + ApiKeysSection (1), each one level down from the page's single <h1>.
     expect((html.match(/<h2/g) ?? []).length).toBe(4);
+    expect(html).toContain('class="dash"');
+    expect(html).toContain("Cloud");
   });
 
   it("lists a tracked website with escaped, tenant-controlled text safe from injection", () => {

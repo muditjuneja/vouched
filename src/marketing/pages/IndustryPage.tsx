@@ -1,4 +1,5 @@
 import { Button } from "../../design";
+import { cloudCtaHref } from "../brand";
 import { Hero } from "../components/Hero";
 import type { IndustryPage as IndustryPageContent } from "../content/industries";
 import { GITHUB_URL } from "../github-url";
@@ -16,8 +17,9 @@ function IndustryPage({ page, cloudMode }: { page: IndustryPageContent; cloudMod
       </section>
 
       <section>
+        <p class="chapter">Tools</p>
         <h2>Relevant tools</h2>
-        <ul>
+        <ul class="tool-callouts">
           {page.toolCallouts.map((name) => (
             <li>
               <a href={`/tools/${name.replace(/_/g, "-")}`}>
@@ -32,7 +34,7 @@ function IndustryPage({ page, cloudMode }: { page: IndustryPageContent; cloudMod
         <Button href={GITHUB_URL} variant="primary">
           Self-host it
         </Button>
-        {cloudMode ? <Button href="/dashboard">Try the cloud version</Button> : <Button href="/pricing">See pricing</Button>}
+        <Button href={cloudCtaHref(cloudMode)}>Start on Cloud</Button>
       </section>
     </>
   );

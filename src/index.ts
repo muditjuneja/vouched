@@ -11,6 +11,7 @@ import { ConfigError } from "./lib/errors";
 import { checkAndIncrementRateLimit } from "./lib/rate-limit";
 import { marketing } from "./marketing/routes";
 import { buildMcpServer } from "./mcp/server";
+import { HEALTH_BODY } from "./lib/product";
 import { isCloudMode, type Env } from "./types/env";
 
 /** Constant-time string compare: avoids leaking the bearer token via timing. */
@@ -40,7 +41,7 @@ function isAuthorized(request: Request, env: Env): boolean {
 // the same handful of routes as before; behavior is unchanged.
 const app = new Hono<{ Bindings: Env }>();
 
-app.get("/health", (c) => c.text("mcp-seo-toolkit: ok\n"));
+app.get("/health", (c) => c.text(HEALTH_BODY));
 
 // Landing/pricing/comparison/pSEO pages, see src/marketing/routes.ts. Mounted
 // at the root ahead of everything else so it owns "/"; none of its other

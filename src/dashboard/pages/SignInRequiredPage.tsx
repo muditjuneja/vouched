@@ -13,7 +13,9 @@ function SignInRequiredPage({ currentUrl, signInUrl }: { currentUrl: string; sig
       <h1>Sign in required</h1>
       {target ? (
         <p>
-          <a href={target}>Sign in to continue</a>
+          <a class="btn btn-primary" href={target}>
+            Sign in to continue
+          </a>
         </p>
       ) : (
         <p class="muted">No sign-in page is configured on this deployment (CLERK_SIGN_IN_URL).</p>
