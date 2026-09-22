@@ -25,30 +25,41 @@ this doc is the quick-reference version.
   `keyword:`, `page:`, `property:`, `backlink:`); `provenance.ts` gives each
   fact a source_class + default confidence; `schema.ts` is the zod schema
   used as every tool's `outputSchema`.
-- **`src/mcp/manifest.ts`**: the full 18-tool manifest (confirmed against
-  OpenRush's own live `describe_capabilities`), each entry flagged
-  `implemented` so `describe_capabilities` never claims more than what's
-  actually registered, 17 of 18 today; `audit_site` is built but
-  deliberately held back (`implemented: false`) until its crawl is reworked
-  to fit this Workers architecture properly (fully sequential, no
-  concurrency, see `src/crawler/crawl.ts`). `src/mcp/server.ts` separately
-  splits `FREE_TOOL_MODULES` from `DATAFORSEO_TOOL_MODULES` and only
-  registers the latter when `DATAFORSEO_LOGIN`/`PASSWORD` are set, a tool
-  being "implemented" and a tool being "enabled right now" are different
+- **`src/mcp/manifest.ts`**: OpenRush's own 18-tool manifest (confirmed
+  against its live `describe_capabilities`) plus 2 more (`inspect_indexing`,
+  `list_sitemaps`) added once real gaps in this build's own GSC coverage
+  turned up, 20 total. Each entry flagged `implemented` so
+  `describe_capabilities` never claims more than what's actually
+  registered, 19 of 20 today; `audit_site` is built but deliberately held
+  back (`implemented: false`) until its crawl is reworked to fit this
+  Workers architecture properly (fully sequential, no concurrency, see
+  `src/crawler/crawl.ts`). `src/mcp/server.ts` separately splits
+  `FREE_TOOL_MODULES` from `DATAFORSEO_TOOL_MODULES` and only registers
+  the latter when `DATAFORSEO_LOGIN`/`PASSWORD` are set, a tool being
+  "implemented" and a tool being "enabled right now" are different
   questions, both answered honestly.
 - **`src/clients/`**: `dataforseo/` (Basic-auth client, D1-backed cost
   tracker, one `endpoints/*.ts` file per DataForSEO product area) and
   `google/` (plain `fetch` wrappers for Search Console + GA4 Data REST).
+  `search-console.ts` covers 3 distinct GSC REST surfaces, not just
+  `searchAnalytics.query`: `sitemaps.list` (`listSitemaps`) and the
+  separate `/v1/urlInspection/index:inspect` endpoint (`inspectUrl`, a
+  different API version/host from the rest of the file) back
+  `list_sitemaps`/`inspect_indexing` respectively.
+- **`src/domains/gsc/shared.ts`**: `cachedGscCall`, the one place every
+  `gsc` domain tool funnels its live Google calls through: a short-TTL KV
+  cache, see `src/lib/cache.ts`. Users' Search Console data is never
+  archived beyond that cache (Google's Limited Use rules).
 - **`src/crawler/`**: the self-crawl behind `audit_site`: robots.txt
   parsing, a bounded BFS, per-page checks, issue clustering.
 - **`src/db/`**: D1 query helpers. `websites.ts` (tracked sites config),
   `google_tokens.ts` (OAuth token storage). Migrations in `migrations/`.
 - **`src/lib/cache.ts`**: a generic short-TTL cache on the `CACHE` KV
-  binding (`getOrSetCache`, keyed by whatever the caller passes in).
-  `get_search_performance` is the first (only, so far) consumer: it wraps
-  every live Search Console query so an identical query within the TTL
-  never re-hits Google, and surfaces the real hit/miss via each fact's
-  `provenance.cache_hit` instead of that field being a permanent `false`.
+  binding (`getOrSetCache`, keyed by whatever the caller passes in). Every
+  `gsc` domain tool goes through it via `src/domains/gsc/shared.ts`'s
+  `cachedGscCall`, so an identical query within the TTL never re-hits Google, and
+  each fact's `provenance.cache_hit` reflects the real hit/miss instead of
+  being a permanent `false`.
 - **`src/resources/store.ts`**: R2-backed `mcpseo://` resource URIs, for
   datasets too large to inline. Now actually exercised by
   `get_search_performance`, which fetches one extra, larger page only when

@@ -1,10 +1,13 @@
 import type { Provenance } from "../envelope/types";
 
 /**
- * The full 18-tool target manifest, confirmed against OpenRush's own live
- * `describe_capabilities` response. `implemented` tracks build progress
- * honestly: `core.describe_capabilities` reports this as-is rather than
- * pretending unbuilt tools already exist.
+ * OpenRush's own 18-tool manifest, confirmed against its live
+ * `describe_capabilities` response, plus 2 more (`inspect_indexing`,
+ * `list_sitemaps`) added here beyond that parity baseline once real gaps
+ * in this build's own GSC coverage turned up (`urlInspection.index:inspect`
+ * and `sitemaps.list` were both entirely untouched). `implemented` tracks
+ * build progress honestly: `core.describe_capabilities` reports this as-is
+ * rather than pretending unbuilt tools already exist.
  */
 export interface ToolManifestEntry {
   name: string;
@@ -197,6 +200,32 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
     domain: "gsc",
     summary: "Query/page/date/country/device performance from Search Console, with filters and period-over-period comparison.",
     fact_types: ["gsc.performance_summary", "gsc.query_performance"],
+    source_classes: ["webmaster_console"],
+    requires_connection: "webmaster_console",
+    billing: "free",
+    implemented: true
+  },
+  {
+    // Beyond OpenRush's own 18-tool manifest this file was originally
+    // confirmed against: a real gap found in this build's GSC coverage
+    // (urlInspection.index:inspect was entirely untouched), not part of
+    // parity with OpenRush's live surface.
+    name: "inspect_indexing",
+    domain: "gsc",
+    summary: "Google's own indexing status for one URL: indexed?, canonical Google chose, mobile usability, rich results, last crawl.",
+    fact_types: ["gsc.index_status", "gsc.mobile_usability", "gsc.rich_results"],
+    source_classes: ["webmaster_console"],
+    requires_connection: "webmaster_console",
+    billing: "free",
+    implemented: true
+  },
+  {
+    // Same as inspect_indexing above: a real gap in GSC coverage
+    // (sitemaps.list was entirely untouched), added beyond OpenRush parity.
+    name: "list_sitemaps",
+    domain: "gsc",
+    summary: "Submitted sitemaps for a tracked website: last-read status, warnings/errors, submitted counts (Google's indexed count here is deprecated, always 0).",
+    fact_types: ["gsc.sitemap_status"],
     source_classes: ["webmaster_console"],
     requires_connection: "webmaster_console",
     billing: "free",

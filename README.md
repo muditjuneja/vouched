@@ -4,8 +4,10 @@ An open-source (MIT) MCP server for SEO/marketing data on Cloudflare
 Workers. Spoken name: **Vouched**. Site: vouchedhq.com. Machine id:
 `vouched-seo-mcp`. Dataset URIs stay `mcpseo://` (OFE-compatible).
 
-SEO facts your agent can cite, same 18-tool manifest whether you run
-**Vouched Cloud** or **self-hosted Community**.
+SEO facts your agent can cite, same 20-tool manifest whether you run
+**Vouched Cloud** or **self-hosted Community**: OpenRush's own 18-tool
+manifest, plus 2 more (`inspect_indexing`, `list_sitemaps`) added once
+this build found real gaps in its own Google Search Console coverage.
 
 - **Community / self-host**: your Worker, optional BYOK DataForSEO, zero
   markup. See [`docs/SELF_HOST.md`](docs/SELF_HOST.md).
@@ -15,8 +17,8 @@ SEO facts your agent can cite, same 18-tool manifest whether you run
 Vendor split (free Google/self-crawl tools vs DataForSEO-backed tools) is
 a capability footnote, not the Cloud vs Community story.
 
-**17 of 18 tools in OpenRush's manifest are implemented and exposed**,
-see [`docs/TOOLS.md`](docs/TOOLS.md) for the live per-tool
+**19 of 20 tools are implemented and exposed**, see
+[`docs/TOOLS.md`](docs/TOOLS.md) for the live per-tool
 `implemented`/enabled breakdown `describe_capabilities` itself reports.
 `audit_site` is built but deliberately held back until its crawl is
 reworked to fit this Workers architecture properly.
@@ -32,8 +34,8 @@ reworked to fit this Workers architecture properly.
 
 ## Status
 
-M0-M19 are complete and pushed: the full 18-tool-manifest self-hosted
-server (17 currently exposed, see above), plus
+M0-M19 are complete and pushed: the full 20-tool-manifest self-hosted
+server (19 currently exposed, see above), plus
 the cloud surface (Hono, multi-tenant D1, Clerk, Dodo billing, bundled
 DataForSEO quotas with a real margin, a prepaid overage wallet for usage
 beyond a plan's bundled quota, dashboard, marketing/pSEO). External

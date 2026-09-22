@@ -82,7 +82,10 @@ describe("get_search_performance", () => {
   it("defaults to a single-dimension query breakdown and produces one keyword entity per row", async () => {
     getWebsiteByDomain.mockResolvedValueOnce(WEBSITE);
     getValidAccessToken.mockResolvedValueOnce("token-123");
-    querySearchAnalytics.mockResolvedValueOnce({
+    // Same response for both the detail call and the totals-only call
+    // (dimensions: []) fetchTotals makes right after it; only the detail
+    // call's rows are asserted on here.
+    querySearchAnalytics.mockResolvedValue({
       rows: [{ keys: ["resend alternatives"], clicks: 10, impressions: 100, ctr: 0.1, position: 5 }]
     });
 
@@ -101,7 +104,7 @@ describe("get_search_performance", () => {
   it("cross-tabs multiple dimensions and adds both a keyword and a page entity when both are present", async () => {
     getWebsiteByDomain.mockResolvedValueOnce(WEBSITE);
     getValidAccessToken.mockResolvedValueOnce("token-123");
-    querySearchAnalytics.mockResolvedValueOnce({
+    querySearchAnalytics.mockResolvedValue({
       rows: [{ keys: ["resend alternatives", "https://example.com/blog"], clicks: 3, impressions: 30, ctr: 0.1, position: 4 }]
     });
 
@@ -116,10 +119,33 @@ describe("get_search_performance", () => {
     expect(rowFact?.subject).toHaveLength(2);
   });
 
+  it("computes gsc.performance_summary from a dedicated totals-only query (dimensions: []), not by summing the rowLimit-truncated detail rows", async () => {
+    getWebsiteByDomain.mockResolvedValueOnce(WEBSITE);
+    getValidAccessToken.mockResolvedValueOnce("token-123");
+    // Detail rows are capped at rowLimit: 1 (a single row, 10 clicks), but
+    // the property's real total for the period is far higher (31 clicks):
+    // exactly the shape of the bug this test guards against.
+    querySearchAnalytics.mockImplementation(async (_token, _siteUrl, query) => {
+      if (query.dimensions.length === 0) {
+        return { rows: [{ keys: [], clicks: 31, impressions: 20368, ctr: 0.0015, position: 11.2 }] };
+      }
+      return { rows: [{ keys: ["resend alternatives"], clicks: 10, impressions: 100, ctr: 0.1, position: 5 }] };
+    });
+
+    const result = await getSearchPerformance.handler(
+      { domain: "example.com", startDate: "2026-01-01", endDate: "2026-01-31", rowLimit: 1 },
+      fakeEnv()
+    );
+
+    const summaryFact = result.facts.find((f) => f.type === "gsc.performance_summary");
+    expect(summaryFact?.data).toMatchObject({ clicks: 31, impressions: 20368 });
+    expect(querySearchAnalytics).toHaveBeenCalledWith("token-123", "sc-domain:example.com", expect.objectContaining({ dimensions: [], rowLimit: 1 }));
+  });
+
   it("builds a device/query/page dimensionFilterGroups filter set from the convenience args", async () => {
     getWebsiteByDomain.mockResolvedValueOnce(WEBSITE);
     getValidAccessToken.mockResolvedValueOnce("token-123");
-    querySearchAnalytics.mockResolvedValueOnce({ rows: [] });
+    querySearchAnalytics.mockResolvedValue({ rows: [] });
 
     await getSearchPerformance.handler(
       {
@@ -148,6 +174,64 @@ describe("get_search_performance", () => {
     );
   });
 
+  it("appends the searchAppearance convenience filter and any customFilters, in that order", async () => {
+    getWebsiteByDomain.mockResolvedValueOnce(WEBSITE);
+    getValidAccessToken.mockResolvedValueOnce("token-123");
+    querySearchAnalytics.mockResolvedValue({ rows: [] });
+
+    await getSearchPerformance.handler(
+      {
+        domain: "example.com",
+        startDate: "2026-01-01",
+        endDate: "2026-01-31",
+        searchAppearance: "RICHCARD",
+        customFilters: [{ dimension: "query", operator: "excludingRegex", expression: "^free" }]
+      },
+      fakeEnv()
+    );
+
+    expect(querySearchAnalytics).toHaveBeenCalledWith(
+      "token-123",
+      "sc-domain:example.com",
+      expect.objectContaining({
+        filters: [
+          { dimension: "searchAppearance", operator: "equals", expression: "RICHCARD" },
+          { dimension: "query", operator: "excludingRegex", expression: "^free" }
+        ]
+      })
+    );
+  });
+
+  it("passes searchType/dataState/aggregationType/startRow straight through to every query, and surfaces response metadata", async () => {
+    getWebsiteByDomain.mockResolvedValueOnce(WEBSITE);
+    getValidAccessToken.mockResolvedValueOnce("token-123");
+    // The detail call's own response carries the metadata that ends up in
+    // result.data; the totals call right after it just needs to not crash.
+    querySearchAnalytics
+      .mockResolvedValueOnce({ rows: [], responseAggregationType: "byPage", metadata: { firstIncompleteDate: "2026-01-31" } })
+      .mockResolvedValue({ rows: [] });
+
+    const result = await getSearchPerformance.handler(
+      {
+        domain: "example.com",
+        startDate: "2026-01-01",
+        endDate: "2026-01-31",
+        searchType: "discover",
+        dataState: "all",
+        aggregationType: "byPage",
+        startRow: 50
+      },
+      fakeEnv()
+    );
+
+    expect(querySearchAnalytics).toHaveBeenCalledWith(
+      "token-123",
+      "sc-domain:example.com",
+      expect.objectContaining({ searchType: "discover", dataState: "all", aggregationType: "byPage", startRow: 50 })
+    );
+    expect(result.data).toMatchObject({ responseAggregationType: "byPage", firstIncompleteDate: "2026-01-31" });
+  });
+
   it("flags coverage as capped when the row count hits rowLimit, and leaves it uncapped otherwise", async () => {
     getWebsiteByDomain.mockResolvedValue(WEBSITE);
     getValidAccessToken.mockResolvedValue("token-123");
@@ -156,9 +240,13 @@ describe("get_search_performance", () => {
     // (see next test for when that probe actually finds more); here it
     // finds nothing extra, so scope_note falls back to the plain "narrow
     // the date range" wording instead of pointing at export_dataset.
+    // Call order for this rowLimit:1 (truncated) invocation: primary
+    // detail, primary totals, export-superset probe.
+    const row = { keys: ["a"], clicks: 1, impressions: 1, ctr: 1, position: 1 };
     querySearchAnalytics
-      .mockResolvedValueOnce({ rows: [{ keys: ["a"], clicks: 1, impressions: 1, ctr: 1, position: 1 }] })
-      .mockResolvedValueOnce({ rows: [{ keys: ["a"], clicks: 1, impressions: 1, ctr: 1, position: 1 }] });
+      .mockResolvedValueOnce({ rows: [row] })
+      .mockResolvedValueOnce({ rows: [row] })
+      .mockResolvedValueOnce({ rows: [row] });
     const capped = await getSearchPerformance.handler(
       { domain: "example.com", startDate: "2026-01-01", endDate: "2026-01-31", rowLimit: 1 },
       fakeEnv()
@@ -166,9 +254,8 @@ describe("get_search_performance", () => {
     expect(capped.coverage.scope_note).toContain("capped at 1 rows");
     expect(capped.coverage.scope_note).not.toContain("export_dataset");
 
-    querySearchAnalytics.mockResolvedValueOnce({
-      rows: [{ keys: ["a"], clicks: 1, impressions: 1, ctr: 1, position: 1 }]
-    });
+    // rowLimit: 25 with only 1 row isn't truncated: just primary detail + primary totals, no superset probe.
+    querySearchAnalytics.mockResolvedValueOnce({ rows: [row] }).mockResolvedValueOnce({ rows: [row] });
     const uncapped = await getSearchPerformance.handler(
       { domain: "example.com", startDate: "2026-01-01", endDate: "2026-01-31", rowLimit: 25 },
       fakeEnv()
@@ -181,9 +268,12 @@ describe("get_search_performance", () => {
     getValidAccessToken.mockResolvedValue("token-123");
 
     // 2026-01-08..2026-01-14 is 7 days; the preceding 7-day period is 01-01..01-07.
+    // Call order: primary detail, primary totals, previous detail, previous totals.
     querySearchAnalytics
       .mockResolvedValueOnce({ rows: [{ keys: ["resend alternatives"], clicks: 20, impressions: 200, ctr: 0.1, position: 4 }] })
-      .mockResolvedValueOnce({ rows: [{ keys: ["resend alternatives"], clicks: 10, impressions: 100, ctr: 0.1, position: 6 }] });
+      .mockResolvedValueOnce({ rows: [{ keys: [], clicks: 20, impressions: 200, ctr: 0.1, position: 4 }] })
+      .mockResolvedValueOnce({ rows: [{ keys: ["resend alternatives"], clicks: 10, impressions: 100, ctr: 0.1, position: 6 }] })
+      .mockResolvedValueOnce({ rows: [{ keys: [], clicks: 10, impressions: 100, ctr: 0.1, position: 6 }] });
 
     const result = await getSearchPerformance.handler(
       {
@@ -196,7 +286,7 @@ describe("get_search_performance", () => {
     );
 
     expect(querySearchAnalytics).toHaveBeenNthCalledWith(
-      2,
+      3,
       "token-123",
       "sc-domain:example.com",
       expect.objectContaining({ startDate: "2026-01-01", endDate: "2026-01-07" })
@@ -214,8 +304,11 @@ describe("get_search_performance", () => {
     getWebsiteByDomain.mockResolvedValue(WEBSITE);
     getValidAccessToken.mockResolvedValue("token-123");
 
+    // Call order: primary detail, primary totals, previous detail, previous totals.
     querySearchAnalytics
       .mockResolvedValueOnce({ rows: [{ keys: ["brand new query"], clicks: 5, impressions: 50, ctr: 0.1, position: 8 }] })
+      .mockResolvedValueOnce({ rows: [{ keys: [], clicks: 5, impressions: 50, ctr: 0.1, position: 8 }] })
+      .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [] });
 
     const result = await getSearchPerformance.handler(
@@ -231,30 +324,32 @@ describe("get_search_performance", () => {
   it("adds no deltas at all when compareToPreviousPeriod isn't set", async () => {
     getWebsiteByDomain.mockResolvedValueOnce(WEBSITE);
     getValidAccessToken.mockResolvedValueOnce("token-123");
-    querySearchAnalytics.mockResolvedValueOnce({ rows: [] });
+    querySearchAnalytics.mockResolvedValue({ rows: [] });
 
     const result = await getSearchPerformance.handler(
       { domain: "example.com", startDate: "2026-01-01", endDate: "2026-01-31" },
       fakeEnv()
     );
     expect(result.deltas).toEqual([]);
-    expect(querySearchAnalytics).toHaveBeenCalledTimes(1);
+    // Primary detail + primary totals, no previous-period calls.
+    expect(querySearchAnalytics).toHaveBeenCalledTimes(2);
   });
 
   it("serves an identical second call from cache, without hitting Google again, and reports cache_hit on its facts", async () => {
     getWebsiteByDomain.mockResolvedValue(WEBSITE);
     getValidAccessToken.mockResolvedValue("token-123");
-    querySearchAnalytics.mockResolvedValueOnce({
-      rows: [{ keys: ["resend alternatives"], clicks: 10, impressions: 100, ctr: 0.1, position: 5 }]
-    });
+    querySearchAnalytics
+      .mockResolvedValueOnce({ rows: [{ keys: ["resend alternatives"], clicks: 10, impressions: 100, ctr: 0.1, position: 5 }] })
+      .mockResolvedValueOnce({ rows: [{ keys: [], clicks: 10, impressions: 100, ctr: 0.1, position: 5 }] });
     const env = fakeEnv();
     const args = { domain: "example.com", startDate: "2026-01-01", endDate: "2026-01-31" };
 
     const first = await getSearchPerformance.handler(args, env);
+    expect(querySearchAnalytics).toHaveBeenCalledTimes(2);
     expect(first.facts[0]?.provenance.cache_hit).toBe(false);
 
     const second = await getSearchPerformance.handler(args, env);
-    expect(querySearchAnalytics).toHaveBeenCalledTimes(1);
+    expect(querySearchAnalytics).toHaveBeenCalledTimes(2);
     expect(second.facts[0]?.provenance.cache_hit).toBe(true);
     // Same underlying data both times, cache_hit is the only thing that should differ.
     expect(second.facts.map((f) => f.data)).toEqual(first.facts.map((f) => f.data));
@@ -268,22 +363,27 @@ describe("get_search_performance", () => {
 
     await getSearchPerformance.handler(args, fakeEnv());
     await getSearchPerformance.handler(args, fakeEnv());
-    expect(querySearchAnalytics).toHaveBeenCalledTimes(2);
+    // 2 calls per invocation (detail + totals) x 2 fresh envs.
+    expect(querySearchAnalytics).toHaveBeenCalledTimes(4);
   });
 
   it("probes for more rows beyond rowLimit exactly once, and adds an export_dataset resource only when there really are more", async () => {
     getWebsiteByDomain.mockResolvedValue(WEBSITE);
     getValidAccessToken.mockResolvedValue("token-123");
 
+    // Call order: primary detail (truncated at rowLimit:1), primary totals, export-superset probe (rowLimit:1000).
     const row = { keys: ["a"], clicks: 1, impressions: 1, ctr: 1, position: 1 };
-    querySearchAnalytics.mockResolvedValueOnce({ rows: [row] }).mockResolvedValueOnce({ rows: [row, row, row] });
+    querySearchAnalytics
+      .mockResolvedValueOnce({ rows: [row] })
+      .mockResolvedValueOnce({ rows: [row] })
+      .mockResolvedValueOnce({ rows: [row, row, row] });
 
     const result = await getSearchPerformance.handler(
       { domain: "example.com", startDate: "2026-01-01", endDate: "2026-01-31", rowLimit: 1 },
       fakeEnv()
     );
 
-    expect(querySearchAnalytics).toHaveBeenNthCalledWith(2, "token-123", "sc-domain:example.com", expect.objectContaining({ rowLimit: 1000 }));
+    expect(querySearchAnalytics).toHaveBeenNthCalledWith(3, "token-123", "sc-domain:example.com", expect.objectContaining({ rowLimit: 1000 }));
     expect(result.resources).toHaveLength(1);
     expect(result.resources[0]?.uri).toMatch(/^mcpseo:\/\//);
     expect(result.coverage.scope_note).toContain("export_dataset");
@@ -292,7 +392,7 @@ describe("get_search_performance", () => {
   it("never probes for more rows when rowLimit already covers everything returned", async () => {
     getWebsiteByDomain.mockResolvedValueOnce(WEBSITE);
     getValidAccessToken.mockResolvedValueOnce("token-123");
-    querySearchAnalytics.mockResolvedValueOnce({
+    querySearchAnalytics.mockResolvedValue({
       rows: [{ keys: ["a"], clicks: 1, impressions: 1, ctr: 1, position: 1 }]
     });
 
@@ -300,7 +400,7 @@ describe("get_search_performance", () => {
       { domain: "example.com", startDate: "2026-01-01", endDate: "2026-01-31", rowLimit: 25 },
       fakeEnv()
     );
-    expect(querySearchAnalytics).toHaveBeenCalledTimes(1);
+    expect(querySearchAnalytics).toHaveBeenCalledTimes(2);
     expect(result.resources).toEqual([]);
   });
 });

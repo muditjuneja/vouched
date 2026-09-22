@@ -10,9 +10,15 @@ const inputSchema = z.object({
 
 async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   const dataset = await readDataset(env.DATASETS, args.uri);
+  // Every current producer of a mcpseo:// uri (get_search_performance) stores
+  // an array of rows, so `returned`/`total` should count rows, not "1
+  // dataset object": reporting 1 while actually carrying, say, 1000 rows
+  // is a real, misleading undercount. Falls back to 1 only for a
+  // non-array dataset, which nothing currently stores.
+  const count = Array.isArray(dataset) ? dataset.length : 1;
 
   return envelope("core", { uri: args.uri, dataset })
-    .setCoverage({ returned: 1, total: 1, as_of: null, scope_note: "full, untruncated dataset" })
+    .setCoverage({ returned: count, total: count, as_of: null, scope_note: "full, untruncated dataset" })
     .build();
 }
 

@@ -8,6 +8,8 @@ import { describeCapabilities } from "../domains/core/describe-capabilities";
 import { exportDataset } from "../domains/core/export-dataset";
 import { listWebsitesTool } from "../domains/core/list-websites";
 import { getSearchPerformance } from "../domains/gsc/get-search-performance";
+import { inspectIndexing } from "../domains/gsc/inspect-indexing";
+import { listSitemapsTool } from "../domains/gsc/list-sitemaps";
 import { compareKeywordCoverage } from "../domains/seo/compare-keyword-coverage";
 import { discoverCompetitors } from "../domains/seo/discover-competitors";
 import { inspectDomain } from "../domains/seo/inspect-domain";
@@ -33,6 +35,8 @@ const FREE_TOOL_MODULES: ToolModule<any>[] = [
   listWebsitesTool,
   exportDataset,
   getSearchPerformance,
+  inspectIndexing,
+  listSitemapsTool,
   getWebsiteAnalytics
 ];
 

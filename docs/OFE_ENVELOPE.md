@@ -72,9 +72,11 @@ back to `entities[]` or pass an id straight into another tool:
   is still small enough to inline and emits no `resources[]` entry; large
   result sets elsewhere (e.g. `inspect_backlinks` with `view: "backlinks"`
   at a high limit) are a natural next candidate to wire up the same way.
-- `provenance.cache_hit`, real for `get_search_performance` (backed by
-  the `CACHE` KV binding, see `src/lib/cache.ts`); every other tool still
-  hardcodes `false` since nothing else caches yet.
+- `provenance.cache_hit`, real for every `gsc` domain tool
+  (`get_search_performance`, `inspect_indexing`, `list_sitemaps`, all
+  routed through `src/domains/gsc/shared.ts`'s `cachedGscCall` onto the
+  `CACHE` KV binding, see `src/lib/cache.ts`); every other domain's tools
+  still hardcode `false` since nothing else caches yet.
 - `next_actions`, the type and builder support exist; no tool populates
   them yet. Chaining today works fine by hand (e.g. call `discover_ai_citations`
   with a topic, or `inspect_domain` before `research_keywords`).

@@ -44,8 +44,13 @@ none of them set. Adding them unlocks the corresponding domains, which
 - **`audit`** (M2): `audit_site`, a bounded, robots.txt-aware self-crawl
   (meta/heading/image/indexability/broken-internal-link checks, issue
   clustering, a simple site-health score).
-- **`gsc` + `analytics`** (M3): `get_search_performance` and
-  `get_website_analytics`, via hand-rolled Google OAuth (no `googleapis`
+- **`gsc` + `analytics`** (M3, plus `inspect_indexing`/`list_sitemaps`
+  added later once real gaps in GSC coverage turned up):
+  `get_search_performance` (query/page/date/hour/country/device/
+  searchAppearance dimensions, `searchType` for Discover/Image/Video/News,
+  period-over-period deltas), `inspect_indexing` (per-URL indexing status
+  via `urlInspection.index:inspect`), `list_sitemaps` (`sitemaps.list`),
+  and `get_website_analytics`, via hand-rolled Google OAuth (no `googleapis`
   SDK, see `docs/ARCHITECTURE.md`) and plain `fetch` against the official
   Search Console / GA4 Data REST APIs. To connect an account, add a row to
   the `websites` D1 table (see `migrations/0001_init.sql`) with its
@@ -88,7 +93,8 @@ field names are a best-effort guess, not verified against docs or a live
 call. Spike this against the real API before trusting it, expect to revise
 the request body shape.
 
-**17 of 18 tools in OpenRush's manifest are implemented and exposed**,
+**19 of this build's 20 tools are implemented and exposed** (OpenRush's
+own 18-tool manifest, plus `inspect_indexing`/`list_sitemaps` added here),
 see [`docs/TOOLS.md`](TOOLS.md) for the live per-tool breakdown.
 `audit_site` is built but deliberately held back (`implemented: false`)
 until its crawl is reworked to fit this Workers architecture properly
