@@ -3,6 +3,9 @@ import { Badge } from "../../../src/design/components/Badge";
 import { Button } from "../../../src/design/components/Button";
 import { Callout } from "../../../src/design/components/Callout";
 import { Card } from "../../../src/design/components/Card";
+import { NavItem } from "../../../src/design/components/NavItem";
+import { Pagination } from "../../../src/design/components/Pagination";
+import { StatCard } from "../../../src/design/components/StatCard";
 import { Table } from "../../../src/design/components/Table";
 import { renderToString } from "../../../src/design/render";
 
@@ -87,5 +90,48 @@ describe("Table", () => {
     expect(html).toContain("<th>Name</th>");
     expect(html).toContain("<th>Domain</th>");
     expect(html).toContain("<td>Example</td>");
+  });
+});
+
+describe("NavItem", () => {
+  it("marks the active item with aria-current and a distinct class", () => {
+    const html = renderToString(<NavItem href="/dashboard" label="Overview" active />);
+    expect(html).toContain('href="/dashboard"');
+    expect(html).toContain("nav-item-active");
+    expect(html).toContain('aria-current="page"');
+  });
+
+  it("omits aria-current and the active class when not active", () => {
+    const html = renderToString(<NavItem href="/dashboard/billing" label="Billing" active={false} />);
+    expect(html).not.toContain("nav-item-active");
+    expect(html).not.toContain("aria-current");
+  });
+});
+
+describe("StatCard", () => {
+  it("renders the label, pre-formatted value, and optional sublabel", () => {
+    const html = renderToString(<StatCard label="Wallet balance" value="$4.00" sublabel="updated just now" />);
+    expect(html).toContain("Wallet balance");
+    expect(html).toContain("$4.00");
+    expect(html).toContain("updated just now");
+  });
+
+  it("applies a status-specific class when given", () => {
+    const html = renderToString(<StatCard label="Usage" value="$20 / $20" status="warn" />);
+    expect(html).toContain("stat-card-warn");
+  });
+});
+
+describe("Pagination", () => {
+  it("renders a real link for each side that has an href", () => {
+    const html = renderToString(<Pagination prevHref="/dashboard/usage?before=1" nextHref="/dashboard/usage?before=2" />);
+    expect(html).toContain('href="/dashboard/usage?before=1"');
+    expect(html).toContain('href="/dashboard/usage?before=2"');
+  });
+
+  it("renders a disabled, non-linked placeholder for a missing side", () => {
+    const html = renderToString(<Pagination prevHref={null} nextHref="/dashboard/usage?before=2" />);
+    expect(html).toContain("btn-disabled");
+    expect((html.match(/<a /g) ?? []).length).toBe(1);
   });
 });

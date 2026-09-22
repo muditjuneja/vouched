@@ -12,10 +12,13 @@ DATAFORSEO_PASSWORD=
 # Optional soft cap; the cost tracker warns past this, it does not hard-stop.
 DATAFORSEO_DAILY_BUDGET_USD=
 
-# Google OAuth (unlocks the gsc/analytics tools). Create a client at
-# https://console.cloud.google.com/apis/credentials, add
+# Google OAuth (unlocks the gsc/analytics tools, and the dashboard's
+# Search Console/Analytics property picker when adding a website). Create
+# a client at https://console.cloud.google.com/apis/credentials, add
 # `<your-worker-url>/oauth/google/callback` as an authorized redirect URI,
-# and enable the Search Console API + Google Analytics Data API.
+# and enable all three: Search Console API, Google Analytics Data API,
+# and Google Analytics Admin API (the picker's property list comes from
+# the Admin API specifically, a separate enablement from the Data API).
 GOOGLE_OAUTH_CLIENT_ID=
 GOOGLE_OAUTH_CLIENT_SECRET=
 
@@ -23,42 +26,47 @@ GOOGLE_OAUTH_CLIENT_SECRET=
 # Vitals enrichment. audit_site works without it, at a lower rate limit.
 PAGESPEED_API_KEY=
 
-# --- Cloud offering only — leave all of these unset for self-host ---
+# --- Cloud offering only, leave all of these unset for self-host ---
 # Setting CLOUD_MODE flips /mcp from the shared-bearer-token check above to
 # per-tenant API keys, and enables the Clerk-gated dashboard/OAuth-connect
 # routes. Self-host behavior is completely unaffected when this is unset.
 CLOUD_MODE=
 
 # Clerk (dashboard auth). CLERK_JWT_KEY is the PEM public key from your
-# Clerk dashboard's API Keys section — set it for zero-network-roundtrip
+# Clerk dashboard's API Keys section, set it for zero-network-roundtrip
 # session verification (Clerk's own recommendation for edge runtimes);
 # CLERK_SECRET_KEY is a fallback that verifies against Clerk's API instead.
 CLERK_SECRET_KEY=
 CLERK_JWT_KEY=
-# Where the dashboard sends a signed-out visitor — Clerk's Account Portal
+# Client-side Clerk key (starts pk_), from the same API Keys section.
+# Required for the dashboard's post-sign-in handshake: without it,
+# /dashboard 401s forever right after a successful Clerk sign-in (see
+# docs/CLOUD.md's M12 entry). Distinct from CLERK_SECRET_KEY above.
+CLERK_PUBLISHABLE_KEY=
+# Where the dashboard sends a signed-out visitor: Clerk's Account Portal
 # URL or a custom sign-in page; a redirect_url back to the dashboard is
 # appended automatically.
 CLERK_SIGN_IN_URL=
 
 # Dodo Payments (billing). Create Pro/Team products in the Dodo dashboard
 # first and paste their ids below; DODO_ENVIRONMENT defaults to test_mode
-# (set "live_mode" explicitly when you mean it — never live by accident).
+# (set "live_mode" explicitly when you mean it, never live by accident).
 DODO_API_KEY=
 DODO_WEBHOOK_SECRET=
 DODO_ENVIRONMENT=
 DODO_PRODUCT_ID_PRO=
 DODO_PRODUCT_ID_TEAM=
 
-# xmit.sh / Transmit (transactional email) — welcome/billing/quota/reconnect
+# xmit.sh / Transmit (transactional email): welcome/billing/quota/reconnect
 # notices. XMIT_FROM_EMAIL is the From address for all of them (deployment-
-# specific — no domain is hardcoded). XMIT_API_BASE_URL is an override,
+# specific, no domain is hardcoded). XMIT_API_BASE_URL is an override,
 # defaulting to https://api.xmit.sh, in case that endpoint path (a
-# best-effort guess — see src/email/client.ts's doc comment) needs correcting.
+# best-effort guess, see src/email/client.ts's doc comment) needs correcting.
 XMIT_API_KEY=
 XMIT_FROM_EMAIL=
 XMIT_API_BASE_URL=
 
-# The cloud tier's own DataForSEO account for bundled access — separate
+# The cloud tier's own DataForSEO account for bundled access, separate
 # from DATAFORSEO_LOGIN/PASSWORD above, which stays the self-host BYOK
 # path. Added in M14, unused until then.
 CLOUD_DATAFORSEO_LOGIN=

@@ -29,6 +29,8 @@ export interface Env {
   // ever read once isCloudMode(env) is true.
   CLOUD_MODE?: string;
   CLERK_SECRET_KEY?: string;
+  /** Client-side Clerk key, distinct from CLERK_SECRET_KEY: required by authenticateDashboardRequest's handshake redirect (src/auth/clerk.ts), which needs it to build the round-trip URL back to Clerk's Frontend API. */
+  CLERK_PUBLISHABLE_KEY?: string;
   CLERK_JWT_KEY?: string; // PEM public key, enables verifyToken() with zero network roundtrip
   /** Where the dashboard sends an unauthenticated visitor: Clerk's Account Portal or a custom sign-in page. A `redirect_url` param is appended. */
   CLERK_SIGN_IN_URL?: string;
@@ -87,6 +89,11 @@ export function hasGoogleOAuth(env: Env): boolean {
 /** True when transactional email (src/email/) is configured; cloud mode only reads this. */
 export function hasEmail(env: Env): boolean {
   return Boolean(env.XMIT_API_KEY);
+}
+
+/** True when Dodo Payments (src/billing/) is configured; cloud mode only reads this. */
+export function hasDodo(env: Env): boolean {
+  return Boolean(env.DODO_API_KEY);
 }
 
 /**

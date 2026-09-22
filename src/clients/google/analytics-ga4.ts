@@ -17,7 +17,7 @@ export interface GA4ReportQuery {
   limit?: number;
 }
 
-/** Plain REST call — no Google client library, see docs/ARCHITECTURE.md. */
+/** Plain REST call, no Google client library, see docs/ARCHITECTURE.md. */
 export async function runReport(
   accessToken: string,
   propertyId: string,
@@ -40,4 +40,37 @@ export async function runReport(
     throw new UpstreamError("ga4", await res.text(), res.status);
   }
   return res.json();
+}
+
+export interface GA4Property {
+  /** e.g. "properties/123456789": the exact id runReport's propertyId param expects. */
+  property: string;
+  displayName: string;
+}
+
+interface AccountSummariesResponse {
+  accountSummaries?: { propertySummaries?: { property: string; displayName: string }[] }[];
+  nextPageToken?: string;
+}
+
+/**
+ * Lists every GA4 property the connected Google account can access, via
+ * the Admin API's `accountSummaries.list` (same `analytics.readonly`
+ * scope this app already requests for the Data API above, no new consent
+ * needed), letting the dashboard offer a real property picker instead of
+ * a raw text field. Only the first page is fetched: reasonable for the
+ * common case (most tenants have a handful of properties, not hundreds);
+ * a tenant with enough properties to paginate would need this extended.
+ */
+export async function listProperties(accessToken: string): Promise<GA4Property[]> {
+  const res = await fetch("https://analyticsadmin.googleapis.com/v1beta/accountSummaries", {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+  if (!res.ok) {
+    throw new UpstreamError("ga4", await res.text(), res.status);
+  }
+  const body = (await res.json()) as AccountSummariesResponse;
+  return (body.accountSummaries ?? []).flatMap((account) =>
+    (account.propertySummaries ?? []).map((p) => ({ property: p.property, displayName: p.displayName }))
+  );
 }

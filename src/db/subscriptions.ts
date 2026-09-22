@@ -75,7 +75,7 @@ export async function upsertSubscription(db: D1Database, input: UpsertSubscripti
  * moment the status changes, so the tenant is warned right when the grace
  * period starts, not left to discover it via a sudden downgrade.
  */
-const PAYMENT_FAILURE_GRACE_DAYS = 3;
+export const PAYMENT_FAILURE_GRACE_DAYS = 3;
 
 /**
  * A tenant with no subscriptions row is the free plan. `active` is their
@@ -174,4 +174,23 @@ export async function debitWallet(db: D1Database, tenantId: string, amountUsd: n
       .run();
   }
   return applied;
+}
+
+export interface WalletLedgerRow {
+  id: number;
+  tenant_id: string;
+  delta_usd: number;
+  reason: "topup" | "overage_usage";
+  dodo_payment_id: string | null;
+  period: string | null;
+  created_at: string;
+}
+
+/** Most-recent-first wallet transaction history, for a billing page. */
+export async function listWalletLedger(db: D1Database, tenantId: string, limit = 20): Promise<WalletLedgerRow[]> {
+  const { results } = await db
+    .prepare("SELECT * FROM wallet_ledger WHERE tenant_id = ?1 ORDER BY created_at DESC, id DESC LIMIT ?2")
+    .bind(tenantId, limit)
+    .all<WalletLedgerRow>();
+  return results;
 }

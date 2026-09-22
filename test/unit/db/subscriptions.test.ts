@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { creditWallet, debitWallet, getEffectivePlan, getWalletBalance, type SubscriptionRow } from "../../../src/db/subscriptions";
+import {
+  creditWallet,
+  debitWallet,
+  getEffectivePlan,
+  getWalletBalance,
+  listWalletLedger,
+  type SubscriptionRow,
+  type WalletLedgerRow
+} from "../../../src/db/subscriptions";
 
 /**
  * A minimal fake D1Database: just enough of `.prepare().bind().first()`
@@ -219,5 +227,64 @@ describe("debitWallet", () => {
     balances.set("tenant-1", 5);
     expect(await debitWallet(db, "tenant-1", 5, "2026-01")).toBe(true);
     expect(balances.get("tenant-1")).toBe(0);
+  });
+});
+
+/** A tiny in-memory fake of wallet_ledger with real rows (unlike fakeWalletDb above, which only tracks the balance), enough to exercise listWalletLedger's ordering and limit. */
+function fakeLedgerDb() {
+  const rows: WalletLedgerRow[] = [];
+
+  const db = {
+    prepare(sql: string) {
+      return {
+        bind(...args: unknown[]) {
+          return {
+            async all<T>() {
+              if (sql.includes("FROM wallet_ledger")) {
+                const [tenantId, limit] = args as [string, number];
+                const results = rows
+                  .filter((r) => r.tenant_id === tenantId)
+                  .sort((a, b) => b.created_at.localeCompare(a.created_at) || b.id - a.id)
+                  .slice(0, limit);
+                return { success: true, meta: { changes: 0 }, results: results as unknown as T[] };
+              }
+              throw new Error(`unhandled all(): ${sql}`);
+            }
+          };
+        }
+      };
+    }
+  };
+
+  return {
+    db: db as unknown as D1Database,
+    addRow: (row: Omit<WalletLedgerRow, "id">) => rows.push({ ...row, id: rows.length + 1 })
+  };
+}
+
+describe("listWalletLedger", () => {
+  it("returns a tenant's own rows, most recent first", async () => {
+    const { db, addRow } = fakeLedgerDb();
+    addRow({ tenant_id: "tenant-1", delta_usd: 10, reason: "topup", dodo_payment_id: "pay_1", period: null, created_at: "2026-01-01T00:00:00Z" });
+    addRow({ tenant_id: "tenant-1", delta_usd: -1.15, reason: "overage_usage", dodo_payment_id: null, period: "2026-01", created_at: "2026-01-02T00:00:00Z" });
+    addRow({ tenant_id: "tenant-2", delta_usd: 25, reason: "topup", dodo_payment_id: "pay_2", period: null, created_at: "2026-01-03T00:00:00Z" });
+
+    const rows = await listWalletLedger(db, "tenant-1");
+    expect(rows).toHaveLength(2);
+    expect(rows[0]?.reason).toBe("overage_usage"); // most recent first
+    expect(rows[1]?.reason).toBe("topup");
+  });
+
+  it("respects the limit", async () => {
+    const { db, addRow } = fakeLedgerDb();
+    for (let i = 0; i < 5; i++) {
+      addRow({ tenant_id: "tenant-1", delta_usd: 1, reason: "topup", dodo_payment_id: `pay_${i}`, period: null, created_at: `2026-01-0${i + 1}T00:00:00Z` });
+    }
+    expect(await listWalletLedger(db, "tenant-1", 3)).toHaveLength(3);
+  });
+
+  it("returns an empty array for a tenant with no wallet activity", async () => {
+    const { db } = fakeLedgerDb();
+    expect(await listWalletLedger(db, "tenant-1")).toEqual([]);
   });
 });

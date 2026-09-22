@@ -1,31 +1,29 @@
 {
-  "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "vouched-seo-mcp",
-  "main": "src/index.ts",
-  "compatibility_date": "2026-06-11",
-  "compatibility_flags": ["nodejs_compat"],
-
-  // D1: config (websites), Google OAuth tokens, DataForSEO cost log,
-  // prior-observation snapshots (backs the OFE `deltas` field).
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "vouched-seo-mcp",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
-      "migrations_dir": "migrations"
-    }
-  ],
-
-  // R2: large exported datasets behind mcpseo:// resource URIs.
-  "r2_buckets": [
-    {
-      "binding": "DATASETS",
-      "bucket_name": "vouched-seo-mcp-datasets"
-    }
-  ]
-
-  // KV and Durable Objects are intentionally not bound yet — see plan
-  // M9 (Hardening) for short-TTL response caching and any future
-  // multi-tenant/coordination needs. A single-user D1-backed server
-  // doesn't need them for v1.
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "vouched-seo-mcp",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-06-11",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	// D1: config (websites), Google OAuth tokens, DataForSEO cost log,
+	// prior-observation snapshots (backs the OFE `deltas` field).
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "vouched-seo-mcp",
+			"database_id": "29f2593b-f475-4eac-b2d1-741f15a52a9c"
+		}
+	],
+	// R2: large exported datasets behind mcpseo:// resource URIs.
+	"r2_buckets": [
+		{
+			"binding": "DATASETS",
+			"bucket_name": "vouched-seo-mcp-datasets"
+		}
+	]
+	// KV and Durable Objects are intentionally not bound yet — see plan
+	// M9 (Hardening) for short-TTL response caching and any future
+	// multi-tenant/coordination needs. A single-user D1-backed server
+	// doesn't need them for v1.
 }

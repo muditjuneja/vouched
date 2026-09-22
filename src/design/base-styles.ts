@@ -115,4 +115,26 @@ export const BASE_CSS = `
   .tok-num { color: #fca5a5; }
   .tok-punc { color: #6b7280; }
   .tok-comment { color: #6b7280; font-style: italic; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.55rem 0.75rem; border-radius: var(--radius-sm);
+    text-decoration: none; color: var(--text); font-weight: 500; font-size: 0.95rem;
+  }
+  .nav-item:hover { background: var(--bg-alt); }
+  .nav-item-active { background: var(--bg-alt); color: var(--accent); font-weight: 700; }
+  .nav-item-icon { display: inline-flex; width: 1.1rem; height: 1.1rem; flex-shrink: 0; }
+
+  .stat-card {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md);
+    padding: 1.1rem 1.25rem; box-shadow: var(--shadow-sm);
+  }
+  .stat-card-label { margin: 0 0 0.35rem; font-size: 0.82rem; color: var(--muted); }
+  .stat-card-value { margin: 0; font-size: 1.7rem; font-weight: 800; letter-spacing: -0.01em; }
+  .stat-card-sublabel { margin: 0.3rem 0 0; font-size: 0.82rem; }
+  .stat-card-warn .stat-card-value { color: var(--status-warn-text); }
+  .stat-card-good .stat-card-value { color: var(--status-good-text); }
+
+  .pagination { display: flex; justify-content: space-between; gap: 0.75rem; margin-top: 1rem; }
+  .btn-disabled { opacity: 0.4; pointer-events: none; }
 `;

@@ -14,3 +14,6 @@ export { Callout } from "./components/Callout";
 export { Card, type CardProps } from "./components/Card";
 export { CodeWindow, type CodeWindowProps } from "./components/CodeWindow";
 export { Table, type TableProps } from "./components/Table";
+export { NavItem, type NavItemProps } from "./components/NavItem";
+export { StatCard, type StatCardProps } from "./components/StatCard";
+export { Pagination, type PaginationProps } from "./components/Pagination";

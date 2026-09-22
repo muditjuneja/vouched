@@ -18,12 +18,12 @@ function ApiKeyCreatedPage({ plaintext }: { plaintext: string }) {
         {`claude mcp add --transport http ${MCP_SERVER_NAME} https://<your-worker>/mcp \\\n  --header "Authorization: Bearer ${plaintext}"`}
       </pre>
       <p>
-        <a href="/dashboard">← Back to dashboard</a>
+        <a href="/dashboard/settings">← Back to settings</a>
       </p>
     </>
   );
 }
 
 export function renderApiKeyCreated(plaintext: string): string {
-  return renderPage({ title: "New API key", children: <ApiKeyCreatedPage plaintext={plaintext} /> });
+  return renderPage({ title: "New API key", activePath: "/dashboard/settings", children: <ApiKeyCreatedPage plaintext={plaintext} /> });
 }

@@ -3,9 +3,9 @@ import { buildAuthUrl, exchangeCodeForTokens } from "./google-oauth";
 import type { ScopeGroup } from "../db/google-tokens";
 import { isCloudMode, type Env } from "../types/env";
 
-const SCOPE_GROUPS: ScopeGroup[] = ["webmaster_console", "analytics_property"];
+export const SCOPE_GROUPS: ScopeGroup[] = ["webmaster_console", "analytics_property"];
 
-function isScopeGroup(value: string): value is ScopeGroup {
+export function isScopeGroup(value: string): value is ScopeGroup {
   return SCOPE_GROUPS.includes(value as ScopeGroup);
 }
 
@@ -13,9 +13,9 @@ function isScopeGroup(value: string): value is ScopeGroup {
  * Starts the Google consent flow.
  * - Self-host: gated by `setup_token` (reuses MCP_BEARER_TOKEN) because
  *   this is a browser-hit GET route outside the MCP endpoint's own
- *   bearer-header gate — without this, anyone who found the URL could
+ *   bearer-header gate: without this, anyone who found the URL could
  *   connect *their own* Google account to this deployment.
- * - Cloud mode: gated by a Clerk session instead — the dashboard links
+ * - Cloud mode: gated by a Clerk session instead: the dashboard links
  *   here, so the browser already carries one. The Clerk user id rides
  *   through Google's `state` param so the callback knows which tenant's
  *   tokens these are.
@@ -35,7 +35,7 @@ export async function handleOAuthStart(request: Request, env: Env): Promise<Resp
   if (isCloudMode(env)) {
     const session = await verifyClerkSession(request, env);
     if (!session) {
-      return new Response("unauthorized — sign in first", { status: 401 });
+      return new Response("unauthorized: sign in first", { status: 401 });
     }
     tenantId = session.userId;
   } else {
@@ -62,7 +62,7 @@ export async function handleOAuthCallback(request: Request, env: Env): Promise<R
     return new Response("missing code/state", { status: 400 });
   }
 
-  // See buildAuthUrl's doc comment — state is "<scope>" (self-host) or
+  // See buildAuthUrl's doc comment: state is "<scope>" (self-host) or
   // "<scope>:<tenantId>" (cloud mode).
   const [scope, tenantId] = state.includes(":")
     ? (state.split(":") as [string, string])
@@ -75,7 +75,7 @@ export async function handleOAuthCallback(request: Request, env: Env): Promise<R
   await exchangeCodeForTokens(env, code, redirectUri, scope, tenantId);
 
   return new Response(
-    `Connected. The "${scope}" tools are now enabled — you can close this tab.\n`,
+    `Connected. The "${scope}" tools are now enabled, you can close this tab.\n`,
     { status: 200 }
   );
 }

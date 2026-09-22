@@ -1,7 +1,7 @@
 import { Button, Table } from "../../design";
-import type { DashboardData } from "../types";
+import type { SettingsData } from "../types";
 
-export function ApiKeysSection({ data }: { data: DashboardData }) {
+export function ApiKeysSection({ data }: { data: SettingsData }) {
   return (
     <section class="panel">
       <h2>MCP API keys</h2>

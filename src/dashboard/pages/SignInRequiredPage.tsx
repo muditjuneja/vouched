@@ -25,5 +25,5 @@ function SignInRequiredPage({ currentUrl, signInUrl }: { currentUrl: string; sig
 }
 
 export function renderSignInRequired(currentUrl: string, signInUrl: string | null): string {
-  return renderPage({ title: "Sign in", children: <SignInRequiredPage currentUrl={currentUrl} signInUrl={signInUrl} /> });
+  return renderPage({ title: "Sign in", activePath: "", children: <SignInRequiredPage currentUrl={currentUrl} signInUrl={signInUrl} /> });
 }

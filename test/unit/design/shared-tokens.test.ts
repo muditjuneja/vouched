@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { renderDashboard } from "../../../src/dashboard/pages/DashboardPage";
+import { renderOverview } from "../../../src/dashboard/pages/OverviewPage";
 import { renderLanding } from "../../../src/marketing/pages/LandingPage";
 import { TOKENS_CSS } from "../../../src/design/tokens";
 
@@ -11,15 +11,17 @@ import { TOKENS_CSS } from "../../../src/design/tokens";
  */
 describe("shared design tokens", () => {
   it("both surfaces embed the identical TOKENS_CSS block", () => {
-    const dashboardHtml = renderDashboard({
-      websites: [],
+    const dashboardHtml = renderOverview({
       plan: "free",
+      status: null,
+      currentPeriodEnd: null,
       usageUsd: 0,
       quotaUsd: 0,
       walletBalanceUsd: 0,
-      apiKeys: [],
-      googleOAuthConfigured: false,
-      dodoConfigured: false
+      websiteCount: 0,
+      recentActivity: [],
+      dodoConfigured: false,
+      hasDodoCustomer: false
     });
     const marketingHtml = renderLanding("https://example.com/", true);
 

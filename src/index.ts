@@ -2,11 +2,12 @@ import { createMcpHandler } from "agents/mcp/server";
 import { Hono } from "hono";
 import { handleOAuthCallback, handleOAuthStart } from "./auth/oauth-routes";
 import { verifyClerkSession } from "./auth/clerk";
-import { startCheckout, startWalletTopup } from "./billing/dodo-client";
+import { startCheckout, startCustomerPortalSession, startWalletTopup } from "./billing/dodo-client";
 import { MIN_TOPUP_USD } from "./billing/quotas";
 import { buildDodoWebhookHandler } from "./billing/webhook-handlers";
 import { dashboard } from "./dashboard/routes";
 import { verifyApiKey } from "./db/mcp-api-keys";
+import { getSubscription } from "./db/subscriptions";
 import { ConfigError } from "./lib/errors";
 import { checkAndIncrementRateLimit } from "./lib/rate-limit";
 import { marketing } from "./marketing/routes";
@@ -88,7 +89,7 @@ app.get("/billing/checkout", async (c) => {
   }
 
   try {
-    const returnUrl = new URL("/billing/success", new URL(c.req.url).origin).toString();
+    const returnUrl = new URL("/dashboard/billing?checkout=success", new URL(c.req.url).origin).toString();
     const checkoutUrl = await startCheckout(c.env, {
       plan,
       tenantId: session.userId,
@@ -103,8 +104,6 @@ app.get("/billing/checkout", async (c) => {
     throw error;
   }
 });
-
-app.get("/billing/success", (c) => c.text("Payment received. Your plan will update shortly.\n"));
 
 // Starts a prepaid overage wallet top-up. Same cloud-mode + Clerk-session
 // gate as /billing/checkout, but a one-time payment, not a subscription:
@@ -128,7 +127,7 @@ app.get("/billing/topup", async (c) => {
   }
 
   try {
-    const returnUrl = new URL("/billing/success", new URL(c.req.url).origin).toString();
+    const returnUrl = new URL("/dashboard/billing?topup=success", new URL(c.req.url).origin).toString();
     const checkoutUrl = await startWalletTopup(c.env, {
       tenantId: session.userId,
       customerEmail: email,
@@ -136,6 +135,33 @@ app.get("/billing/topup", async (c) => {
       returnUrl
     });
     return c.redirect(checkoutUrl, 302);
+  } catch (error) {
+    if (error instanceof ConfigError) {
+      return c.text(error.message, 500);
+    }
+    throw error;
+  }
+});
+
+// A hosted Dodo customer-portal link for the signed-in tenant's own
+// subscription (manage payment method, view invoices, cancel). Never
+// trusts a client-supplied customer id, only the tenant's own
+// subscriptions row, see startCustomerPortalSession's doc comment for why
+// the vendored @dodopayments/hono handler isn't used here instead.
+app.get("/billing/portal", async (c) => {
+  if (!isCloudMode(c.env)) {
+    return c.text("not found", 404);
+  }
+  const session = await verifyClerkSession(c.req.raw, c.env);
+  if (!session) {
+    return c.text("unauthorized: sign in first", 401);
+  }
+  const sub = await getSubscription(c.env.DB, session.userId);
+  if (!sub?.dodo_customer_id) {
+    return c.text("no billing account on file yet", 404);
+  }
+  try {
+    return c.redirect(await startCustomerPortalSession(c.env, sub.dodo_customer_id), 302);
   } catch (error) {
     if (error instanceof ConfigError) {
       return c.text(error.message, 500);

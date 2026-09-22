@@ -1,4 +1,5 @@
 import { createCheckoutSession } from "@dodopayments/core/checkout";
+import { DodoPayments } from "dodopayments";
 import { ConfigError, UpstreamError } from "../lib/errors";
 import type { Env } from "../types/env";
 import type { Plan } from "../db/subscriptions";
@@ -50,6 +51,29 @@ export async function startCheckout(env: Env, input: StartCheckoutInput): Promis
     throw new UpstreamError("dodo", "checkout session created without a checkout_url");
   }
   return session.checkout_url;
+}
+
+/**
+ * A hosted Dodo "customer portal" session URL for an already-resolved
+ * Dodo customer id, letting a tenant manage/cancel their own subscription
+ * or view invoices without us building any of that UI ourselves.
+ *
+ * Deliberately not the vendored @dodopayments/hono `CustomerPortal`
+ * handler: that handler takes a bare `customer_id` from the request's own
+ * query string with no session/ownership check at all (confirmed against
+ * its source), which would let any caller view/manage another tenant's
+ * billing portal by guessing an id. Callers of this function must resolve
+ * `dodoCustomerId` from the requesting tenant's own subscriptions row
+ * first (see src/index.ts's /billing/portal route), never from client
+ * input directly.
+ */
+export async function startCustomerPortalSession(env: Env, dodoCustomerId: string): Promise<string> {
+  if (!env.DODO_API_KEY) {
+    throw new ConfigError("Dodo Payments is not configured (DODO_API_KEY)");
+  }
+  const client = new DodoPayments({ bearerToken: env.DODO_API_KEY, environment: dodoEnvironment(env) });
+  const session = await client.customers.customerPortal.create(dodoCustomerId, { send_email: false });
+  return session.link;
 }
 
 export interface StartWalletTopupInput {

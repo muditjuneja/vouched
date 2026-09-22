@@ -11,9 +11,9 @@ export interface GoogleTokenRow {
 }
 
 /**
- * Every function here takes an optional `tenantId`, defaulting to `null` —
+ * Every function here takes an optional `tenantId`, defaulting to `null`:
  * see websites.ts's doc comment for the same pattern. Note the primary key
- * is still `(account_email, scope_group)` (from migration 0001) — a given
+ * is still `(account_email, scope_group)` (from migration 0001): a given
  * tenant is assumed to connect at most one Google account per scope group;
  * see getAnyToken's own note on that.
  */
@@ -45,11 +45,11 @@ export async function getToken(
 }
 
 /**
- * This is a personal, single-user server in self-host mode — v1 doesn't
+ * This is a personal, single-user server in self-host mode: v1 doesn't
  * bind a website to a specific connected Google account, so "the" token
  * for a scope group is whichever one was connected/refreshed most
  * recently. In cloud mode this is scoped per tenant, so it resolves to
- * that tenant's one connected account for the scope group — still at most
+ * that tenant's one connected account for the scope group, still at most
  * one account per tenant per scope group, not one globally.
  */
 export async function getAnyToken(
@@ -64,6 +64,15 @@ export async function getAnyToken(
     .bind(scopeGroup, tenantId)
     .first<GoogleTokenRow>();
   return row ?? null;
+}
+
+/** Removes the tenant's stored token for a scope group ("disconnect"). false if nothing was connected. */
+export async function deleteToken(db: D1Database, scopeGroup: ScopeGroup, tenantId: string | null = null): Promise<boolean> {
+  const result = await db
+    .prepare("DELETE FROM google_tokens WHERE scope_group = ?1 AND tenant_id IS ?2")
+    .bind(scopeGroup, tenantId)
+    .run();
+  return (result.meta.changes ?? 0) > 0;
 }
 
 export async function upsertToken(

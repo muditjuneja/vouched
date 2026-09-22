@@ -1,6 +1,7 @@
 import type { PropsWithChildren } from "hono/jsx";
 import { BASE_CSS, FAVICON_HREF, TOKENS_CSS, renderToString } from "../design";
 import { DISPLAY_NAME } from "../lib/product";
+import { Sidebar } from "./components/Sidebar";
 
 /**
  * Dashboard is the same brand as marketing, denser: a control panel on
@@ -73,9 +74,8 @@ const DASHBOARD_CSS = `
   }
   .sheet {
     position: relative; z-index: 1;
-    max-width: min(880px, 100%); margin: 0 auto; background: var(--bg);
+    max-width: min(1180px, 100%); margin: 0 auto; background: var(--bg);
     border: 1px solid var(--border); min-height: calc(100vh - 28px);
-    padding: 0 0 3rem;
   }
   .sheet-tick {
     position: absolute; width: 11px; height: 11px; pointer-events: none; z-index: 3;
@@ -85,22 +85,39 @@ const DASHBOARD_CSS = `
   .sheet-tick.tr { top: -1px; right: -1px; border-left: none; border-bottom: none; }
   .sheet-tick.bl { bottom: -1px; left: -1px; border-right: none; border-top: none; }
   .sheet-tick.br { bottom: -1px; right: -1px; border-left: none; border-top: none; }
-  header.dash-head {
-    display: flex; align-items: baseline; justify-content: space-between;
-    gap: 1rem; padding: 1.15rem 1.5rem; margin: 0;
+
+  /* Mobile-only hamburger; toggles .dash-sidebar via the [open] ~ sibling
+     rule further down. On desktop this whole element is display: none, so
+     the details/summary semantics never matter there: the sidebar is
+     just always visible as a normal flex column. */
+  .dash-mobile-toggle { display: none; }
+  .dash-mobile-toggle summary {
+    cursor: pointer; list-style: none; padding: 0.9rem 1.25rem;
+    font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase;
     border-bottom: 1px solid var(--border);
   }
-  header.dash-head a.brand {
+  .dash-mobile-toggle summary::-webkit-details-marker { display: none; }
+  .dash-mobile-toggle summary::before { content: "☰ Menu"; }
+  .dash-mobile-toggle[open] summary::before { content: "✕ Close"; }
+
+  .dash-shell { display: flex; align-items: stretch; min-height: calc(100vh - 30px); }
+  .dash-sidebar {
+    display: flex; flex-direction: column; gap: 1.5rem;
+    width: 15rem; flex-shrink: 0; padding: 1.5rem 1.25rem;
+    border-right: 1px solid var(--border);
+  }
+  .dash-sidebar > a.brand {
     font-family: var(--font-display); font-style: italic; font-weight: 500;
     font-size: 1.35rem; letter-spacing: -0.03em; text-decoration: none; color: var(--text);
   }
-  header.dash-head .meta {
-    display: flex; gap: 1.1rem; align-items: baseline;
-    font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+  .dash-nav-items { display: flex; flex-direction: column; gap: 0.15rem; flex: 1; }
+  .dash-back-link {
+    font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
+    text-decoration: none; color: var(--muted);
   }
-  header.dash-head .meta a { text-decoration: none; color: var(--muted); font-weight: 500; }
-  header.dash-head .meta a:hover { color: var(--text); }
-  main { padding: 1.75rem 1.5rem 0; }
+  .dash-back-link:hover { color: var(--text); }
+  .dash-main { flex: 1; min-width: 0; }
+  main.dash-content { padding: 1.75rem 1.75rem 3rem; }
   .kicker {
     font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.14em;
     text-transform: uppercase; color: var(--muted); margin: 0 0 0.35rem;
@@ -143,13 +160,25 @@ const DASHBOARD_CSS = `
     height: 6px; background: var(--paper); border: 1px solid var(--border); margin: 0.65rem 0 1rem;
   }
   .meter > span { display: block; height: 100%; background: var(--moss); }
+  .stat-grid { display: grid; gap: 0.9rem; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); margin-bottom: 1.1rem; }
+  body.dash .stat-card { border-radius: 0; box-shadow: none; }
   table { font-size: 0.9rem; }
   th { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; }
   body.dash .badge { border-radius: 4px; font-weight: 500; letter-spacing: 0.02em; }
   ::selection { background: color-mix(in srgb, var(--gold) 45%, white); color: var(--ink); }
   :focus-visible { outline: 1px solid var(--ink); outline-offset: 3px; }
+  @media (max-width: 780px) {
+    .dash-mobile-toggle { display: block; }
+    .dash-shell { position: relative; overflow: hidden; }
+    .dash-sidebar {
+      position: absolute; top: 0; left: 0; height: 100%; width: 15rem; z-index: 5;
+      background: var(--bg); transform: translateX(-100%); transition: transform 0.2s ease;
+      box-shadow: var(--shadow-lg);
+    }
+    .dash-mobile-toggle[open] ~ .dash-shell .dash-sidebar { transform: translateX(0); }
+    main.dash-content { padding: 1.5rem 1.25rem 3rem; }
+  }
   @media (max-width: 640px) {
-    header.dash-head { flex-direction: column; gap: 0.4rem; }
     .row { flex-direction: column; align-items: stretch; }
     input { min-width: 0; width: 100%; }
     body.dash .table-scroll { overflow: visible; }
@@ -170,9 +199,17 @@ const DASHBOARD_CSS = `
 
 export interface LayoutProps {
   title: string;
+  /**
+   * Which sidebar item is the current page: a literal string each page's
+   * own render*Page() function passes in (e.g. "/dashboard/billing"),
+   * compile-time-known per route. Fully server-computed active-item
+   * highlighting: never derived from the request path inside Layout
+   * itself, so no request/context needs to be threaded through here.
+   */
+  activePath: string;
 }
 
-function Layout({ title, children }: PropsWithChildren<LayoutProps>) {
+function Layout({ title, activePath, children }: PropsWithChildren<LayoutProps>) {
   return (
     <html lang="en">
       <head>
@@ -196,16 +233,17 @@ function Layout({ title, children }: PropsWithChildren<LayoutProps>) {
           <span class="sheet-tick tr" />
           <span class="sheet-tick bl" />
           <span class="sheet-tick br" />
-          <header class="dash-head">
-            <a class="brand" href="/">
-              <em>{DISPLAY_NAME}</em>
-            </a>
-            <div class="meta">
-              <a href="/">Site</a>
-              <a href="/dashboard">Cloud</a>
-            </div>
-          </header>
-          <main>{children}</main>
+          {/* Mobile-only hamburger; CSS-only via the [open] ~ sibling
+              selector below, no script. Irrelevant on desktop, where
+              .dash-mobile-toggle is display: none and .dash-sidebar is
+              just always visible. */}
+          <details class="dash-mobile-toggle">
+            <summary />
+          </details>
+          <div class="dash-shell">
+            <Sidebar activePath={activePath} />
+            <main class="dash-main dash-content">{children}</main>
+          </div>
         </div>
       </body>
     </html>

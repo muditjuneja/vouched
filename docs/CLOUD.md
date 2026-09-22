@@ -76,6 +76,33 @@ sandbox — `verifyToken`'s real behavior (a valid session, a real JWKS/PEM
 key) matches its documented type signature only; test against a real Clerk
 app before trusting it.
 
+**Confirmed broken against a real Clerk app (2026-09-22)**: signing in via
+Clerk's hosted Account Portal and getting redirected back to `/dashboard`
+loops on 401 forever. Root cause: `verifyClerkSession` only ever checks an
+`Authorization: Bearer` header or a `__session` cookie. In a local/dev
+setup, Clerk's Account Portal lives on a different origin than this app
+(`*.accounts.dev` vs `localhost:8787`), so it redirects back with a
+`__clerk_db_jwt` query param instead of a same-origin cookie. That handoff
+is normally completed by Clerk's *frontend* JS (`@clerk/clerk-js`) running
+on the receiving page, which exchanges it for a real `__session` cookie in
+the browser. This codebase has no Clerk frontend integration anywhere (no
+script tag, no `publishableKey`, no `CLERK_PUBLISHABLE_KEY` env var at
+all), so that token is never consumed, no cookie is ever set, and every
+subsequent request has nothing to verify.
+
+Needs, before cloud mode's sign-in flow is usable end to end:
+- A `CLERK_PUBLISHABLE_KEY` env var (client-side key, distinct from the
+  server-side `CLERK_SECRET_KEY`/`CLERK_JWT_KEY` already here).
+- Some client-side Clerk JS on whichever page receives the post-sign-in
+  redirect (`@clerk/clerk-js`'s browser bundle via a plain `<script>` tag
+  is enough, no framework required) to complete the `__clerk_db_jwt`
+  handoff into a real `__session` cookie before the page ever calls
+  `/dashboard`.
+- A real, in-app sign-in entry point (the landing page currently links
+  straight to `CLERK_SIGN_IN_URL` with no handling for the return trip) —
+  the "Sign in" button flagged in M16 predates this finding and needs
+  revisiting alongside it.
+
 ## M13 — Dodo Payments billing
 
 Done. `GET /billing/checkout?plan=pro|team&email=...` (Clerk-session-gated,
@@ -338,6 +365,86 @@ entitlement configuration this sandbox has no live account to verify
 against, and the per-call quota check needs a synchronous, cheap local
 D1 lookup regardless of who the system of record is. Worth revisiting
 against a real Dodo account before launch.
+
+## M20: Sidebar dashboard shell + real per-feature pages
+
+Done. M15's dashboard was one flat page with three sections stacked on
+top of each other (websites, plan+wallet, API keys) and no navigation at
+all. Replaced with a real app shell: `src/dashboard/components/Sidebar.tsx`
+(Overview/Websites/Usage/Billing/Settings, server-computed active-item
+highlighting via a literal `activePath` each page's own render function
+passes in, no client JS needed for that) and five real pages under
+`/dashboard/*`, all still behind M12's single Clerk-auth gate:
+
+- **Overview** (`/dashboard`, renamed from the old single page): plan,
+  usage-vs-quota, wallet balance, website count as `StatCard` tiles, plus
+  a "recent activity" table (last 5 `cost_log` rows via the new
+  `listCostLog`).
+- **Websites** (`/dashboard/websites`): the existing add/list table plus
+  real edit (`/websites/:id/edit` GET, `/update` POST) and delete
+  (`/delete` POST) actions, backed by new `updateWebsite`/`deleteWebsite`/
+  `getWebsiteById` functions in `src/db/websites.ts` (all `tenant_id IS ?`
+  scoped, confirmed no other table has a `website_id` foreign key, so a
+  hard delete needs no cleanup elsewhere).
+- **Usage** (`/dashboard/usage`): the per-call `cost_log` table finally
+  has a page: `listCostLog` cursor-paginates on `cost_log.id` (not
+  `called_at`, since multiple calls can share a timestamp).
+- **Billing** (`/dashboard/billing`): plan/quota + wallet sections
+  (unchanged logic) plus a new wallet-ledger transaction history
+  (`listWalletLedger`, `wallet_ledger` already existed with no reader
+  until now), a "Manage billing" link to a new `/billing/portal` route,
+  and a payment-status warning banner (see below).
+- **Settings** (`/dashboard/settings`): account email (`getTenantEmail`),
+  API keys (relocated unchanged), and a new Google-connections section
+  with a disconnect action (`deleteToken`, new in
+  `src/db/google-tokens.ts`); connect links stay on both Websites and
+  Settings by deliberate choice (redundant, but connecting is idempotent
+  and harmless either way); disconnect only lives in Settings since it
+  isn't tied to any one website.
+
+**Two real gaps found and fixed along the way, not just plumbing**:
+- Subscription *status* (`on_hold`/`failed`, not just the collapsed
+  *plan*) was never surfaced anywhere in the dashboard: only
+  `getEffectivePlan` was ever called, which silently keeps a failed
+  payment's plan alive through its grace period with zero in-app
+  warning. `PaymentStatusBanner` (shown on Overview + Billing) fixes
+  this, linking to `/billing/portal`.
+- `/billing/success` was a dead-end static text page. `/billing/checkout`
+  and `/billing/topup`'s `returnUrl` now point at
+  `/dashboard/billing?checkout=success` / `?topup=success` instead, and
+  `BillingPage` shows a "payment received, updating shortly" banner
+  (phrased as pending, not done, since webhook processing is async).
+
+**`/billing/portal`** (`src/index.ts`) is a new authenticated route
+returning a hosted Dodo customer-portal link, via a new
+`startCustomerPortalSession` in `src/billing/dodo-client.ts`. Deliberately
+not the vendored `@dodopayments/hono` `CustomerPortal` handler: that
+handler trusts a bare `customer_id` from the request's own query string
+with no session/ownership check at all (confirmed directly in
+`@dodopayments/hono`'s source), which would let any caller view/manage
+another tenant's billing portal by guessing an id. This route instead
+resolves `dodo_customer_id` from the signed-in tenant's own `subscriptions`
+row, the same trust pattern `/billing/checkout` already uses.
+
+**Considered and deferred, not adopted this pass**: moving Google OAuth
+to Clerk-managed connections (`@clerk/backend` exposes
+`users.getUserOauthAccessToken`, confirmed real, which would remove
+`google-tokens.ts`'s own storage/refresh logic entirely), needs a Custom
+OAuth connection configured in Clerk's dashboard for GSC/Analytics scopes
+beyond Clerk's default Google sign-in scopes, and it's unconfirmed
+whether Clerk's hosted Account Portal alone can drive connecting a
+custom-scoped provider without embedding `@clerk/clerk-js` for the first
+time in this otherwise 100%-server-rendered app. Also deferred: CSV/data
+export (no export infra anywhere in the app), a subscription-status
+history table (today's single-current-row model is sufficient for
+everything in this pass), wallet-ledger pagination past the latest 20.
+
+New design-system components (`src/design/`): `NavItem`, `StatCard`,
+`Pagination` — same prop-shape conventions as the existing `Button`/
+`Badge`/`Card`/`Table`. Mobile sidebar collapse is a `<details>/<summary>`
+disclosure (same pattern the marketing pricing page's FAQ already uses),
+not a checkbox or any new script — this app still has zero client JS
+framework, by design.
 
 ## Verification discipline
 
