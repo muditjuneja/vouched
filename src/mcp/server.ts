@@ -2,7 +2,6 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { discoverAiCitations } from "../domains/ai_visibility/discover-ai-citations";
 import { inspectAiVisibility } from "../domains/ai_visibility/inspect-ai-visibility";
 import { getWebsiteAnalytics } from "../domains/analytics/get-website-analytics";
-import { auditSite } from "../domains/audit/audit-site";
 import { compareBacklinkGap } from "../domains/backlinks/compare-backlink-gap";
 import { inspectBacklinks } from "../domains/backlinks/inspect-backlinks";
 import { describeCapabilities } from "../domains/core/describe-capabilities";
@@ -23,21 +22,24 @@ import { ConnectionRequiredError, QuotaExceededError } from "../lib/errors";
 import { MCP_SERVER_NAME } from "../lib/product";
 import { hasDataForSEO, type Env } from "../types/env";
 
-// Free — no keys needed. Grows as each milestone lands.
+// Free, no keys needed. Grows as each milestone lands.
+// audit_site is intentionally NOT registered here despite being fully
+// built (see its `implemented: false` entry in mcp/manifest.ts for why):
+// held back until its crawl is reworked to actually fit this Workers
+// architecture, so it isn't exposed as a real tool call until then.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const FREE_TOOL_MODULES: ToolModule<any>[] = [
   describeCapabilities,
   listWebsitesTool,
   exportDataset,
-  auditSite,
   getSearchPerformance,
   getWebsiteAnalytics
 ];
 
-// Backed by DataForSEO — only registered (and only then advertised by
+// Backed by DataForSEO, only registered (and only then advertised by
 // describe_capabilities) when DATAFORSEO_LOGIN/PASSWORD are configured, so
 // the server never lists a tool call it would just fail on. All 12 tools
-// here are now built — see README's Status section for per-domain
+// here are now built, see README's Status section for per-domain
 // field-shape confidence (ai_visibility is the least certain).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const DATAFORSEO_TOOL_MODULES: ToolModule<any>[] = [
@@ -58,14 +60,14 @@ const DATAFORSEO_TOOL_MODULES: ToolModule<any>[] = [
 /**
  * Builds a fresh McpServer for one request, with every implemented tool
  * registered against this request's `env` (D1/R2 bindings + secrets),
- * captured via closure — `createMcpHandler`'s factory has no other way to
+ * captured via closure: `createMcpHandler`'s factory has no other way to
  * reach Worker bindings, so this is the mechanism, not a workaround.
  *
  * `tenantId` is null in self-host mode (the default) and the Clerk user id
  * in cloud mode, resolved by the caller (src/index.ts's /mcp route) from
  * the presented API key before this is called. It's threaded into a
  * per-request copy of `env` (see Env.__tenantId's doc comment) rather than
- * changing every ToolModule's handler signature — only a few tools
+ * changing every ToolModule's handler signature, only a few tools
  * currently need it.
  */
 export function buildMcpServer(env: Env, tenantId: string | null = null): McpServer {
@@ -99,7 +101,7 @@ export function buildMcpServer(env: Env, tenantId: string | null = null): McpSer
               content: [
                 {
                   type: "text" as const,
-                  text: `connection_required: ${error.connection} — ${error.message}`
+                  text: `connection_required (${error.connection}): ${error.message}`
                 }
               ]
             };

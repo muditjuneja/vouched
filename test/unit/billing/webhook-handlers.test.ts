@@ -28,6 +28,7 @@ function fakeEnv(overrides: Partial<Env> = {}): Env {
       })
     } as unknown as D1Database,
     DATASETS: {} as R2Bucket,
+    CACHE: {} as KVNamespace,
     MCP_BEARER_TOKEN: "x",
     DODO_PRODUCT_ID_PRO: "prod_pro_123",
     DODO_PRODUCT_ID_TEAM: "prod_team_456",

@@ -27,6 +27,7 @@ function fakeEnv(overrides: Partial<Env> = {}): Env {
   return {
     DB: {} as D1Database,
     DATASETS: {} as R2Bucket,
+    CACHE: {} as KVNamespace,
     MCP_BEARER_TOKEN: "x",
     ...overrides
   };
@@ -87,7 +88,7 @@ describe("dashboard's catch-all GET fallback", () => {
   // doc comment); without this fallback, that landing 404s instead of just...
   // landing somewhere sane. Note /dashboard/websites itself is now a real
   // GET page (WebsitesPage), so it's no longer a genuinely-unmatched path
-  // to probe this with — a POST-only sub-path is used instead.
+  // to probe this with, a POST-only sub-path is used instead.
   it("redirects an otherwise-unmatched GET under /dashboard back to the dashboard instead of 404ing", async () => {
     authenticateDashboardRequest.mockResolvedValueOnce({ session: { userId: "user_1" }, handshakeRedirect: null, refreshedSetCookies: [] });
     const env = fakeEnv({ CLOUD_MODE: "1", CLERK_SECRET_KEY: "sk_test" });

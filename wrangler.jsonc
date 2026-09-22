@@ -15,15 +15,22 @@
 			"database_id": "29f2593b-f475-4eac-b2d1-741f15a52a9c"
 		}
 	],
-	// R2: large exported datasets behind mcpseo:// resource URIs.
+	// R2: large exported datasets behind mcpseo:// resource URIs (see
+	// src/resources/store.ts).
 	"r2_buckets": [
 		{
 			"binding": "DATASETS",
 			"bucket_name": "vouched-seo-mcp-datasets"
 		}
+	],
+	// KV: short-TTL response cache (see src/lib/cache.ts), currently used by
+	// get_search_performance to avoid re-querying Google for an identical
+	// query it already has a recent answer for. Durable Objects are still
+	// intentionally not bound: no multi-tenant/coordination need for them yet.
+	"kv_namespaces": [
+		{
+			"binding": "CACHE",
+			"id": "69e2d321e8454eeb8c3044cf78393718"
+		}
 	]
-	// KV and Durable Objects are intentionally not bound yet — see plan
-	// M9 (Hardening) for short-TTL response caching and any future
-	// multi-tenant/coordination needs. A single-user D1-backed server
-	// doesn't need them for v1.
 }

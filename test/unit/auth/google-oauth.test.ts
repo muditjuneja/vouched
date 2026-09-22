@@ -12,6 +12,7 @@ function fakeEnv(overrides: Partial<Env> = {}): Env {
   return {
     DB: {} as D1Database,
     DATASETS: {} as R2Bucket,
+    CACHE: {} as KVNamespace,
     MCP_BEARER_TOKEN: "test-token",
     GOOGLE_OAUTH_CLIENT_ID: "client-123",
     GOOGLE_OAUTH_CLIENT_SECRET: "secret",

@@ -12,11 +12,20 @@ export interface SearchAnalyticsResponse {
   rows?: SearchAnalyticsRow[];
 }
 
+/** One dimensionFilterGroups filter, GSC's real (slightly odd) shape: a flat list of filters, all AND-ed together within a group. */
+export interface SearchAnalyticsFilter {
+  dimension: "query" | "page" | "country" | "device";
+  operator: "equals" | "contains" | "notContains" | "notEquals";
+  expression: string;
+}
+
 export interface SearchAnalyticsQuery {
   startDate: string;
   endDate: string;
   dimensions: ("query" | "page" | "date" | "country" | "device")[];
   rowLimit?: number;
+  /** All AND-ed together (GSC only supports one filter group per query at the level this client uses). */
+  filters?: SearchAnalyticsFilter[];
 }
 
 /** Plain REST call, no Google client library, see docs/ARCHITECTURE.md. */
@@ -37,7 +46,8 @@ export async function querySearchAnalytics(
         startDate: query.startDate,
         endDate: query.endDate,
         dimensions: query.dimensions,
-        rowLimit: query.rowLimit ?? 25
+        rowLimit: query.rowLimit ?? 25,
+        ...(query.filters && query.filters.length > 0 ? { dimensionFilterGroups: [{ filters: query.filters }] } : {})
       })
     }
   );

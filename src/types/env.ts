@@ -8,6 +8,8 @@ export interface Env {
   // Bindings (wrangler.jsonc)
   DB: D1Database;
   DATASETS: R2Bucket;
+  /** Short-TTL response cache, see src/lib/cache.ts. */
+  CACHE: KVNamespace;
 
   // Secrets: required
   MCP_BEARER_TOKEN: string;

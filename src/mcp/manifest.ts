@@ -3,7 +3,7 @@ import type { Provenance } from "../envelope/types";
 /**
  * The full 18-tool target manifest, confirmed against OpenRush's own live
  * `describe_capabilities` response. `implemented` tracks build progress
- * honestly — `core.describe_capabilities` reports this as-is rather than
+ * honestly: `core.describe_capabilities` reports this as-is rather than
  * pretending unbuilt tools already exist.
  */
 export interface ToolManifestEntry {
@@ -136,7 +136,14 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
     source_classes: ["crawl"],
     requires_connection: null,
     billing: "free",
-    implemented: true
+    // Built and working (src/domains/audit/audit-site.ts), but deliberately
+    // held back from `implemented` (and unregistered in mcp/server.ts)
+    // until its crawl is reworked for the Workers architecture it actually
+    // runs on: today it's a fully sequential, unbounded-concurrency loop
+    // with no request budget/timeout handling of its own, fine for a small
+    // site but not yet the "best/performant" story we want to ship before
+    // exposing it. Flip this back to true once that rework lands.
+    implemented: false
   },
   {
     name: "inspect_backlinks",
@@ -188,7 +195,7 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
   {
     name: "get_search_performance",
     domain: "gsc",
-    summary: "Query/page performance from Search Console.",
+    summary: "Query/page/date/country/device performance from Search Console, with filters and period-over-period comparison.",
     fact_types: ["gsc.performance_summary", "gsc.query_performance"],
     source_classes: ["webmaster_console"],
     requires_connection: "webmaster_console",

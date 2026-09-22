@@ -33,6 +33,7 @@ function fakeEnv(overrides: Partial<Env> = {}): Env {
   return {
     DB: {} as D1Database,
     DATASETS: {} as R2Bucket,
+    CACHE: {} as KVNamespace,
     MCP_BEARER_TOKEN: "correct-token",
     ...overrides
   };
