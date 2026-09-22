@@ -8,8 +8,7 @@ function fakeData(overrides: Partial<WebsitesData> = {}): WebsitesData {
     googleOAuthConfigured: false,
     gscState: "not_connected",
     ga4State: "not_connected",
-    gscSites: null,
-    ga4Properties: null,
+    discovered: [],
     justConnected: null,
     ...overrides
   };
@@ -76,24 +75,39 @@ describe("renderWebsites", () => {
     expect(html).toContain('action="/dashboard/websites/w1/delete"');
   });
 
-  it("falls back to plain text inputs when Google isn't connected (gscSites/ga4Properties null)", () => {
-    const html = renderWebsites(fakeData());
-    expect(html).toContain('name="gscSiteUrl"');
-    expect(html).toContain("<input");
-    expect(html).not.toContain("<select");
+  it("has no manual name/domain form at all: nothing to type, only discovered properties to click", () => {
+    const html = renderWebsites(fakeData({ googleOAuthConfigured: true, gscState: "connected", ga4State: "not_connected" }));
+    expect(html).not.toContain('name="name"');
+    expect(html).not.toContain('placeholder="My Site"');
+    expect(html).not.toContain('placeholder="example.com"');
   });
 
-  it("shows a real property picker instead of a text input once Google is connected", () => {
+  it("prompts to connect Google when nothing is connected yet, and lists discovered properties as one-click Track forms once something is", () => {
     const html = renderWebsites(
       fakeData({
-        gscSites: [{ siteUrl: "sc-domain:example.com", permissionLevel: "siteOwner" }],
-        ga4Properties: [{ property: "properties/123", displayName: "My Site" }]
+        googleOAuthConfigured: true,
+        gscState: "connected",
+        ga4State: "not_connected",
+        discovered: [{ name: "example.com", primaryDomain: "example.com", gscSiteUrl: "sc-domain:example.com", ga4PropertyId: null }]
       })
     );
-    expect(html).toContain('<select name="gscSiteUrl"');
-    expect(html).toContain('value="sc-domain:example.com"');
-    expect(html).toContain('<select name="ga4PropertyId"');
-    expect(html).toContain('value="properties/123"');
+    expect(html).toContain('action="/dashboard/websites"');
+    expect(html).toContain('name="primaryDomain" value="example.com"');
+    expect(html).toContain('name="gscSiteUrl" value="sc-domain:example.com"');
+    expect(html).not.toContain('name="ga4PropertyId"');
+    expect(html).toContain("Track");
+  });
+
+  it("shows a not-connected prompt, not an empty picker, when neither scope is connected", () => {
+    const html = renderWebsites(fakeData({ googleOAuthConfigured: true }));
+    expect(html).toContain("Connect or reconnect Search Console/Analytics above");
+    expect(html).not.toContain("No new properties found");
+  });
+
+  it("shows a distinct empty state when connected but everything discoverable is already tracked", () => {
+    const html = renderWebsites(fakeData({ googleOAuthConfigured: true, gscState: "connected", discovered: [] }));
+    expect(html).toContain("No new properties found");
+    expect(html).not.toContain("Connect or reconnect Search Console/Analytics above");
   });
 
   it("offers a direct Connect action in the Add-website widget when Google isn't connected yet, only when Google OAuth itself is configured on this deployment", () => {
@@ -112,8 +126,7 @@ describe("renderWebsites", () => {
         googleOAuthConfigured: true,
         gscState: "connected",
         ga4State: "connected",
-        gscSites: [],
-        ga4Properties: []
+        discovered: []
       })
     );
     expect(html).not.toContain("/oauth/google/start");

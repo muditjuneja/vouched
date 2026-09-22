@@ -3,7 +3,7 @@ import { authenticateDashboardRequest, getTenantEmail } from "../auth/clerk";
 import { checkConnectionState, getValidAccessToken, type ConnectionState } from "../auth/google-oauth";
 import { isScopeGroup, SCOPE_GROUPS } from "../auth/oauth-routes";
 import { listCostLog } from "../clients/dataforseo/cost-tracker";
-import { listProperties, type GA4Property } from "../clients/google/analytics-ga4";
+import { listProperties, listPropertiesWithDomains, type GA4Property } from "../clients/google/analytics-ga4";
 import { listSites, type SearchConsoleSite } from "../clients/google/search-console";
 import type { ScopeGroup } from "../db/google-tokens";
 import { deleteToken } from "../db/google-tokens";
@@ -11,7 +11,9 @@ import { createApiKey, listApiKeys, revokeApiKey } from "../db/mcp-api-keys";
 import { getEffectivePlan, getSubscription, getWalletBalance, listWalletLedger } from "../db/subscriptions";
 import { getUsage } from "../db/usage-counters";
 import { addWebsite, deleteWebsite, getWebsiteById, listWebsites, updateWebsite } from "../db/websites";
+import { normalizeDomain } from "../envelope/entities";
 import { MONTHLY_QUOTA_USD } from "../billing/quotas";
+import { buildDiscoveredProperties, type DiscoveredProperty } from "./discovery";
 import { markNotifiedOnce, markNotifiedWithCooldown } from "../email/dedup";
 import { notifyApiKeyIssued, notifyReconnectRequired, notifyWelcome } from "../email/notifications";
 import { ConfigError } from "../lib/errors";
@@ -63,6 +65,36 @@ async function fetchGoogleProperties(
       : Promise.resolve(null)
   ]);
   return { gscSites, ga4Properties };
+}
+
+/**
+ * The Add-website drawer's whole reason for existing: what's in the
+ * tenant's Google account that isn't tracked here yet, so there's
+ * something to click instead of a name/domain form to fill in (see
+ * discovery.ts). Best-effort per scope, same as fetchGoogleProperties: a
+ * transient Google API failure just means fewer discovered properties
+ * this load, never a broken page.
+ */
+async function discoverProperties(
+  env: Env,
+  tenantId: string,
+  gscState: ConnectionState,
+  ga4State: ConnectionState,
+  existingDomains: Set<string>
+): Promise<DiscoveredProperty[]> {
+  const [gscSites, ga4Properties] = await Promise.all([
+    gscState === "connected"
+      ? getValidAccessToken(env, "webmaster_console", tenantId)
+          .then((token) => listSites(token))
+          .catch(() => [])
+      : Promise.resolve([]),
+    ga4State === "connected"
+      ? getValidAccessToken(env, "analytics_property", tenantId)
+          .then((token) => listPropertiesWithDomains(token))
+          .catch(() => [])
+      : Promise.resolve([])
+  ]);
+  return buildDiscoveredProperties(gscSites, ga4Properties, existingDomains);
 }
 
 type DashboardEnv = { Bindings: Env; Variables: { tenantId: string } };
@@ -163,7 +195,8 @@ dashboard.get("/websites", async (c) => {
     gsc: row.gsc_site_url ? gscState : "not_configured",
     ga4: row.ga4_property_id ? ga4State : "not_configured"
   }));
-  const { gscSites, ga4Properties } = await fetchGoogleProperties(env, tenantId, gscState, ga4State);
+  const existingDomains = new Set(websiteRows.map((row) => normalizeDomain(row.primary_domain)));
+  const discovered = await discoverProperties(env, tenantId, gscState, ga4State, existingDomains);
   const connectedParam = c.req.query("connected");
 
   return c.html(
@@ -172,8 +205,7 @@ dashboard.get("/websites", async (c) => {
       googleOAuthConfigured: hasGoogleOAuth(env),
       gscState,
       ga4State,
-      gscSites,
-      ga4Properties,
+      discovered,
       justConnected: connectedParam && isScopeGroup(connectedParam) ? connectedParam : null
     })
   );

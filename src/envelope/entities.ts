@@ -2,7 +2,7 @@ import type { Entity } from "./types";
 
 /**
  * Deterministic, dependency-free short hash (FNV-1a) for minting stable
- * entity ids from URLs/strings. Not cryptographic — just needs to be stable
+ * entity ids from URLs/strings. Not cryptographic, just needs to be stable
  * and collision-unlikely for the id space this server deals with.
  */
 function fnv1a(input: string): string {
@@ -14,7 +14,8 @@ function fnv1a(input: string): string {
   return (hash >>> 0).toString(16).padStart(8, "0");
 }
 
-function normalizeDomain(domainOrUrl: string): string {
+/** Exported for reuse by src/dashboard/discovery.ts, which matches GSC/GA4 properties onto the same domain without any tenant-typed input. */
+export function normalizeDomain(domainOrUrl: string): string {
   const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(domainOrUrl)
     ? domainOrUrl
     : `https://${domainOrUrl}`;

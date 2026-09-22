@@ -162,13 +162,15 @@ const DASHBOARD_CSS = `
   .widget-connections { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.3rem; }
   .widget-connect-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; }
   .widget-connect-row > span:first-child { flex: 1; }
-  .stacked-form { display: flex; flex-direction: column; gap: 0.85rem; }
-  .stacked-form label {
-    display: flex; flex-direction: column; gap: 0.3rem;
-    font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+  .discovered-list { display: flex; flex-direction: column; gap: 0.6rem; }
+  form.discovered-row {
+    display: flex; align-items: center; gap: 0.6rem; margin: 0;
+    border: 1px solid var(--border); padding: 0.65rem 0.8rem;
   }
-  .stacked-form input, .stacked-form select { width: 100%; min-width: 0; }
-  .stacked-form button { margin-top: 0.2rem; }
+  .discovered-row > div:first-child { flex: 1; min-width: 0; }
+  .discovered-row-name { font-weight: 600; overflow-wrap: anywhere; }
+  .discovered-row-source { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.05em; text-transform: uppercase; }
+  .discovered-row button { flex-shrink: 0; }
 
   /* Add-website drawer: checkbox+label toggle (see AddWebsiteWidget's doc
      comment for why this uses that instead of <details>/<summary>). The

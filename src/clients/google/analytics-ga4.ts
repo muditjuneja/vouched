@@ -46,6 +46,8 @@ export interface GA4Property {
   /** e.g. "properties/123456789": the exact id runReport's propertyId param expects. */
   property: string;
   displayName: string;
+  /** The property's web data stream's default URI, hostname-only, or null if it has no web stream (an app-only property) or the lookup failed. Lets the dashboard match a GA4 property onto the same domain as a Search Console site with zero tenant-typed input; see listPropertiesWithDomains. */
+  domain: string | null;
 }
 
 interface AccountSummariesResponse {
@@ -71,6 +73,38 @@ export async function listProperties(accessToken: string): Promise<GA4Property[]
   }
   const body = (await res.json()) as AccountSummariesResponse;
   return (body.accountSummaries ?? []).flatMap((account) =>
-    (account.propertySummaries ?? []).map((p) => ({ property: p.property, displayName: p.displayName }))
+    (account.propertySummaries ?? []).map((p) => ({ property: p.property, displayName: p.displayName, domain: null }))
   );
+}
+
+interface DataStreamsResponse {
+  dataStreams?: { type?: string; webStreamData?: { defaultUri?: string } }[];
+}
+
+/** Best-effort: a transient failure, a property with no web stream (app-only), or an unparseable defaultUri all just mean "no domain to match on", never a thrown error. */
+async function fetchStreamDomain(accessToken: string, property: string): Promise<string | null> {
+  try {
+    const res = await fetch(`https://analyticsadmin.googleapis.com/v1beta/${property}/dataStreams`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as DataStreamsResponse;
+    const defaultUri = body.dataStreams?.find((s) => s.type === "WEB_DATA_STREAM")?.webStreamData?.defaultUri;
+    return defaultUri ? new URL(defaultUri).hostname : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Same as listProperties, but also resolves each property's web stream
+ * domain (one extra Admin API call per property, run in parallel) so the
+ * dashboard can match a GA4 property onto the same tracked website as a
+ * Search Console site with zero tenant-typed input (see
+ * src/dashboard/discovery.ts). listProperties itself stays domain-less and
+ * cheap for the edit page's plain picker, which doesn't need matching.
+ */
+export async function listPropertiesWithDomains(accessToken: string): Promise<GA4Property[]> {
+  const properties = await listProperties(accessToken);
+  return Promise.all(properties.map(async (p) => ({ ...p, domain: await fetchStreamDomain(accessToken, p.property) })));
 }

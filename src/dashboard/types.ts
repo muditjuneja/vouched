@@ -1,10 +1,9 @@
 import type { ConnectionState } from "../auth/google-oauth";
 import type { CostLogRow } from "../clients/dataforseo/cost-tracker";
-import type { GA4Property } from "../clients/google/analytics-ga4";
-import type { SearchConsoleSite } from "../clients/google/search-console";
 import type { McpApiKeyRow } from "../db/mcp-api-keys";
 import type { Plan, SubscriptionStatus, WalletLedgerRow } from "../db/subscriptions";
 import type { WebsiteRow } from "../db/websites";
+import type { DiscoveredProperty } from "./discovery";
 
 export interface DashboardWebsite {
   row: WebsiteRow;
@@ -44,15 +43,14 @@ export interface WebsitesData {
   gscState: ConnectionState;
   ga4State: ConnectionState;
   /**
-   * The tenant's real GSC sites / GA4 properties, fetched live from Google
-   * once per page load when that scope is connected: lets the add/edit
-   * forms offer a real picker instead of a raw text field the tenant has
-   * to hand-type an internal id into. `null` means "don't show a picker"
-   * (not connected, or the listing call itself failed): the form falls
-   * back to a plain text input either way, never a dead end.
+   * The tenant's Google properties that aren't tracked yet, matched by
+   * domain across GSC/GA4 and ready to track with one click, no name/url
+   * typing at all: see src/dashboard/discovery.ts. Empty whenever nothing
+   * new was found, whether because nothing's connected, the account has no
+   * properties, or everything discoverable is already tracked; the widget
+   * tells those cases apart via gscState/ga4State, not this list alone.
    */
-  gscSites: SearchConsoleSite[] | null;
-  ga4Properties: GA4Property[] | null;
+  discovered: DiscoveredProperty[];
   /** Set right after the OAuth callback redirects back here (see src/auth/oauth-routes.ts's handleOAuthCallback), so a connect started from this page lands on a real confirmation right here instead of over on Settings. */
   justConnected: "webmaster_console" | "analytics_property" | null;
 }
