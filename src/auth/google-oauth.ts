@@ -7,7 +7,7 @@ const AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
 
 /**
  * `openid email` is included so the callback can label the connected
- * account by email (decoded from the returned id_token) — it's a display
+ * account by email (decoded from the returned id_token): it's a display
  * label, not used for authorization, so this server never verifies the
  * id_token's signature.
  */
@@ -16,18 +16,23 @@ const SCOPES: Record<ScopeGroup, string> = {
   analytics_property: "openid email https://www.googleapis.com/auth/analytics.readonly"
 };
 
+/** Which dashboard page to land back on after the consent screen; a closed enum (never a raw URL) so this can never become an open redirect. */
+export type OAuthReturnTo = "websites" | "settings";
+
 /**
  * `state` round-trips through Google untouched, so it's how the callback
- * learns which scope group (and, in cloud mode, which tenant) this consent
- * flow was for. Self-host: just the scope group. Cloud mode: scope group
- * plus the Clerk user id that started the flow, colon-separated (a Clerk
- * user id never contains a colon, so this is an unambiguous split).
+ * learns which scope group (and, in cloud mode, which tenant and which
+ * page to return to) this consent flow was for. Self-host: just the scope
+ * group. Cloud mode: scope group, the Clerk user id that started the
+ * flow, and the return page, colon-separated (a Clerk user id never
+ * contains a colon, so this is an unambiguous split).
  */
 export function buildAuthUrl(
   env: Env,
   redirectUri: string,
   scopeGroup: ScopeGroup,
-  tenantId: string | null = null
+  tenantId: string | null = null,
+  returnTo: OAuthReturnTo = "settings"
 ): string {
   const url = new URL(AUTH_ENDPOINT);
   url.searchParams.set("client_id", env.GOOGLE_OAUTH_CLIENT_ID ?? "");
@@ -35,11 +40,11 @@ export function buildAuthUrl(
   url.searchParams.set("response_type", "code");
   url.searchParams.set("scope", SCOPES[scopeGroup]);
   url.searchParams.set("access_type", "offline");
-  // Forces Google to (re)issue a refresh_token even on a repeat consent —
+  // Forces Google to (re)issue a refresh_token even on a repeat consent:
   // without this, reconnecting after a revoked/expired refresh_token would
   // silently fail to get a new one.
   url.searchParams.set("prompt", "consent");
-  url.searchParams.set("state", tenantId ? `${scopeGroup}:${tenantId}` : scopeGroup);
+  url.searchParams.set("state", tenantId ? `${scopeGroup}:${tenantId}:${returnTo}` : scopeGroup);
   return url.toString();
 }
 
@@ -56,7 +61,7 @@ function expiresAtFrom(expiresInSeconds: number): string {
   return new Date(Date.now() + expiresInSeconds * 1000).toISOString();
 }
 
-/** Decodes the id_token payload for its `email` claim. Not signature-verified — see SCOPES comment. */
+/** Decodes the id_token payload for its `email` claim. Not signature-verified: see SCOPES comment. */
 function decodeEmailClaim(idToken: string): string {
   const payload = idToken.split(".")[1];
   if (!payload) return "unknown";
@@ -94,7 +99,7 @@ export async function exchangeCodeForTokens(
   if (!tokens.refresh_token) {
     throw new UpstreamError(
       "google_oauth",
-      "no refresh_token returned — Google only issues one on first consent per client; revoke access at https://myaccount.google.com/permissions and try again"
+      "no refresh_token returned. Google only issues one on first consent per client; revoke access at https://myaccount.google.com/permissions and try again"
     );
   }
 
@@ -132,7 +137,7 @@ const EXPIRY_BUFFER_MS = 60_000;
  * Returns a usable access token for the given scope group, refreshing it
  * first if it's expired (or about to). Throws `ConnectionRequiredError` if
  * nothing is connected at all, and `UpstreamError` if a refresh fails (a
- * revoked/expired refresh_token — this is the "reconnect_required" case).
+ * revoked/expired refresh_token, this is the "reconnect_required" case).
  */
 export async function getValidAccessToken(
   env: Env,

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildAuthUrl } from "../../../src/auth/google-oauth";
 import type { Env } from "../../../src/types/env";
 
-// buildAuthUrl is the one pure (no D1, no fetch) piece of google-oauth.ts —
+// buildAuthUrl is the one pure (no D1, no fetch) piece of google-oauth.ts:
 // everything else (getValidAccessToken, checkConnectionState, the token
 // exchange/refresh calls) touches D1 and/or Google's endpoints directly and
 // is exercised under @cloudflare/vitest-pool-workers instead (see README's
@@ -46,5 +46,19 @@ describe("buildAuthUrl", () => {
     );
     expect(url.searchParams.get("client_id")).toBe("abc");
     expect(url.searchParams.get("redirect_uri")).toBe("https://worker.example/oauth/google/callback");
+  });
+
+  it("encodes the tenant id and return page into state (cloud mode), defaulting returnTo to settings", () => {
+    const url = new URL(
+      buildAuthUrl(fakeEnv(), "https://worker.example/oauth/google/callback", "webmaster_console", "tenant-1")
+    );
+    expect(url.searchParams.get("state")).toBe("webmaster_console:tenant-1:settings");
+  });
+
+  it("threads a websites returnTo through state so the callback can send the tenant back to the page they started from", () => {
+    const url = new URL(
+      buildAuthUrl(fakeEnv(), "https://worker.example/oauth/google/callback", "webmaster_console", "tenant-1", "websites")
+    );
+    expect(url.searchParams.get("state")).toBe("webmaster_console:tenant-1:websites");
   });
 });

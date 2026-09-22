@@ -147,7 +147,7 @@ describe("authenticateDashboardRequest", () => {
     const result = await authenticateDashboardRequest(req, fakeEnv({ CLERK_PUBLISHABLE_KEY: "pk_test" }), makeClient);
     expect(result.session).toBeNull();
     expect(result.handshakeRedirect).toBeInstanceOf(Response);
-    expect(result.handshakeRedirect?.status).toBe(307);
+    expect(result.handshakeRedirect?.status).toBe(303);
     expect(result.handshakeRedirect?.headers.get("Location")).toBe("https://clerk.example.com/handshake");
   });
 
@@ -180,7 +180,7 @@ describe("authenticateDashboardRequest", () => {
       expect(result.refreshedSetCookies).toEqual([]);
     });
 
-    it("falls back to a real handshake redirect when a same-request refresh alone isn't enough", async () => {
+    it("falls back to a real handshake redirect when a same-request refresh alone isn't enough, using 303 so the browser's follow-up GETs Clerk instead of replaying the original POST onto it", async () => {
       const handshakeHeaders = new Headers({ Location: "https://clerk.example.com/handshake?redirect_url=%2Fdashboard%2Fwebsites" });
       const makeClient = fakeAuthClerkClient((request) => {
         if (request.method === "GET") return { status: "handshake", headers: handshakeHeaders };
@@ -190,7 +190,7 @@ describe("authenticateDashboardRequest", () => {
       const result = await authenticateDashboardRequest(postReq, fakeEnv({ CLERK_PUBLISHABLE_KEY: "pk_test" }), makeClient);
       expect(result.session).toBeNull();
       expect(result.handshakeRedirect).toBeInstanceOf(Response);
-      expect(result.handshakeRedirect?.status).toBe(307);
+      expect(result.handshakeRedirect?.status).toBe(303);
       expect(result.handshakeRedirect?.headers.get("Location")).toContain("dashboard%2Fwebsites");
     });
 

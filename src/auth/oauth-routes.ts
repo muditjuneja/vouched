@@ -1,5 +1,5 @@
 import { verifyClerkSession } from "./clerk";
-import { buildAuthUrl, exchangeCodeForTokens } from "./google-oauth";
+import { buildAuthUrl, exchangeCodeForTokens, type OAuthReturnTo } from "./google-oauth";
 import type { ScopeGroup } from "../db/google-tokens";
 import { isCloudMode, type Env } from "../types/env";
 
@@ -45,8 +45,9 @@ export async function handleOAuthStart(request: Request, env: Env): Promise<Resp
     }
   }
 
+  const returnTo: OAuthReturnTo = url.searchParams.get("returnTo") === "websites" ? "websites" : "settings";
   const redirectUri = new URL("/oauth/google/callback", url.origin).toString();
-  return Response.redirect(buildAuthUrl(env, redirectUri, scope, tenantId), 302);
+  return Response.redirect(buildAuthUrl(env, redirectUri, scope, tenantId, returnTo), 302);
 }
 
 export async function handleOAuthCallback(request: Request, env: Env): Promise<Response> {
@@ -63,16 +64,25 @@ export async function handleOAuthCallback(request: Request, env: Env): Promise<R
   }
 
   // See buildAuthUrl's doc comment: state is "<scope>" (self-host) or
-  // "<scope>:<tenantId>" (cloud mode).
-  const [scope, tenantId] = state.includes(":")
-    ? (state.split(":") as [string, string])
-    : [state, null];
+  // "<scope>:<tenantId>:<returnTo>" (cloud mode).
+  const [scope, tenantId, returnTo] = state.includes(":") ? state.split(":") : [state, null, null];
   if (!isScopeGroup(scope)) {
     return new Response("invalid state", { status: 400 });
   }
 
   const redirectUri = new URL("/oauth/google/callback", url.origin).toString();
-  await exchangeCodeForTokens(env, code, redirectUri, scope, tenantId);
+  await exchangeCodeForTokens(env, code, redirectUri, scope, tenantId ?? null);
+
+  // Cloud mode: this is a same-tab navigation from the dashboard (the
+  // connect link is a plain <a>, not a popup), so land back on a real,
+  // navigable page instead of a dead-end text response with no way back.
+  // Self-host has no dashboard to return to at all (isCloudMode is false,
+  // or this callback was reached via the setup_token path with no
+  // tenant), so it keeps the plain text response.
+  if (isCloudMode(env) && tenantId) {
+    const page = returnTo === "websites" ? "websites" : "settings";
+    return Response.redirect(new URL(`/dashboard/${page}?connected=${scope}`, url.origin).toString(), 302);
+  }
 
   return new Response(
     `Connected. The "${scope}" tools are now enabled, you can close this tab.\n`,

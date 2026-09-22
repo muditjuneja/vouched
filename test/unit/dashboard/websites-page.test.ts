@@ -6,8 +6,11 @@ function fakeData(overrides: Partial<WebsitesData> = {}): WebsitesData {
   return {
     websites: [],
     googleOAuthConfigured: false,
+    gscState: "not_connected",
+    ga4State: "not_connected",
     gscSites: null,
     ga4Properties: null,
+    justConnected: null,
     ...overrides
   };
 }
@@ -93,22 +96,31 @@ describe("renderWebsites", () => {
     expect(html).toContain('value="properties/123"');
   });
 
-  it("nudges the tenant to connect Google when it isn't connected yet, only when Google OAuth itself is configured on this deployment", () => {
+  it("offers a direct Connect action in the Add-website widget when Google isn't connected yet, only when Google OAuth itself is configured on this deployment", () => {
     const notConfigured = renderWebsites(fakeData({ googleOAuthConfigured: false }));
-    expect(notConfigured).not.toContain("Connect Google in");
+    expect(notConfigured).not.toContain("/oauth/google/start?scope=webmaster_console&returnTo=websites");
+    expect(notConfigured).toContain("Google OAuth isn&#39;t configured on this deployment yet");
 
     const configuredButNotConnected = renderWebsites(fakeData({ googleOAuthConfigured: true }));
-    expect(configuredButNotConnected).toContain("Connect Google in");
+    expect(configuredButNotConnected).toContain("/oauth/google/start?scope=webmaster_console&amp;returnTo=websites");
+    expect(configuredButNotConnected).toContain("/oauth/google/start?scope=analytics_property&amp;returnTo=websites");
   });
 
-  it("doesn't show the connect nudge once both scopes are connected", () => {
+  it("doesn't show the connect action once both scopes are connected", () => {
     const html = renderWebsites(
       fakeData({
         googleOAuthConfigured: true,
+        gscState: "connected",
+        ga4State: "connected",
         gscSites: [],
         ga4Properties: []
       })
     );
-    expect(html).not.toContain("Connect Google in");
+    expect(html).not.toContain("/oauth/google/start");
+  });
+
+  it("shows a confirmation banner right here when the tenant just connected from this page", () => {
+    const html = renderWebsites(fakeData({ justConnected: "webmaster_console" }));
+    expect(html).toContain("Search Console connected");
   });
 });

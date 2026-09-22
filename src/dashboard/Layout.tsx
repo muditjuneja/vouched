@@ -74,7 +74,7 @@ const DASHBOARD_CSS = `
   }
   .sheet {
     position: relative; z-index: 1;
-    max-width: min(1180px, 100%); margin: 0 auto; background: var(--bg);
+    background: var(--bg);
     border: 1px solid var(--border); min-height: calc(100vh - 28px);
   }
   .sheet-tick {
@@ -148,9 +148,55 @@ const DASHBOARD_CSS = `
   form.inline { display: inline-block; margin: 0; }
   .row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
   input, select {
-    border-radius: 4px; background: color-mix(in srgb, var(--bg) 50%, white);
+    /* var(--paper), not a fixed color-mix toward white: that mix reads as a
+       subtle lift off the page in light mode but turns into a jarring flat
+       gray box in dark mode, since mixing 50% white into a near-black --bg
+       lands in the middle of the scale, ignoring the theme entirely.
+       --paper already flips per theme (see body.dash's two variable
+       blocks), so this stays a subtle paper-toned field in both. */
+    border-radius: 4px; background: var(--paper);
     min-width: 10rem;
   }
+  .page-header-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .page-header-row h1 { margin-bottom: 0; }
+  .widget-connections { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.3rem; }
+  .widget-connect-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; }
+  .widget-connect-row > span:first-child { flex: 1; }
+  .stacked-form { display: flex; flex-direction: column; gap: 0.85rem; }
+  .stacked-form label {
+    display: flex; flex-direction: column; gap: 0.3rem;
+    font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+  }
+  .stacked-form input, .stacked-form select { width: 100%; min-width: 0; }
+  .stacked-form button { margin-top: 0.2rem; }
+
+  /* Add-website drawer: checkbox+label toggle (see AddWebsiteWidget's doc
+     comment for why this uses that instead of <details>/<summary>). The
+     checkbox itself is visually hidden but stays keyboard-focusable. */
+  .drawer-toggle-input {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
+  label.drawer-open-btn { cursor: pointer; }
+  .drawer-backdrop {
+    position: fixed; inset: 0; z-index: 19; cursor: pointer;
+    background: rgba(20, 17, 14, 0.4); opacity: 0; pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  aside.add-website-drawer {
+    position: fixed; top: 0; right: 0; z-index: 20;
+    width: min(26rem, 92vw); height: 100%; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 0.9rem;
+    background: var(--bg); padding: 1.25rem 1.3rem 1.35rem;
+    border-left: 1px solid var(--border); border-radius: 0; margin: 0;
+    box-shadow: var(--shadow-lg);
+    transform: translateX(100%); transition: transform 0.2s ease;
+  }
+  .drawer-toggle-input:checked ~ .drawer-backdrop { opacity: 1; pointer-events: auto; }
+  .drawer-toggle-input:checked ~ aside.add-website-drawer { transform: translateX(0); }
+  .drawer-header { display: flex; align-items: center; justify-content: space-between; }
+  .drawer-header h2 { margin: 0; }
+  label.drawer-close { cursor: pointer; font-family: var(--font-mono); font-size: 1rem; line-height: 1; }
   .callout { border-radius: 0; background: var(--paper); }
   .key {
     font-family: var(--font-mono); background: var(--paper); border: 1px solid var(--border);

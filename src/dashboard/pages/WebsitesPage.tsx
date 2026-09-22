@@ -1,11 +1,15 @@
 import { renderPage } from "../Layout";
+import { AddWebsiteWidget } from "../components/AddWebsiteWidget";
 import { WebsitesSection } from "../components/WebsitesSection";
 import type { WebsitesData } from "../types";
 
 function WebsitesPage({ data }: { data: WebsitesData }) {
   return (
     <>
-      <h1>Websites</h1>
+      <div class="page-header-row">
+        <h1>Websites</h1>
+        <AddWebsiteWidget data={data} />
+      </div>
       <WebsitesSection data={data} />
     </>
   );

@@ -164,8 +164,19 @@ dashboard.get("/websites", async (c) => {
     ga4: row.ga4_property_id ? ga4State : "not_configured"
   }));
   const { gscSites, ga4Properties } = await fetchGoogleProperties(env, tenantId, gscState, ga4State);
+  const connectedParam = c.req.query("connected");
 
-  return c.html(renderWebsites({ websites, googleOAuthConfigured: hasGoogleOAuth(env), gscSites, ga4Properties }));
+  return c.html(
+    renderWebsites({
+      websites,
+      googleOAuthConfigured: hasGoogleOAuth(env),
+      gscState,
+      ga4State,
+      gscSites,
+      ga4Properties,
+      justConnected: connectedParam && isScopeGroup(connectedParam) ? connectedParam : null
+    })
+  );
 });
 
 dashboard.post("/websites", async (c) => {
@@ -298,6 +309,7 @@ dashboard.get("/settings", async (c) => {
     checkConnectionState(env, "webmaster_console", tenantId),
     checkConnectionState(env, "analytics_property", tenantId)
   ]);
+  const connectedParam = c.req.query("connected");
 
   return c.html(
     renderSettings({
@@ -305,7 +317,8 @@ dashboard.get("/settings", async (c) => {
       apiKeys,
       gsc,
       ga4,
-      googleOAuthConfigured: hasGoogleOAuth(env)
+      googleOAuthConfigured: hasGoogleOAuth(env),
+      justConnected: connectedParam && isScopeGroup(connectedParam) ? connectedParam : null
     })
   );
 });

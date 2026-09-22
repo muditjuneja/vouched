@@ -114,7 +114,15 @@ export async function authenticateDashboardRequest(
   const requestState = await client.authenticateRequest(request);
 
   if (requestState.status === "handshake") {
-    return { session: null, handshakeRedirect: new Response(null, { status: 307, headers: requestState.headers }), refreshedSetCookies: [] };
+    // 303, not 307: Clerk's handshake endpoint is a GET-only browser
+    // navigation target (confirmed against a real Clerk app: a POST that
+    // needed this fallback got a 405 straight from *.accounts.dev when this
+    // used 307, which preserves the original request's method on redirect).
+    // 303 always switches the browser to GET regardless of what the
+    // original request's method was, which is what a redirect-based
+    // handshake needs. Safe for the plain-GET case above too: 303 and 307
+    // behave identically when the original method was already GET.
+    return { session: null, handshakeRedirect: new Response(null, { status: 303, headers: requestState.headers }), refreshedSetCookies: [] };
   }
   if (requestState.status === "signed-in") {
     const auth = requestState.toAuth();
@@ -146,7 +154,12 @@ export async function authenticateDashboardRequest(
     // GET; see the dashboard's catch-all GET fallback in
     // src/dashboard/routes.ts for why that's harmless.
     if (probeState.status === "handshake") {
-      return { session: null, handshakeRedirect: new Response(null, { status: 307, headers: probeState.headers }), refreshedSetCookies: [] };
+      // Same 303-not-307 reasoning as above: this is what a POST (e.g.
+      // disconnect, add website) hits when a silent refresh alone isn't
+      // enough. 307 would preserve the original POST onto Clerk's
+      // GET-only handshake endpoint and 405 there instead of completing
+      // the round trip.
+      return { session: null, handshakeRedirect: new Response(null, { status: 303, headers: probeState.headers }), refreshedSetCookies: [] };
     }
   }
 

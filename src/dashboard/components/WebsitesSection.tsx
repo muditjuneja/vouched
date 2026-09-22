@@ -1,11 +1,10 @@
-import { Button, Callout, Table } from "../../design";
+import { Button, Table } from "../../design";
 import type { WebsitesData } from "../types";
 import { ConnectionBadge } from "./ConnectionBadge";
-import { Ga4PropertyField, GscSiteField } from "./GoogleAssetFields";
 
 function ConnectLink({ scope, show }: { scope: "webmaster_console" | "analytics_property"; show: boolean }) {
   if (!show) return null;
-  return <a href={`/oauth/google/start?scope=${scope}`}> connect</a>;
+  return <a href={`/oauth/google/start?scope=${scope}&returnTo=websites`}> connect</a>;
 }
 
 export function WebsitesSection({ data }: { data: WebsitesData }) {
@@ -46,23 +45,6 @@ export function WebsitesSection({ data }: { data: WebsitesData }) {
           ))}
         </Table>
       )}
-      {data.googleOAuthConfigured && (data.gscSites === null || data.ga4Properties === null) ? (
-        <Callout>
-          <p>
-            Connect Google in <a href="/dashboard/settings">Settings</a> to pick your Search Console/Analytics properties from a real
-            list instead of typing an id by hand.
-          </p>
-        </Callout>
-      ) : null}
-      <form method="post" action="/dashboard/websites" class="row" style="margin-top:0.75rem">
-        <input name="name" placeholder="Display name" required />
-        <input name="primaryDomain" placeholder="example.com" required />
-        <GscSiteField sites={data.gscSites} />
-        <Ga4PropertyField properties={data.ga4Properties} />
-        <button type="submit" class="btn btn-primary">
-          Add website
-        </button>
-      </form>
     </section>
   );
 }

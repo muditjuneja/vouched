@@ -36,6 +36,14 @@ export interface WebsitesData {
   websites: DashboardWebsite[];
   googleOAuthConfigured: boolean;
   /**
+   * The tenant's scope-wide Google connection state, so the "Add a
+   * website" widget can offer a direct Connect action right here instead
+   * of sending the tenant to Settings first (that used to be the only
+   * place to connect).
+   */
+  gscState: ConnectionState;
+  ga4State: ConnectionState;
+  /**
    * The tenant's real GSC sites / GA4 properties, fetched live from Google
    * once per page load when that scope is connected: lets the add/edit
    * forms offer a real picker instead of a raw text field the tenant has
@@ -45,6 +53,8 @@ export interface WebsitesData {
    */
   gscSites: SearchConsoleSite[] | null;
   ga4Properties: GA4Property[] | null;
+  /** Set right after the OAuth callback redirects back here (see src/auth/oauth-routes.ts's handleOAuthCallback), so a connect started from this page lands on a real confirmation right here instead of over on Settings. */
+  justConnected: "webmaster_console" | "analytics_property" | null;
 }
 
 export interface UsageData {
@@ -75,4 +85,6 @@ export interface SettingsData {
   gsc: ConnectionState;
   ga4: ConnectionState;
   googleOAuthConfigured: boolean;
+  /** Set right after the OAuth callback redirects back here (see src/auth/oauth-routes.ts's handleOAuthCallback), so the tenant lands on a real confirmation instead of a dead-end text page. */
+  justConnected: "webmaster_console" | "analytics_property" | null;
 }
