@@ -3,14 +3,14 @@ import { authenticateDashboardRequest, getTenantEmail } from "../auth/clerk";
 import { checkConnectionState, getValidAccessToken, type ConnectionState } from "../auth/google-oauth";
 import { isScopeGroup, SCOPE_GROUPS } from "../auth/oauth-routes";
 import { listCostLog } from "../clients/dataforseo/cost-tracker";
-import { listProperties, listPropertiesWithDomains, type GA4Property } from "../clients/google/analytics-ga4";
+import { listPropertiesWithDomains, type GA4Property } from "../clients/google/analytics-ga4";
 import { listSites, type SearchConsoleSite } from "../clients/google/search-console";
 import type { ScopeGroup } from "../db/google-tokens";
 import { deleteToken } from "../db/google-tokens";
 import { createApiKey, listApiKeys, revokeApiKey } from "../db/mcp-api-keys";
 import { getEffectivePlan, getSubscription, getWalletBalance, listWalletLedger } from "../db/subscriptions";
 import { getUsage } from "../db/usage-counters";
-import { addWebsite, deleteWebsite, getWebsiteById, listWebsites, updateWebsite } from "../db/websites";
+import { addWebsite, deleteWebsite, listWebsites, updateWebsite } from "../db/websites";
 import { normalizeDomain } from "../envelope/entities";
 import { MONTHLY_QUOTA_USD } from "../billing/quotas";
 import { buildDiscoveredProperties, type DiscoveredProperty } from "./discovery";
@@ -25,7 +25,6 @@ import { renderOverview } from "./pages/OverviewPage";
 import { renderSettings } from "./pages/SettingsPage";
 import { renderSignInRequired } from "./pages/SignInRequiredPage";
 import { renderUsage } from "./pages/UsagePage";
-import { renderWebsiteEdit } from "./pages/WebsiteEditPage";
 import { renderWebsites } from "./pages/WebsitesPage";
 import type { ActionNotice, DashboardUser, DashboardWebsite } from "./types";
 
@@ -84,7 +83,7 @@ async function fetchGoogleProperties(
       : Promise.resolve(null),
     ga4State === "connected"
       ? getValidAccessToken(env, "analytics_property", tenantId)
-          .then((token) => listProperties(token))
+          .then((token) => listPropertiesWithDomains(token))
           .catch(() => null)
       : Promise.resolve(null)
   ]);
@@ -105,20 +104,14 @@ async function discoverProperties(
   gscState: ConnectionState,
   ga4State: ConnectionState,
   existingDomains: Set<string>
-): Promise<DiscoveredProperty[]> {
-  const [gscSites, ga4Properties] = await Promise.all([
-    gscState === "connected"
-      ? getValidAccessToken(env, "webmaster_console", tenantId)
-          .then((token) => listSites(token))
-          .catch(() => [])
-      : Promise.resolve([]),
-    ga4State === "connected"
-      ? getValidAccessToken(env, "analytics_property", tenantId)
-          .then((token) => listPropertiesWithDomains(token))
-          .catch(() => [])
-      : Promise.resolve([])
-  ]);
-  return buildDiscoveredProperties(gscSites, ga4Properties, existingDomains);
+): Promise<{
+  discovered: DiscoveredProperty[];
+  gscSites: SearchConsoleSite[] | null;
+  ga4Properties: GA4Property[] | null;
+}> {
+  const { gscSites, ga4Properties } = await fetchGoogleProperties(env, tenantId, gscState, ga4State);
+  const discovered = buildDiscoveredProperties(gscSites ?? [], ga4Properties ?? [], existingDomains);
+  return { discovered, gscSites, ga4Properties };
 }
 
 type DashboardEnv = { Bindings: Env; Variables: { tenantId: string } };
@@ -249,9 +242,10 @@ dashboard.get("/websites", async (c) => {
     ga4: row.ga4_property_id ? ga4State : "not_configured"
   }));
   const existingDomains = new Set(websiteRows.map((row) => normalizeDomain(row.primary_domain)));
-  const discovered = await discoverProperties(env, tenantId, gscState, ga4State, existingDomains);
+  const { discovered, gscSites, ga4Properties } = await discoverProperties(env, tenantId, gscState, ga4State, existingDomains);
   const connectedParam = c.req.query("connected");
   const actionParam = c.req.query("action");
+  const editParam = c.req.query("edit");
   const notice = parseActionNotice(actionParam);
 
   return c.html(
@@ -263,7 +257,10 @@ dashboard.get("/websites", async (c) => {
       ga4State,
       discovered,
       justConnected: connectedParam && isScopeGroup(connectedParam) ? connectedParam : null,
-      notice
+      notice,
+      gscSites,
+      ga4Properties,
+      editingWebsiteId: editParam ?? null
     })
   );
 });
@@ -295,19 +292,9 @@ dashboard.post("/websites", async (c) => {
   return c.redirect("/dashboard/websites?action=added", 303);
 });
 
-dashboard.get("/websites/:websiteId/edit", async (c) => {
-  const tenantId = c.get("tenantId");
-  const env = c.env;
-  const [website, user] = await Promise.all([getWebsiteById(env.DB, c.req.param("websiteId"), tenantId), getDashboardUser(env, tenantId)]);
-  if (!website) return c.text("not found", 404);
-
-  const [gscState, ga4State] = await Promise.all([
-    checkConnectionState(env, "webmaster_console", tenantId),
-    checkConnectionState(env, "analytics_property", tenantId)
-  ]);
-  const { gscSites, ga4Properties } = await fetchGoogleProperties(env, tenantId, gscState, ga4State);
-
-  return c.html(renderWebsiteEdit({ user, website, gscSites, ga4Properties }));
+dashboard.get("/websites/:websiteId/edit", (c) => {
+  const websiteId = c.req.param("websiteId");
+  return c.redirect(`/dashboard/websites?edit=${encodeURIComponent(websiteId)}`, 303);
 });
 
 dashboard.post("/websites/:websiteId/update", async (c) => {

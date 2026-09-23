@@ -19,9 +19,9 @@ function ConnectionRow({
       <td data-label="Status">
         <ConnectionBadge state={state} />
       </td>
-      <td data-label="Action">
+      <td data-label="Action" class="col-actions">
         {!googleOAuthConfigured ? null : state === "not_connected" ? (
-          <a href={`/oauth/google/start?scope=${scope}`}>Connect</a>
+          <a class="btn btn-sm" href={`/oauth/google/start?scope=${scope}`}>Connect</a>
         ) : (
           <form
             method="post"
@@ -29,7 +29,7 @@ function ConnectionRow({
             class="inline"
             onsubmit="return confirm('Disconnect this Google account? Tools relying on it will stop working for every website until you reconnect.')"
           >
-            <Button>Disconnect</Button>
+            <Button size="sm">Disconnect</Button>
           </form>
         )}
       </td>

@@ -128,3 +128,13 @@ describe("dashboard logout", () => {
   });
 });
 
+describe("dashboard website edit route", () => {
+  it("redirects GET /websites/:websiteId/edit to /dashboard/websites?edit=:websiteId to open the side drawer", async () => {
+    authenticateDashboardRequest.mockResolvedValueOnce({ session: { userId: "user_1" }, handshakeRedirect: null, refreshedSetCookies: [] });
+    const env = fakeEnv({ CLOUD_MODE: "1", CLERK_SECRET_KEY: "sk_test" });
+    const res = await dashboard.request("/websites/w1/edit", {}, env);
+    expect(res.status).toBe(303);
+    expect(res.headers.get("Location")).toBe("/dashboard/websites?edit=w1");
+  });
+});
+

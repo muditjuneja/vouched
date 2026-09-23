@@ -31,7 +31,7 @@ describe("renderLanding: domain icon grid", () => {
 
   it("renders all 7 domain tiles with a scaled-down, aria-hidden icon each", () => {
     expect(html).toContain("domain-grid");
-    for (const domain of ["core", "audit", "seo", "serp", "backlinks", "ai_visibility", "gsc / analytics"]) {
+    for (const domain of ["core", "gsc", "analytics", "seo", "serp", "backlinks", "ai_visibility"]) {
       expect(html).toContain(`<h3>${domain}</h3>`);
     }
     const domainGridStart = html.indexOf('class="domain-grid"');

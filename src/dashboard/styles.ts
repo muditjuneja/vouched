@@ -249,20 +249,23 @@ export const DASHBOARD_CSS = `
   body.dash .stat-card-value { margin: 0; font-size: 1.35rem; font-weight: 700; letter-spacing: -0.01em; }
   body.dash .stat-card-sublabel { margin: 0.25rem 0 0; font-size: 0.75rem; }
 
-  /* Add-website slide-over drawer */
+  /* Slide-over drawers (Add website & Edit website) */
   .drawer-toggle-input {
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
     overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
   }
-  label.drawer-open-btn { cursor: pointer; }
+  label.drawer-open-btn { cursor: pointer; user-select: none; }
+  label.drawer-cancel-btn { cursor: pointer; user-select: none; }
   .drawer-backdrop {
     position: fixed; inset: 0; z-index: 19; cursor: pointer;
     background: rgba(20, 17, 14, 0.45); opacity: 0; pointer-events: none;
     transition: opacity 0.2s ease;
   }
-  aside.add-website-drawer {
+  aside.add-website-drawer,
+  aside.edit-website-drawer,
+  aside.slide-drawer {
     position: fixed; top: 0; right: 0; z-index: 20;
-    width: min(25rem, 92vw); height: 100%; overflow-y: auto;
+    width: min(26rem, 92vw); height: 100%; overflow-y: auto;
     display: flex; flex-direction: column; gap: 0.85rem;
     background: var(--bg); padding: 1.25rem;
     border-left: 1px solid var(--border); border-radius: 0; margin: 0;
@@ -271,7 +274,33 @@ export const DASHBOARD_CSS = `
     box-sizing: border-box;
   }
   .drawer-toggle-input:checked ~ .drawer-backdrop { opacity: 1; pointer-events: auto; }
-  .drawer-toggle-input:checked ~ aside.add-website-drawer { transform: translateX(0); }
+  .drawer-toggle-input:checked ~ aside.add-website-drawer,
+  .drawer-toggle-input:checked ~ aside.edit-website-drawer,
+  .drawer-toggle-input:checked ~ aside.slide-drawer { transform: translateX(0); }
+  .drawer-form {
+    display: flex; flex-direction: column; gap: 0.95rem; margin: 0;
+  }
+  .drawer-form .form-group {
+    display: flex; flex-direction: column; gap: 0.35rem;
+  }
+  .drawer-form .form-label {
+    font-size: 0.8rem; font-weight: 600; color: var(--text);
+  }
+  .drawer-form .form-input,
+  .drawer-form input,
+  .drawer-form select {
+    width: 100%; box-sizing: border-box; font-size: 0.82rem; padding: 0.45rem 0.65rem;
+    border: 1px solid var(--border); border-radius: 4px; background: var(--paper); color: var(--text);
+    font-family: inherit;
+  }
+  .drawer-form select {
+    cursor: pointer;
+  }
+  .drawer-form .font-normal { font-weight: 400; }
+  .drawer-actions {
+    display: flex; align-items: center; gap: 0.6rem; margin-top: 0.5rem; padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+  }
   .drawer-header {
     display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem;
     padding-bottom: 0.75rem; border-bottom: 1px solid var(--border);
@@ -613,5 +642,108 @@ export const DASHBOARD_CSS = `
     .row-actions { justify-content: flex-start; }
     .col-actions { text-align: left; }
     .websites-table th:last-child { text-align: left; }
+  }
+
+  /* Standalone Auth / Gate Shell (no sidebar) */
+  .dash-auth-shell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    padding: 2rem 1.5rem;
+    box-sizing: border-box;
+    overflow-y: auto;
+  }
+  .auth-card {
+    max-width: 28rem;
+    width: 100%;
+    background: var(--paper);
+    border: 1px solid var(--border);
+    padding: 2.25rem 2rem;
+    box-sizing: border-box;
+    text-align: center;
+  }
+  .auth-brand {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 2.2rem;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+    line-height: 1;
+  }
+  .auth-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+  }
+  .auth-title {
+    font-family: var(--font-display);
+    font-size: 1.45rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.65rem;
+    color: var(--text);
+  }
+  .auth-desc {
+    font-size: 0.88rem;
+    color: var(--muted);
+    line-height: 1.5;
+    margin: 0 0 1.75rem;
+  }
+  .auth-btn-primary {
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.92rem;
+    font-weight: 550;
+    margin-bottom: 1.5rem;
+  }
+  .auth-checklist {
+    list-style: none;
+    padding: 0.9rem 0 0;
+    margin: 0;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    text-align: left;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .auth-checklist li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .auth-check-icon {
+    color: var(--status-good-bg);
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+  .auth-footer {
+    margin-top: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 28rem;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .auth-footer a {
+    color: var(--text);
+    text-decoration: none;
+  }
+  .auth-footer a:hover {
+    text-decoration: underline;
   }
 `;

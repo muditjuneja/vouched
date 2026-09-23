@@ -39,5 +39,14 @@ function CloudDisabledPage() {
 }
 
 export function renderCloudDisabled(): string {
-  return renderPage({ title: "Dashboard not available", activePath: "", children: <CloudDisabledPage /> });
+  return renderPage({
+    title: "Dashboard not available",
+    activePath: "",
+    hideSidebar: true,
+    children: (
+      <div class="auth-card" style="max-width: 34rem; text-align: left;">
+        <CloudDisabledPage />
+      </div>
+    )
+  });
 }

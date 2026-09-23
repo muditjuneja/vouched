@@ -48,7 +48,7 @@ export const COMPARISON_PAGES: ComparisonPage[] = [
       "Ahrefs is a long-established, dashboard-first SEO suite with its own crawler and " +
       "backlink index. Vouched is a different kind of tool: an open-source MCP " +
       "server that exposes the same category of data (keywords, backlinks, SERPs, " +
-      "technical audits) as callable tools for an AI agent, backed by DataForSEO rather " +
+      "URL indexing inspection) as callable tools for an AI agent, backed by DataForSEO rather " +
       "than a proprietary index it built itself.",
     rows: [
       OSS_ROW,
@@ -88,7 +88,7 @@ export const COMPARISON_PAGES: ComparisonPage[] = [
       MCP_ROW,
       {
         label: "Scope",
-        us: "18 focused SEO/marketing-data tools: keyword research, backlinks, SERP, AI-visibility, technical audit, GSC/GA4.",
+        us: "18 focused SEO/marketing-data tools: keyword research, backlinks, SERP, AI-visibility, URL indexing inspection, GSC/GA4.",
         them: "Broader marketing suite (SEO, advertising, content, social media management) beyond just SEO data."
       },
       {
@@ -121,6 +121,11 @@ export const COMPARISON_PAGES: ComparisonPage[] = [
         label: "Pricing model",
         us: "Self-host: free forever, bring your own DataForSEO key, zero markup. Cloud: flat monthly plans with bundled usage.",
         them: "Credits at $10 / 1,000 (public pricing fetched 6 Sep 2026). Per-tool credit costs in their docs vs marketing do not always match."
+      },
+      {
+        label: "Search Console (GSC)",
+        us: "First-party Google Search Console connection: inspect URL indexing, query 28-day CTR and impressions, and list sitemaps. Confidence 1.0, $0 vendor cost.",
+        them: "No direct first-party Google Search Console connection. Third-party scraping/proxy credits only."
       },
       {
         label: "Tool manifest",

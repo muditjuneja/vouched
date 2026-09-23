@@ -103,7 +103,7 @@ function PricingPage({ cloudMode }: { cloudMode: boolean }) {
             </td>
           </tr>
           <tr>
-            <td>Free-tier tools (core/audit/gsc/analytics)</td>
+            <td>Free-tier tools (core/gsc/analytics)</td>
             <td>
               <Yes /> no paid vendor
             </td>
@@ -143,29 +143,39 @@ function PricingPage({ cloudMode }: { cloudMode: boolean }) {
 
       <section class="faq">
         <h2>Frequently asked</h2>
-        <details>
-          <summary>Do I need a DataForSEO account to self-host?</summary>
-          <p>
-            Only for the <code>seo</code>/<code>serp</code>/<code>backlinks</code>/<code>ai_visibility</code> tools. The free tier
-            (audits, Search Console, GA4) needs no paid vendor at all.
-          </p>
-        </details>
-        <details>
-          <summary>Is the cloud version the same code?</summary>
-          <p>Yes, the same 18 tools and the same open-source implementation. The cloud version adds hosting, bundled DataForSEO billing, and a dashboard on top.</p>
-        </details>
-        <details>
-          <summary>Can I switch from cloud to self-host later?</summary>
-          <p>Yes, it's the same MIT-licensed codebase. Clone the repo and deploy your own copy whenever you want.</p>
-        </details>
-        <details>
-          <summary>What happens once I use up my plan's included quota?</summary>
-          <p>
-            Add credit to your prepaid overage wallet from the dashboard, and DataForSEO-backed calls keep working past your monthly quota,
-            billed at cost plus a small markup, no plan upgrade needed. It works standalone too: skip the subscription entirely and pay
-            straight from the wallet.
-          </p>
-        </details>
+        <div class="faq-list">
+          <details open>
+            <summary>Do I need a DataForSEO account to self-host?</summary>
+            <div class="faq-answer">
+              <p>
+                Only for the <code>seo</code>/<code>serp</code>/<code>backlinks</code>/<code>ai_visibility</code> tools. The free tier
+                (Search Console, GA4, core tools) needs no paid vendor at all.
+              </p>
+            </div>
+          </details>
+          <details>
+            <summary>Is the cloud version the same code?</summary>
+            <div class="faq-answer">
+              <p>Yes, the same 18 tools and the same open-source implementation. The cloud version adds hosting, bundled DataForSEO billing, and a dashboard on top.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Can I switch from cloud to self-host later?</summary>
+            <div class="faq-answer">
+              <p>Yes, it's the same MIT-licensed codebase. Clone the repo and deploy your own copy whenever you want.</p>
+            </div>
+          </details>
+          <details>
+            <summary>What happens once I use up my plan's included quota?</summary>
+            <div class="faq-answer">
+              <p>
+                Add credit to your prepaid overage wallet from the dashboard, and DataForSEO-backed calls keep working past your monthly quota,
+                billed at cost plus a small markup, no plan upgrade needed. It works standalone too: skip the subscription entirely and pay
+                straight from the wallet.
+              </p>
+            </div>
+          </details>
+        </div>
       </section>
     </>
   );

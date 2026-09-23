@@ -8,17 +8,11 @@ import { DASHBOARD_CSS } from "./styles";
 
 export interface LayoutProps {
   title: string;
-  /**
-   * Which sidebar item is the current page: a literal string each page's
-   * own render*Page() function passes in (e.g. "/dashboard/billing"),
-   * compile-time-known per route. Fully server-computed active-item
-   * highlighting: never derived from the request path inside Layout
-   * itself, so no request/context needs to be threaded through here.
-   */
   activePath: string;
   user?: import("./types").DashboardUser;
   notice?: import("./types").ActionNotice | null;
   breadcrumbs?: { label: string; href?: string }[];
+  hideSidebar?: boolean;
 }
 
 function FlashAlert({ notice }: { notice: import("./types").ActionNotice }) {
@@ -43,7 +37,7 @@ function Breadcrumbs({ items }: { items: { label: string; href?: string }[] }) {
   );
 }
 
-function Layout({ title, activePath, user, notice, breadcrumbs, children }: PropsWithChildren<LayoutProps>) {
+function Layout({ title, activePath, user, notice, breadcrumbs, hideSidebar, children }: PropsWithChildren<LayoutProps>) {
   return (
     <html lang="en">
       <head>
@@ -56,7 +50,7 @@ function Layout({ title, activePath, user, notice, breadcrumbs, children }: Prop
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,500&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,600&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
         <style dangerouslySetInnerHTML={{ __html: TOKENS_CSS + BASE_CSS + DASHBOARD_CSS }} />
@@ -67,21 +61,29 @@ function Layout({ title, activePath, user, notice, breadcrumbs, children }: Prop
           <span class="sheet-tick tr" />
           <span class="sheet-tick bl" />
           <span class="sheet-tick br" />
-          {/* Mobile-only hamburger; CSS-only via the [open] ~ sibling
-              selector below, no script. Irrelevant on desktop, where
-              .dash-mobile-toggle is display: none and .dash-sidebar is
-              just always visible. */}
-          <details class="dash-mobile-toggle">
-            <summary />
-          </details>
-          <div class="dash-shell">
-            <Sidebar activePath={activePath} user={user} />
-            <main class="dash-main dash-content">
-              {notice ? <FlashAlert notice={notice} /> : null}
-              {breadcrumbs && breadcrumbs.length > 0 ? <Breadcrumbs items={breadcrumbs} /> : null}
+          {hideSidebar ? (
+            <div class="dash-auth-shell">
               {children}
-            </main>
-          </div>
+            </div>
+          ) : (
+            <>
+              {/* Mobile-only hamburger; CSS-only via the [open] ~ sibling
+                  selector below, no script. Irrelevant on desktop, where
+                  .dash-mobile-toggle is display: none and .dash-sidebar is
+                  just always visible. */}
+              <details class="dash-mobile-toggle">
+                <summary />
+              </details>
+              <div class="dash-shell">
+                <Sidebar activePath={activePath} user={user} />
+                <main class="dash-main dash-content">
+                  {notice ? <FlashAlert notice={notice} /> : null}
+                  {breadcrumbs && breadcrumbs.length > 0 ? <Breadcrumbs items={breadcrumbs} /> : null}
+                  {children}
+                </main>
+              </div>
+            </>
+          )}
         </div>
         <script
           dangerouslySetInnerHTML={{

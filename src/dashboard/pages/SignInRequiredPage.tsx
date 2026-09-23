@@ -1,3 +1,5 @@
+import { DISPLAY_NAME } from "../../lib/product";
+import { GITHUB_URL } from "../../marketing/github-url";
 import { renderPage } from "../Layout";
 
 function buildTarget(currentUrl: string, signInUrl: string | null): string | null {
@@ -6,33 +8,61 @@ function buildTarget(currentUrl: string, signInUrl: string | null): string | nul
   return `${signInUrl}${separator}redirect_url=${encodeURIComponent(currentUrl)}`;
 }
 
-function SignInRequiredPage({ currentUrl, signInUrl }: { currentUrl: string; signInUrl: string | null }) {
+function SignInPage({ currentUrl, signInUrl }: { currentUrl: string; signInUrl: string | null }) {
   const target = buildTarget(currentUrl, signInUrl);
   return (
-    <div style="max-width: 28rem; margin: 3rem auto 0; text-align: center;">
-      <section class="panel" style="padding: 2.2rem 2rem;">
-        <h1 style="font-size: 1.8rem; margin-bottom: 0.75rem;">Sign in required</h1>
-        <p class="muted" style="margin-bottom: 1.5rem; font-size: 0.92rem;">
-          You need an active session to access your dashboard, manage tracked websites, and generate MCP keys.
+    <>
+      <div class="auth-card">
+        <div class="auth-brand">
+          <em>{DISPLAY_NAME}</em>
+        </div>
+        <span class="auth-badge">Cloud Dashboard</span>
+        <h1 class="auth-title">Sign in to your account</h1>
+        <p class="auth-desc">
+          Connect your Google Search Console properties, manage tracked domains, and generate MCP API keys for Claude and Cursor.
         </p>
+
         {target ? (
-          <p style="margin: 0;">
-            <a class="btn btn-primary" href={target} style="width: 100%; box-sizing: border-box; justify-content: center; padding: 0.75rem 1rem;">
-              Sign in to continue →
-            </a>
-          </p>
+          <a class="btn btn-primary auth-btn-primary" href={target}>
+            Sign in to continue →
+          </a>
         ) : (
-          <p class="muted" style="font-size: 0.85rem;">No sign-in page is configured on this deployment (CLERK_SIGN_IN_URL).</p>
+          <div class="dash-alert dash-alert-warn" style="margin-bottom: 1.25rem; text-align: left; font-size: 0.8rem;">
+            No sign-in page is configured on this deployment (<code>CLERK_SIGN_IN_URL</code> is unset).
+          </div>
         )}
-      </section>
-      <p style="margin-top: 1rem;">
-        <a href="/" class="dash-back-link">← Return to home page</a>
-      </p>
-    </div>
+
+        <ul class="auth-checklist">
+          <li>
+            <span class="auth-check-icon" aria-hidden="true">✓</span>
+            <span>Automatic workspace setup on first sign-in</span>
+          </li>
+          <li>
+            <span class="auth-check-icon" aria-hidden="true">✓</span>
+            <span>Direct Google Search Console & Analytics OAuth</span>
+          </li>
+          <li>
+            <span class="auth-check-icon" aria-hidden="true">✓</span>
+            <span>Pre-configured DataForSEO quota on hosted plans</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="auth-footer">
+        <a href="/">← Return to home page</a>
+        <a href={GITHUB_URL} target="_blank" rel="noreferrer">
+          Self-host Community ($0) →
+        </a>
+      </div>
+    </>
   );
 }
 
 export function renderSignInRequired(currentUrl: string, signInUrl: string | null): string {
-  return renderPage({ title: "Sign in", activePath: "", children: <SignInRequiredPage currentUrl={currentUrl} signInUrl={signInUrl} /> });
+  return renderPage({
+    title: "Sign in",
+    activePath: "",
+    hideSidebar: true,
+    children: <SignInPage currentUrl={currentUrl} signInUrl={signInUrl} />
+  });
 }
-

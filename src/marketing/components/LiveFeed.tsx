@@ -4,7 +4,7 @@ export interface FeedItem {
 
 export const DEFAULT_FEED_ITEMS: FeedItem[] = [
   { label: "research_keywords → seo.keyword_opportunity · search_index · 0.75" },
-  { label: "audit_site → audit.site_health · crawl · 0.95" },
+  { label: "inspect_indexing → gsc.indexing_status · webmaster_console · 1.0" },
   { label: "get_search_performance → webmaster_console · 1.0" },
   { label: "inspect_serp → live_serp · 0.85" },
   { label: "inspect_backlinks → backlink_index · 0.7" }

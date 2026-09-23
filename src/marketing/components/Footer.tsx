@@ -12,8 +12,8 @@ export function Footer({ cloudMode }: FooterProps) {
         <div>
           <p class="brand">{DISPLAY_NAME}</p>
           <p class="muted">
-            An open-source (MIT) MCP server for SEO and marketing data: keyword research, backlinks, SERP, AI-visibility, technical
-            audits, and your own Search Console/Analytics, callable from an MCP client. Same tools on Cloud or self-host.
+            An open-source (MIT) MCP server for SEO and marketing data: keyword research, backlinks, SERP, AI-visibility, URL
+            indexing inspection, and your own Search Console/Analytics, callable from an MCP client. Same tools on Cloud or self-host.
           </p>
         </div>
         <div>

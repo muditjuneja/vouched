@@ -50,7 +50,7 @@ describe("renderWebsites", () => {
     expect(html).toContain("&lt;script&gt;");
   });
 
-  it("links Edit/Delete actions to the right per-website routes", () => {
+  it("wires Edit side drawer and Delete actions to the right per-website targets", () => {
     const html = renderWebsites(
       fakeData({
         websites: [
@@ -71,8 +71,34 @@ describe("renderWebsites", () => {
         ]
       })
     );
-    expect(html).toContain('href="/dashboard/websites/w1/edit"');
+    expect(html).toContain('for="edit-website-w1"');
+    expect(html).toContain('action="/dashboard/websites/w1/update"');
     expect(html).toContain('action="/dashboard/websites/w1/delete"');
+  });
+
+  it("pre-opens the edit drawer when editingWebsiteId matches", () => {
+    const html = renderWebsites(
+      fakeData({
+        websites: [
+          {
+            row: {
+              website_id: "w1",
+              name: "Example",
+              primary_domain: "example.com",
+              is_default: 0,
+              gsc_site_url: null,
+              ga4_property_id: null,
+              tenant_id: "t1",
+              created_at: "2026-01-01"
+            },
+            gsc: "not_configured",
+            ga4: "not_configured"
+          }
+        ],
+        editingWebsiteId: "w1"
+      })
+    );
+    expect(html).toContain('id="edit-website-w1" class="drawer-toggle-input" checked');
   });
 
   it("has no manual name/domain form at all: nothing to type, only discovered properties to click", () => {

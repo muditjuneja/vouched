@@ -35,7 +35,7 @@ export function renderToolsIndex(canonicalUrl: string, cloudMode: boolean): stri
   const byDomain = groupByDomain(TOOL_PAGES);
   return renderPage({
     title: `All ${TOOL_PAGES.length} tools · Vouched`,
-    description: `Reference for every MCP tool Vouched offers across ${byDomain.size} domains: keyword research, backlinks, SERP, AI-visibility, technical audits, Search Console, and GA4.`,
+    description: `Reference for every MCP tool Vouched offers across ${byDomain.size} domains: keyword research, backlinks, SERP, AI-visibility, URL indexing inspection, Search Console, and GA4.`,
     canonicalUrl,
     cloudMode,
     children: <ToolsIndexPage byDomain={byDomain} />

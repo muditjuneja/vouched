@@ -1,20 +1,18 @@
 import type { Child } from "hono/jsx";
 import { MONTHLY_QUOTA_USD } from "../../billing/quotas";
 import { Button, Card, CodeWindow, Table } from "../../design";
-import { TOOL_MANIFEST } from "../../mcp/manifest";
 import { DISPLAY_NAME, MCP_SERVER_NAME, cloudCtaHref } from "../brand";
+import { AgentPreview } from "../components/AgentPreview";
 import { Hero } from "../components/Hero";
-import { LiveFeed } from "../components/LiveFeed";
 import {
   BarChartIcon,
   LinkIcon,
+  ReceiptIcon,
   SearchIcon,
-  ShieldIcon,
   SparkleIcon,
   TargetIcon,
   TrendingUpIcon
 } from "../components/icons";
-import { TOOL_PAGES } from "../content/tool-pages";
 import { GITHUB_URL } from "../github-url";
 import { renderPage } from "../Layout";
 
@@ -22,20 +20,52 @@ interface DomainSummary {
   icon: Child;
   name: string;
   description: string;
+  examplePrompt: string;
 }
 
 const DOMAIN_SUMMARIES: DomainSummary[] = [
-  { icon: <SearchIcon />, name: "core", description: "Capability discovery, tracked-site listing, dataset export." },
-  { icon: <ShieldIcon />, name: "audit", description: "A bounded, robots.txt-aware self-crawl with a site-health score." },
+  {
+    icon: <SearchIcon />,
+    name: "core",
+    description: "Capability discovery, tracked-site listing, dataset export.",
+    examplePrompt: 'list_websites() · export_dataset("mcpseo://...")'
+  },
+  {
+    icon: <BarChartIcon />,
+    name: "gsc",
+    description: "First-party Google Search Console queries, URL indexing inspection, and sitemaps.",
+    examplePrompt: 'inspect_indexing({ url: "https://example.com" })'
+  },
   {
     icon: <TrendingUpIcon />,
-    name: "seo",
-    description: "Domain snapshots, competitor discovery, keyword research and gap analysis, search-visibility tracking."
+    name: "analytics",
+    description: "First-party Google Analytics 4 traffic metrics, landing pages, and engagement.",
+    examplePrompt: 'get_website_analytics({ domain: "example.com" })'
   },
-  { icon: <TargetIcon />, name: "serp", description: "Live SERP snapshots for a single query." },
-  { icon: <LinkIcon />, name: "backlinks", description: "Link profile inspection and backlink-gap analysis across competitors." },
-  { icon: <SparkleIcon />, name: "ai_visibility", description: "Which sources AI answers cite in your category, and how your domain shows up in them." },
-  { icon: <BarChartIcon />, name: "gsc / analytics", description: "Your own Search Console and GA4 data, first-party, no modeling." }
+  {
+    icon: <ReceiptIcon />,
+    name: "seo",
+    description: "Domain snapshots, competitor discovery, keyword research, and rank tracking.",
+    examplePrompt: 'research_keywords({ seedKeywords: ["open source seo"] })'
+  },
+  {
+    icon: <TargetIcon />,
+    name: "serp",
+    description: "Live SERP snapshots for a single query.",
+    examplePrompt: 'inspect_serp({ keyword: "best developer seo" })'
+  },
+  {
+    icon: <LinkIcon />,
+    name: "backlinks",
+    description: "Link profile inspection and backlink-gap analysis across competitors.",
+    examplePrompt: 'inspect_backlinks({ domain: "competitor.com" })'
+  },
+  {
+    icon: <SparkleIcon />,
+    name: "ai_visibility",
+    description: "Which sources AI answers cite in your category, and how your domain shows up.",
+    examplePrompt: 'discover_ai_citations({ topic: "developer tools" })'
+  }
 ];
 
 const DEPLOY_COMMANDS = `npm install
@@ -62,7 +92,7 @@ const HOW_IT_WORKS: Step[] = [
   {
     title: "Ask in the conversation",
     description:
-      "Research a keyword, snapshot a SERP, inspect backlinks, audit a site, or pull GSC/GA4 without leaving the chat."
+      "Research keywords, inspect SERPs, verify URL indexing, or pull GSC data directly from your chat."
   },
   {
     title: "Get facts with provenance",
@@ -90,8 +120,8 @@ function LandingPage({ cloudMode }: { cloudMode: boolean }) {
             </span>
           </>
         }
-        lede="The same 18 tools whether we run Vouched Cloud or you self-host Community. Cite keywords, SERPs, backlinks, audits, and GSC/GA4 from Claude or Cursor — with source, freshness, and a confidence score on every fact."
-        visual={<LiveFeed />}
+        lede="Connect Claude, Cursor, or any MCP client to 18 SEO tools. Pull keyword research, live SERPs, backlink profiles, URL indexing, and verified GSC/GA4 data — with source, timestamp, and confidence on every fact."
+        visual={<AgentPreview />}
       >
         <div class="cta-row">
           <Button href={cloudHref} variant="primary">
@@ -112,9 +142,44 @@ function LandingPage({ cloudMode }: { cloudMode: boolean }) {
         <p class="chapter">01 — Product</p>
         <h2>What the agent can do</h2>
         <p>
-          Product capabilities, not deploy docs. Every tool returns a typed envelope: facts plus provenance so you can show where a
-          number came from.
+          Every tool returns a typed envelope: facts plus provenance so you can verify where every number came from.
         </p>
+
+        <div class="receipt-anatomy-grid">
+          <div class="receipt-pillar">
+            <span class="pillar-icon" aria-hidden="true">🏷️</span>
+            <span class="pillar-title">Source Attribution</span>
+            <p class="pillar-desc">
+              Every fact cites its origin: first-party Google accounts, live SERP snapshots, or third-party search index.
+            </p>
+            <span class="pillar-code">source_class: "search_index"</span>
+          </div>
+          <div class="receipt-pillar">
+            <span class="pillar-icon" aria-hidden="true">⏱️</span>
+            <span class="pillar-title">Freshness Timestamp</span>
+            <p class="pillar-desc">
+              ISO-8601 observation timestamp on every fact, showing when data was observed.
+            </p>
+            <span class="pillar-code">observed_at: "2026-09-23..."</span>
+          </div>
+          <div class="receipt-pillar">
+            <span class="pillar-icon" aria-hidden="true">🎯</span>
+            <span class="pillar-title">Confidence Score</span>
+            <p class="pillar-desc">
+              A published default per source class (1.0 for Search Console, 0.85 live SERP, 0.75 search index) so agents weight claims accordingly.
+            </p>
+            <span class="pillar-code">confidence: 0.75</span>
+          </div>
+          <div class="receipt-pillar">
+            <span class="pillar-icon" aria-hidden="true">🔒</span>
+            <span class="pillar-title">Typed Envelope</span>
+            <p class="pillar-desc">
+              Strict JSON schemas and mcpseo:// dataset URIs. Predictable data structures an agent can parse without guessing.
+            </p>
+            <span class="pillar-code">fact_type: "seo.keyword_opp..."</span>
+          </div>
+        </div>
+
         <div class="domain-grid">
           {DOMAIN_SUMMARIES.map((domain) => (
             <div class="domain-tile">
@@ -122,12 +187,13 @@ function LandingPage({ cloudMode }: { cloudMode: boolean }) {
               <div>
                 <h3>{domain.name}</h3>
                 <p>{domain.description}</p>
+                <span class="domain-prompt-tag"><code>{domain.examplePrompt}</code></span>
               </div>
             </div>
           ))}
         </div>
         <p style="margin-top:1.5rem">
-          <a href="/tools">Browse all {TOOL_PAGES.length} tools →</a>
+          <a href="/tools">Browse all 18 tools →</a>
         </p>
       </section>
 
@@ -155,8 +221,9 @@ function LandingPage({ cloudMode }: { cloudMode: boolean }) {
         </p>
         <div class="deploy-grid">
           <Card title="Vouched Cloud">
-            <p>We run it. Bundled DataForSEO, dashboard, keys, and quotas. Fastest path if you do not want to operate a Worker.</p>
-            <p class="muted">Pick this when you want to start in minutes.</p>
+            <span class="deploy-badge cloud">Managed Cloud</span>
+            <p>Hosted on Cloudflare Workers with bundled DataForSEO, key management, and a dashboard.</p>
+            <p class="muted">Pick this if you don't want to operate a Worker or manage vendor keys.</p>
             <div class="cta-row">
               <Button href={cloudHref} variant="primary">
                 Start on Cloud
@@ -164,8 +231,9 @@ function LandingPage({ cloudMode }: { cloudMode: boolean }) {
             </div>
           </Card>
           <Card title="Self-hosted Community">
-            <p>MIT, your Cloudflare Worker, bring-your-own DataForSEO key, zero markup. Full control.</p>
-            <p class="muted">Pick this when you want cost control and to run it yourself.</p>
+            <span class="deploy-badge oss">MIT Open Source</span>
+            <p>Deploy to your own Cloudflare account. Bring your own DataForSEO key with zero markup.</p>
+            <p class="muted">Pick this for full control, privacy, and zero software subscription fees.</p>
             <div id="quickstart">
               <CodeWindow title="Community quickstart">{`${DEPLOY_COMMANDS}
 
@@ -185,25 +253,28 @@ ${CONNECT_COMMAND}`}</CodeWindow>
         <p>Community is $0. Cloud is a flat monthly quota, not credits.</p>
         <div class="pricing-rail">
           <div>
+            <span class="rail-tag">Self-Host · Free Forever</span>
             <p class="rail-name">Community</p>
             <p class="price-amount">
               ${MONTHLY_QUOTA_USD.free} <small>/mo</small>
             </p>
-            <p>Self-host. All {TOOL_MANIFEST.length} tools. BYOK for DataForSEO-backed calls.</p>
+            <p>Self-host on Cloudflare Workers. All 18 tools. Free tier needs no vendor; BYOK for DataForSEO.</p>
           </div>
           <div>
+            <span class="rail-tag highlight">Most Popular · Bundled Quota</span>
             <p class="rail-name">Cloud Pro</p>
             <p class="price-amount">
               ${MONTHLY_QUOTA_USD.pro} <small>/mo</small>
             </p>
-            <p>Hosted. Bundled DataForSEO up to the Pro quota.</p>
+            <p>Hosted for you. Includes ${MONTHLY_QUOTA_USD.pro}/mo of DataForSEO usage, dashboard, and key management.</p>
           </div>
           <div>
+            <span class="rail-tag">Scale · Team Allowance</span>
             <p class="rail-name">Cloud Team</p>
             <p class="price-amount">
               ${MONTHLY_QUOTA_USD.team} <small>/mo</small>
             </p>
-            <p>Same hosted product, larger bundled allowance.</p>
+            <p>For teams tracking more sites. Includes ${MONTHLY_QUOTA_USD.team}/mo of DataForSEO usage.</p>
           </div>
         </div>
         <p>
@@ -230,6 +301,11 @@ ${CONNECT_COMMAND}`}</CodeWindow>
             <td>Community $0 + BYOK, or flat Cloud quota</td>
             <td>Credits ($10 / 1,000)</td>
           </tr>
+          <tr>
+            <td>Search Console</td>
+            <td>First-party GSC integration (confidence 1.0, $0 vendor cost)</td>
+            <td>No direct GSC connection (credit-metered proxies)</td>
+          </tr>
         </Table>
         <p class="muted">
           OpenRush credit price from their public site, 6 Sep 2026. Their docs and marketing disagree on some per-tool credit costs
@@ -243,48 +319,65 @@ ${CONNECT_COMMAND}`}</CodeWindow>
       <section class="faq">
         <p class="chapter">06 — Questions</p>
         <h2>Frequently asked</h2>
-        <details>
-          <summary>Cloud or self-host — which should I pick?</summary>
-          <p>
-            Same 18 tools. Cloud means we operate the Worker and bundle DataForSEO. Community means you run the Worker and bring your
-            own key. Speed vs control and cost.
-          </p>
-        </details>
-        <details>
-          <summary>Do I need a DataForSEO key?</summary>
-          <p>
-            Only for the DataForSEO-backed domains (<code>seo</code>, <code>serp</code>, <code>backlinks</code>,{" "}
-            <code>ai_visibility</code>). That is a capability split, not Cloud vs Community: self-host with BYOK, or Cloud with
-            bundled access. Audits, GSC, and GA4 need no paid vendor.
-          </p>
-        </details>
-        <details>
-          <summary>Is Cloud the same code?</summary>
-          <p>Yes. Hosting, keys, quotas, and a dashboard sit on the same MIT codebase.</p>
-        </details>
-        <details>
-          <summary>Can I switch later?</summary>
-          <p>Yes. Clone the repo and deploy Community whenever you want; MCP clients point at a different URL.</p>
-        </details>
-        <details>
-          <summary>What does “receipts” or provenance actually mean?</summary>
-          <p>
-            Every fact ships <code>source_class</code>, <code>method</code>, <code>observed_at</code>, and a{" "}
-            <code>confidence</code> number. Confidence is a published default per source class (for example search_index is 0.75),
-            not a statistical estimate of whether a volume number is “right.”
-          </p>
-        </details>
-        <details>
-          <summary>Which MCP clients work?</summary>
-          <p>Anything that speaks MCP over HTTP with a bearer token: Claude, Cursor, and other clients with custom MCP servers.</p>
-        </details>
-        <details>
-          <summary>How is this different from OpenRush?</summary>
-          <p>
-            OpenRush is closed and credit-metered. Vouched is MIT, self-hostable, and Cloud is a flat quota. Dataset URIs stay{" "}
-            <code>mcpseo://</code> for compatibility.
-          </p>
-        </details>
+        <div class="faq-list">
+          <details open>
+            <summary>Cloud or self-host — which should I pick?</summary>
+            <div class="faq-answer">
+              <p>
+                Same 18 tools. Cloud means we host the Worker and bundle DataForSEO access.
+                Community means you deploy to your own Cloudflare account with your own key. Speed
+                vs control and cost.
+              </p>
+            </div>
+          </details>
+          <details open>
+            <summary>Do I need a DataForSEO key?</summary>
+            <div class="faq-answer">
+              <p>
+                Only for the DataForSEO-backed domains (<code>seo</code>, <code>serp</code>, <code>backlinks</code>,{" "}
+                <code>ai_visibility</code>). That is a capability split, not Cloud vs Community: self-host with BYOK, or Cloud with
+                bundled access. Search Console, GA4, and core tools need no paid vendor key.
+              </p>
+            </div>
+          </details>
+          <details>
+            <summary>Is Cloud the same code?</summary>
+            <div class="faq-answer">
+              <p>Yes. The cloud service runs the same MIT codebase with added hosting, quota tracking, and auth.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Can I switch later?</summary>
+            <div class="faq-answer">
+              <p>Yes. Deploy Community to your own Cloudflare account anytime. Simply update the MCP URL in your client.</p>
+            </div>
+          </details>
+          <details>
+            <summary>What does “receipts” or provenance actually mean?</summary>
+            <div class="faq-answer">
+              <p>
+                Every fact includes <code>source_class</code>, <code>method</code>, <code>observed_at</code>, and a{" "}
+                <code>confidence</code> score. Confidence is a published default per source class (for example Search Console is 1.0,
+                live SERP is 0.85, search index is 0.75), not a statistical estimate of whether a volume number is exact.
+              </p>
+            </div>
+          </details>
+          <details>
+            <summary>Which MCP clients work?</summary>
+            <div class="faq-answer">
+              <p>Claude Desktop, Claude Code, Cursor, and any client supporting MCP over HTTP with bearer authentication.</p>
+            </div>
+          </details>
+          <details>
+            <summary>How is this different from OpenRush?</summary>
+            <div class="faq-answer">
+              <p>
+                OpenRush is closed-source and charges per-call credits. Vouched is MIT licensed, self-hostable, and Cloud uses predictable
+                monthly quotas. Dataset URIs stay <code>mcpseo://</code> for compatibility.
+              </p>
+            </div>
+          </details>
+        </div>
       </section>
 
       <section>
@@ -306,7 +399,7 @@ export function renderLanding(canonicalUrl: string, cloudMode: boolean): string 
   return renderPage({
     title: `${DISPLAY_NAME}: SEO facts your agent can vouch for`,
     description:
-      "Open-source MCP server for SEO and marketing data. Same 18 tools on Vouched Cloud or self-hosted Community — keyword research, backlinks, SERP, audits, GSC/GA4, with provenance on every fact.",
+      "Open-source MCP server for SEO and marketing data. Same 18 tools on Vouched Cloud or self-hosted Community — keyword research, backlinks, SERP, URL indexing, GSC/GA4, with provenance on every fact.",
     canonicalUrl,
     cloudMode,
     children: <LandingPage cloudMode={cloudMode} />

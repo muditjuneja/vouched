@@ -1,5 +1,7 @@
 import type { ConnectionState } from "../auth/google-oauth";
 import type { CostLogRow } from "../clients/dataforseo/cost-tracker";
+import type { GA4Property } from "../clients/google/analytics-ga4";
+import type { SearchConsoleSite } from "../clients/google/search-console";
 import type { McpApiKeyRow } from "../db/mcp-api-keys";
 import type { Plan, SubscriptionStatus, WalletLedgerRow } from "../db/subscriptions";
 import type { WebsiteRow } from "../db/websites";
@@ -73,6 +75,11 @@ export interface WebsitesData {
   /** Set right after the OAuth callback redirects back here (see src/auth/oauth-routes.ts's handleOAuthCallback), so a connect started from this page lands on a real confirmation right here instead of over on Settings. */
   justConnected: "webmaster_console" | "analytics_property" | null;
   notice?: ActionNotice | null;
+  /** Discovered Google properties available for selection when editing a website in its slide drawer. */
+  gscSites?: SearchConsoleSite[] | null;
+  ga4Properties?: GA4Property[] | null;
+  /** ID of website whose edit side drawer should be open on initial load. */
+  editingWebsiteId?: string | null;
 }
 
 export interface UsageData {

@@ -21,7 +21,6 @@ export const DOMAIN_LABELS: Record<string, string> = {
   core: "Core",
   seo: "SEO",
   serp: "SERP",
-  audit: "Technical Audit",
   backlinks: "Backlinks",
   ai_visibility: "AI Visibility",
   gsc: "Search Console",

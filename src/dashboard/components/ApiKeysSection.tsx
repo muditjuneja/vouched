@@ -20,14 +20,14 @@ export function ApiKeysSection({ data }: { data: SettingsData }) {
               <td class="muted" data-label="Last used">
                 {key.last_used_at ?? "never used"}
               </td>
-              <td data-label="Action">
+              <td data-label="Action" class="col-actions">
                 <form
                   method="post"
                   action={`/dashboard/api-keys/${key.key_id}/revoke`}
                   class="inline"
                   onsubmit="return confirm('Revoke this key? Anything using it will stop working immediately.')"
                 >
-                  <Button>Revoke</Button>
+                  <Button size="sm">Revoke</Button>
                 </form>
               </td>
             </tr>
@@ -36,7 +36,7 @@ export function ApiKeysSection({ data }: { data: SettingsData }) {
       )}
       <form method="post" action="/dashboard/api-keys" class="row" style="margin-top:0.75rem">
         <input name="label" placeholder="e.g. my laptop" />
-        <Button variant="primary">Create new key</Button>
+        <Button variant="primary" size="sm">Create new key</Button>
       </form>
     </section>
   );
