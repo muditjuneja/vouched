@@ -51,11 +51,17 @@ CLERK_SIGN_IN_URL=
 # Dodo Payments (billing). Create Pro/Team products in the Dodo dashboard
 # first and paste their ids below; DODO_ENVIRONMENT defaults to test_mode
 # (set "live_mode" explicitly when you mean it, never live by accident).
+# DODO_PRODUCT_ID_WALLET_TOPUP is separate from Pro/Team: a single
+# flexible/"pay what you want" priced product (the checkout overrides its
+# price per top-up amount). This is not Dodo's own credit-entitlement
+# feature; the wallet balance itself lives only in this app's own D1
+# database, see docs/CLOUD.md's M19 entry.
 DODO_API_KEY=
 DODO_WEBHOOK_SECRET=
 DODO_ENVIRONMENT=
 DODO_PRODUCT_ID_PRO=
 DODO_PRODUCT_ID_TEAM=
+DODO_PRODUCT_ID_WALLET_TOPUP=
 
 # xmit.sh / Transmit (transactional email): welcome/billing/quota/reconnect
 # notices. XMIT_FROM_EMAIL is the From address for all of them (deployment-

@@ -166,6 +166,53 @@ export async function authenticateDashboardRequest(
   return { session: null, handshakeRedirect: null, refreshedSetCookies: [] };
 }
 
+export type BillingAuthResult =
+  | { ok: true; session: ClerkSession; withRefreshedCookies: (response: Response) => Response }
+  | { ok: false; response: Response };
+
+/**
+ * Same handshake + silent-refresh robustness authenticateDashboardRequest
+ * gives the dashboard, collapsed into one call for the handful of bare
+ * billing routes (checkout/topup/portal) that predate the dashboard and
+ * were still gated by the bare verifyClerkSession above, confirmed against
+ * a real Clerk session: a token due for its silent refresh 401s on these
+ * routes ("unauthorized: sign in first") even though the exact same
+ * browser session refreshes fine on any dashboard page, since only the
+ * dashboard's gate ever attempted the refresh/handshake dance at all.
+ *
+ * On success, call `withRefreshedCookies(response)` on whatever response
+ * the route eventually builds (redirect, error, whatever) so a
+ * silently-refreshed token's cookies still reach the browser; it's a
+ * no-op when nothing was refreshed.
+ */
+export async function authenticateBillingRequest(
+  request: Request,
+  env: Env,
+  makeClient: typeof createClerkClient = createClerkClient
+): Promise<BillingAuthResult> {
+  let auth: DashboardAuthResult;
+  try {
+    auth = await authenticateDashboardRequest(request, env, makeClient);
+  } catch (error) {
+    if (error instanceof ConfigError) return { ok: false, response: new Response(error.message, { status: 500 }) };
+    throw error;
+  }
+  if (auth.handshakeRedirect) return { ok: false, response: auth.handshakeRedirect };
+  if (!auth.session) return { ok: false, response: new Response("unauthorized: sign in first", { status: 401 }) };
+
+  const refreshedSetCookies = auth.refreshedSetCookies;
+  return {
+    ok: true,
+    session: auth.session,
+    withRefreshedCookies: (response) => {
+      if (refreshedSetCookies.length === 0) return response;
+      const headers = new Headers(response.headers);
+      for (const cookie of refreshedSetCookies) headers.append("Set-Cookie", cookie);
+      return new Response(response.body, { status: response.status, headers });
+    }
+  };
+}
+
 /**
  * Looks up a tenant's email address from Clerk, needed by src/email/
  * notifications.ts, since neither a Clerk session token nor Dodo's webhook

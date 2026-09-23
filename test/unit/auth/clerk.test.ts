@@ -1,6 +1,6 @@
 import type { createClerkClient } from "@clerk/backend";
 import { describe, expect, it, vi } from "vitest";
-import { authenticateDashboardRequest, extractSessionToken, getTenantEmail } from "../../../src/auth/clerk";
+import { authenticateBillingRequest, authenticateDashboardRequest, extractSessionToken, getTenantEmail } from "../../../src/auth/clerk";
 import { ConfigError } from "../../../src/lib/errors";
 import type { Env } from "../../../src/types/env";
 
@@ -201,5 +201,73 @@ describe("authenticateDashboardRequest", () => {
       await authenticateDashboardRequest(postReq, fakeEnv({ CLERK_PUBLISHABLE_KEY: "pk_test" }), makeClient);
       expect(authenticateRequest).toHaveBeenCalledTimes(1);
     });
+  });
+});
+
+describe("authenticateBillingRequest", () => {
+  // The bug this exists to fix: /billing/checkout, /billing/topup, and
+  // /billing/portal used to call the bare verifyClerkSession (only checks
+  // an already-valid token, no refresh/handshake), so a token due for its
+  // silent refresh 401'd on these routes even with a genuinely signed-in
+  // browser session. This wraps authenticateDashboardRequest instead, the
+  // same machinery the dashboard's own gate uses.
+  const req = new Request("https://example.com/billing/checkout?plan=pro");
+
+  it("surfaces a ConfigError as a 500 response instead of throwing", async () => {
+    const result = await authenticateBillingRequest(req, fakeEnv({ CLERK_PUBLISHABLE_KEY: undefined }));
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.response.status).toBe(500);
+      expect(await result.response.text()).toContain("CLERK_PUBLISHABLE_KEY");
+    }
+  });
+
+  it("passes a handshake redirect through as the response, not a 401", async () => {
+    const handshakeHeaders = new Headers({ Location: "https://clerk.example.com/handshake" });
+    const makeClient = fakeAuthClerkClient(() => ({ status: "handshake", headers: handshakeHeaders }));
+    const result = await authenticateBillingRequest(req, fakeEnv({ CLERK_PUBLISHABLE_KEY: "pk_test" }), makeClient);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.response.status).toBe(303);
+      expect(result.response.headers.get("Location")).toBe("https://clerk.example.com/handshake");
+    }
+  });
+
+  it("returns a 401 response (not a thrown error) when there's no session at all", async () => {
+    const makeClient = fakeAuthClerkClient(() => ({ status: "signed-out" }));
+    const result = await authenticateBillingRequest(req, fakeEnv({ CLERK_PUBLISHABLE_KEY: "pk_test" }), makeClient);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.response.status).toBe(401);
+      expect(await result.response.text()).toContain("sign in first");
+    }
+  });
+
+  it("returns the session on success, with a no-op withRefreshedCookies when nothing needed refreshing", async () => {
+    const makeClient = fakeAuthClerkClient(() => ({ status: "signed-in", toAuth: () => ({ userId: "user_1" }), headers: new Headers() }));
+    const result = await authenticateBillingRequest(req, fakeEnv({ CLERK_PUBLISHABLE_KEY: "pk_test" }), makeClient);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.session).toEqual({ userId: "user_1" });
+      const original = new Response("hi", { status: 200 });
+      expect(result.withRefreshedCookies(original)).toBe(original);
+    }
+  });
+
+  it("appends a silently-refreshed session cookie onto whatever response the route builds", async () => {
+    const refreshedCookies = new Headers();
+    refreshedCookies.append("Set-Cookie", "__session=fresh-token; Path=/");
+    const postReq = new Request("https://example.com/billing/checkout?plan=pro", { method: "POST" });
+    const makeClient = fakeAuthClerkClient((request) => {
+      if (request.method === "GET") return { status: "signed-in", toAuth: () => ({ userId: "user_1" }), headers: refreshedCookies };
+      return { status: "signed-out" };
+    });
+    const result = await authenticateBillingRequest(postReq, fakeEnv({ CLERK_PUBLISHABLE_KEY: "pk_test" }), makeClient);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const wrapped = result.withRefreshedCookies(new Response(null, { status: 302, headers: { Location: "https://checkout.example" } }));
+      expect(wrapped.headers.get("Set-Cookie")).toBe("__session=fresh-token; Path=/");
+      expect(wrapped.headers.get("Location")).toBe("https://checkout.example");
+    }
   });
 });

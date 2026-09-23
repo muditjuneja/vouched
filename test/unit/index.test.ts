@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "../../src/types/env";
 
-const { verifyClerkSession, getSubscription, startCheckout, startWalletTopup, startCustomerPortalSession } = vi.hoisted(() => ({
-  verifyClerkSession: vi.fn(),
+const { authenticateBillingRequest, getSubscription, startCheckout, startWalletTopup, startCustomerPortalSession } = vi.hoisted(() => ({
+  authenticateBillingRequest: vi.fn(),
   getSubscription: vi.fn(),
   startCheckout: vi.fn(),
   startWalletTopup: vi.fn(),
@@ -10,7 +10,7 @@ const { verifyClerkSession, getSubscription, startCheckout, startWalletTopup, st
 }));
 vi.mock("../../src/auth/clerk", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/auth/clerk")>();
-  return { ...actual, verifyClerkSession };
+  return { ...actual, authenticateBillingRequest };
 });
 vi.mock("../../src/db/subscriptions", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/db/subscriptions")>();
@@ -77,6 +77,11 @@ describe("Hono app: routes not requiring D1/R2", () => {
 
 const cloudEnv = fakeEnv({ CLOUD_MODE: "1", CLERK_SECRET_KEY: "sk_test" });
 
+/** Matches authenticateBillingRequest's real "ok" shape: a session plus a passthrough cookie-forwarder (see the "carries refreshed cookies" test below for when it isn't a no-op). */
+function signedIn(userId = "user_1", withRefreshedCookies: (r: Response) => Response = (r) => r) {
+  return { ok: true as const, session: { userId }, withRefreshedCookies };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -88,13 +93,21 @@ describe("/billing/checkout", () => {
   });
 
   it("401s when not signed in", async () => {
-    verifyClerkSession.mockResolvedValueOnce(null);
+    authenticateBillingRequest.mockResolvedValueOnce({ ok: false, response: new Response("unauthorized: sign in first", { status: 401 }) });
     const res = await app.request("/billing/checkout?plan=pro&email=a@b.com", {}, cloudEnv);
     expect(res.status).toBe(401);
   });
 
+  it("passes through a handshake redirect verbatim instead of 401ing a token mid-refresh", async () => {
+    const handshakeResponse = new Response(null, { status: 303, headers: { Location: "https://clerk.example.com/handshake" } });
+    authenticateBillingRequest.mockResolvedValueOnce({ ok: false, response: handshakeResponse });
+    const res = await app.request("/billing/checkout?plan=pro&email=a@b.com", {}, cloudEnv);
+    expect(res.status).toBe(303);
+    expect(res.headers.get("Location")).toBe("https://clerk.example.com/handshake");
+  });
+
   it("redirects to the checkout URL, pointing the return trip at the new billing page", async () => {
-    verifyClerkSession.mockResolvedValueOnce({ userId: "user_1" });
+    authenticateBillingRequest.mockResolvedValueOnce(signedIn());
     startCheckout.mockResolvedValueOnce("https://checkout.dodo.example/session_abc");
     const res = await app.request("/billing/checkout?plan=pro&email=a@b.com", {}, cloudEnv);
     expect(res.status).toBe(302);
@@ -104,11 +117,24 @@ describe("/billing/checkout", () => {
       expect.objectContaining({ plan: "pro", tenantId: "user_1", returnUrl: expect.stringContaining("/dashboard/billing?checkout=success") })
     );
   });
+
+  it("carries a silently-refreshed session cookie onto the checkout redirect", async () => {
+    authenticateBillingRequest.mockResolvedValueOnce(
+      signedIn("user_1", (r) => {
+        const headers = new Headers(r.headers);
+        headers.append("Set-Cookie", "__session=fresh-token; Path=/");
+        return new Response(r.body, { status: r.status, headers });
+      })
+    );
+    startCheckout.mockResolvedValueOnce("https://checkout.dodo.example/session_abc");
+    const res = await app.request("/billing/checkout?plan=pro&email=a@b.com", {}, cloudEnv);
+    expect(res.headers.get("Set-Cookie")).toBe("__session=fresh-token; Path=/");
+  });
 });
 
 describe("/billing/topup", () => {
   it("redirects to the top-up checkout URL, pointing the return trip at the new billing page", async () => {
-    verifyClerkSession.mockResolvedValueOnce({ userId: "user_1" });
+    authenticateBillingRequest.mockResolvedValueOnce(signedIn());
     startWalletTopup.mockResolvedValueOnce("https://checkout.dodo.example/session_def");
     const res = await app.request("/billing/topup?amount=10&email=a@b.com", {}, cloudEnv);
     expect(res.status).toBe(302);
@@ -122,14 +148,14 @@ describe("/billing/topup", () => {
 
 describe("/billing/portal", () => {
   it("404s when the tenant has no Dodo customer id on file yet", async () => {
-    verifyClerkSession.mockResolvedValueOnce({ userId: "user_1" });
+    authenticateBillingRequest.mockResolvedValueOnce(signedIn());
     getSubscription.mockResolvedValueOnce(null);
     const res = await app.request("/billing/portal", {}, cloudEnv);
     expect(res.status).toBe(404);
   });
 
   it("redirects to the portal session link for the signed-in tenant's own subscription", async () => {
-    verifyClerkSession.mockResolvedValueOnce({ userId: "user_1" });
+    authenticateBillingRequest.mockResolvedValueOnce(signedIn());
     getSubscription.mockResolvedValueOnce({ dodo_customer_id: "cus_123" });
     startCustomerPortalSession.mockResolvedValueOnce("https://portal.dodo.example/session_xyz");
     const res = await app.request("/billing/portal", {}, cloudEnv);

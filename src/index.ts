@@ -1,7 +1,7 @@
 import { createMcpHandler } from "agents/mcp/server";
 import { Hono } from "hono";
 import { handleOAuthCallback, handleOAuthStart } from "./auth/oauth-routes";
-import { verifyClerkSession } from "./auth/clerk";
+import { authenticateBillingRequest } from "./auth/clerk";
 import { startCheckout, startCustomerPortalSession, startWalletTopup } from "./billing/dodo-client";
 import { MIN_TOPUP_USD } from "./billing/quotas";
 import { buildDodoWebhookHandler } from "./billing/webhook-handlers";
@@ -84,10 +84,8 @@ app.get("/billing/checkout", async (c) => {
   if (!isCloudMode(c.env)) {
     return c.text("not found", 404);
   }
-  const session = await verifyClerkSession(c.req.raw, c.env);
-  if (!session) {
-    return c.text("unauthorized: sign in first", 401);
-  }
+  const auth = await authenticateBillingRequest(c.req.raw, c.env);
+  if (!auth.ok) return auth.response;
 
   const plan = c.req.query("plan");
   const email = c.req.query("email");
@@ -102,11 +100,11 @@ app.get("/billing/checkout", async (c) => {
     const returnUrl = new URL("/dashboard/billing?checkout=success", new URL(c.req.url).origin).toString();
     const checkoutUrl = await startCheckout(c.env, {
       plan,
-      tenantId: session.userId,
+      tenantId: auth.session.userId,
       customerEmail: email,
       returnUrl
     });
-    return c.redirect(checkoutUrl, 302);
+    return auth.withRefreshedCookies(c.redirect(checkoutUrl, 302));
   } catch (error) {
     if (error instanceof ConfigError) {
       return c.text(error.message, 500);
@@ -122,10 +120,8 @@ app.get("/billing/topup", async (c) => {
   if (!isCloudMode(c.env)) {
     return c.text("not found", 404);
   }
-  const session = await verifyClerkSession(c.req.raw, c.env);
-  if (!session) {
-    return c.text("unauthorized: sign in first", 401);
-  }
+  const auth = await authenticateBillingRequest(c.req.raw, c.env);
+  if (!auth.ok) return auth.response;
 
   const amount = Number(c.req.query("amount"));
   const email = c.req.query("email");
@@ -139,12 +135,12 @@ app.get("/billing/topup", async (c) => {
   try {
     const returnUrl = new URL("/dashboard/billing?topup=success", new URL(c.req.url).origin).toString();
     const checkoutUrl = await startWalletTopup(c.env, {
-      tenantId: session.userId,
+      tenantId: auth.session.userId,
       customerEmail: email,
       amountUsd: amount,
       returnUrl
     });
-    return c.redirect(checkoutUrl, 302);
+    return auth.withRefreshedCookies(c.redirect(checkoutUrl, 302));
   } catch (error) {
     if (error instanceof ConfigError) {
       return c.text(error.message, 500);
@@ -162,16 +158,14 @@ app.get("/billing/portal", async (c) => {
   if (!isCloudMode(c.env)) {
     return c.text("not found", 404);
   }
-  const session = await verifyClerkSession(c.req.raw, c.env);
-  if (!session) {
-    return c.text("unauthorized: sign in first", 401);
-  }
-  const sub = await getSubscription(c.env.DB, session.userId);
+  const auth = await authenticateBillingRequest(c.req.raw, c.env);
+  if (!auth.ok) return auth.response;
+  const sub = await getSubscription(c.env.DB, auth.session.userId);
   if (!sub?.dodo_customer_id) {
     return c.text("no billing account on file yet", 404);
   }
   try {
-    return c.redirect(await startCustomerPortalSession(c.env, sub.dodo_customer_id), 302);
+    return auth.withRefreshedCookies(c.redirect(await startCustomerPortalSession(c.env, sub.dodo_customer_id), 302));
   } catch (error) {
     if (error instanceof ConfigError) {
       return c.text(error.message, 500);
