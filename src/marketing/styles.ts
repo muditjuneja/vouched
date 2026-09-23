@@ -1077,9 +1077,9 @@ export const MARKETING_CSS = `
 
   /* Tool Detail Page */
   .tool-detail-page {
-    max-width: 52rem;
+    max-width: 60rem;
     margin: 0 auto;
-    padding: 1.5rem 0 3.5rem;
+    padding: 1.5rem 0 4rem;
   }
   .docs-breadcrumbs {
     display: flex;
@@ -1092,6 +1092,7 @@ export const MARKETING_CSS = `
   .docs-breadcrumbs a {
     color: var(--muted);
     text-decoration: none;
+    transition: color 0.15s ease;
   }
   .docs-breadcrumbs a:hover {
     color: var(--text);
@@ -1104,7 +1105,7 @@ export const MARKETING_CSS = `
     font-family: var(--font-mono);
   }
   .tool-header {
-    margin-bottom: 3rem;
+    margin-bottom: 2.5rem;
     padding-bottom: 2rem;
     border-bottom: 1px solid var(--border);
   }
@@ -1122,111 +1123,444 @@ export const MARKETING_CSS = `
     letter-spacing: 0.1em;
     font-weight: 600;
     color: var(--text);
+    padding: 0.2rem 0.5rem;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 3px;
   }
   .tool-conn-badge, .tool-status-badge {
     font-family: var(--font-mono);
     font-size: 0.7rem;
-    padding: 0.15rem 0.45rem;
+    padding: 0.2rem 0.5rem;
     border-radius: 3px;
     background: var(--bg-alt);
     border: 1px solid var(--border);
     color: var(--muted);
   }
+  .tool-conf-badge {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-weight: 500;
+  }
+  .tool-conf-badge.conf-perfect {
+    background: color-mix(in srgb, #22c55e 15%, transparent);
+    color: #16a34a;
+    border: 1px solid color-mix(in srgb, #22c55e 35%, transparent);
+  }
+  .tool-conf-badge.conf-high {
+    background: color-mix(in srgb, #0ea5e9 15%, transparent);
+    color: #0284c7;
+    border: 1px solid color-mix(in srgb, #0ea5e9 35%, transparent);
+  }
+  .tool-conf-badge.conf-med {
+    background: color-mix(in srgb, #eab308 15%, transparent);
+    color: #ca8a04;
+    border: 1px solid color-mix(in srgb, #eab308 35%, transparent);
+  }
+  .tool-conf-badge.conf-low {
+    background: color-mix(in srgb, #a855f7 15%, transparent);
+    color: #9333ea;
+    border: 1px solid color-mix(in srgb, #a855f7 35%, transparent);
+  }
   .tool-header h1 {
-    margin: 0 0 0.5rem;
+    margin: 0 0 0.65rem;
     font-size: clamp(2rem, 4vw, 2.75rem);
     letter-spacing: -0.02em;
   }
   .tool-signature {
     display: inline-block;
     font-family: var(--font-mono);
-    font-size: 0.95rem;
-    background: var(--bg-alt);
+    font-size: 0.88rem;
+    background: var(--card-bg);
     border: 1px solid var(--border);
-    padding: 0.35rem 0.75rem;
+    padding: 0.45rem 0.85rem;
     border-radius: 4px;
     color: var(--text);
     margin-bottom: 1.25rem;
+    word-break: break-word;
   }
   .tool-lede {
     font-size: 1.15rem;
     line-height: 1.6;
+    color: var(--text);
+    max-width: 48rem;
+    margin: 0 0 0.5rem;
+  }
+  .tool-sub-lede {
+    font-size: 0.95rem;
+    line-height: 1.5;
     color: var(--muted);
-    max-width: 44rem;
-    margin: 0;
+    max-width: 48rem;
+    margin: 0 0 1.5rem;
+  }
+  .tool-subnav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--border);
+  }
+  .tool-subnav a {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 4px;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    text-decoration: none;
+    transition: all 0.15s ease;
+  }
+  .tool-subnav a:hover {
+    color: var(--text);
+    border-color: var(--text);
+    background: var(--card-bg);
   }
   .tool-section {
-    margin: 3.25rem 0;
+    margin: 3.5rem 0;
+    scroll-margin-top: 2rem;
   }
-  .tool-section h2 {
-    font-size: 1.45rem;
+  .section-title-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+  }
+  .section-title-row h2 {
+    font-size: 1.4rem;
     letter-spacing: -0.02em;
-    margin: 0 0 1rem;
+    margin: 0;
+  }
+  .section-badge {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .empty-params-card {
+    padding: 1.5rem;
+    border-radius: 6px;
+    border: 1px dashed var(--border);
+    background: var(--bg-alt);
+    text-align: center;
+    color: var(--muted);
+  }
+  .empty-params-card code {
+    font-size: 1.1rem;
+    color: var(--text);
+  }
+  .param-name {
+    font-size: 0.88rem;
   }
   .type-code {
     font-family: var(--font-mono);
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: var(--muted);
+    background: var(--bg-alt);
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
   }
   .badge-required {
     font-family: var(--font-mono);
     font-size: 0.68rem;
-    padding: 0.12rem 0.35rem;
+    padding: 0.15rem 0.45rem;
     border-radius: 3px;
     background: color-mix(in srgb, #e53935 15%, transparent);
     color: #e53935;
     border: 1px solid color-mix(in srgb, #e53935 30%, transparent);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
   .badge-optional {
     font-family: var(--font-mono);
     font-size: 0.68rem;
-    padding: 0.12rem 0.35rem;
+    padding: 0.15rem 0.45rem;
     border-radius: 3px;
     background: var(--bg-alt);
     color: var(--muted);
     border: 1px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
-  .fact-types-list ul {
-    margin: 0.75rem 0 0;
-    padding-left: 1.25rem;
+  .param-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.75rem;
   }
-  .fact-types-list li {
-    margin: 0.4rem 0;
+  .param-default {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
   }
-  .provenance-box {
-    margin-top: 1.5rem;
+  .param-constraints {
+    color: var(--muted);
+    font-size: 0.72rem;
+    background: var(--bg-alt);
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    display: inline-block;
+  }
+  .param-desc {
+    line-height: 1.5;
+    font-size: 0.88rem;
+  }
+  .envelope-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+    margin-top: 1.25rem;
+  }
+  .envelope-card {
     padding: 1.25rem;
     border-radius: 6px;
     border: 1px solid var(--border);
-    background: var(--bg-alt);
+    background: var(--card-bg);
   }
-  .provenance-box h3 {
+  .envelope-card h3 {
     margin: 0 0 0.5rem;
     font-size: 0.95rem;
+    font-family: var(--font-mono);
+  }
+  .envelope-card p {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+  .fact-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .field-pill {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    color: var(--text);
+  }
+  .entities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.85rem;
+    margin-top: 0.75rem;
+  }
+  .entity-card {
+    padding: 0.85rem 1rem;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: var(--bg-alt);
+  }
+  .entity-kind-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    margin-bottom: 0.4rem;
+    color: var(--text);
+  }
+  .entity-card p {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+  .code-examples-split {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-top: 1rem;
+  }
+  .code-example-col h3 {
+    font-size: 0.92rem;
+    font-family: var(--font-mono);
+    margin: 0 0 0.5rem;
+    color: var(--muted);
+  }
+  .agent-workflow-card {
+    padding: 1.5rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+  }
+  .workflow-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
+  }
+  .workflow-header h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-family: var(--font-mono);
+  }
+  .workflow-step-num {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.15rem 0.45rem;
+    border-radius: 3px;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .workflow-quote {
+    margin: 0.5rem 0 0;
+    padding: 0.75rem 1rem;
+    background: var(--bg-alt);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+    font-size: 0.92rem;
+    color: var(--text);
+  }
+  .workflow-reasoning {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+  .workflow-followup-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+  .followup-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 4px;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    color: var(--text);
+    text-decoration: none;
+    transition: all 0.15s ease;
+  }
+  .followup-pill:hover {
+    border-color: var(--text);
+    background: var(--card-bg);
+  }
+  .provenance-detail-card {
+    padding: 1.5rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+  }
+  .provenance-meta-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .muted-label {
+    display: block;
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+  }
+  .prov-val {
+    font-size: 0.9rem;
+    color: var(--text);
+  }
+  .provenance-desc {
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--muted);
+    margin: 0 0 1.25rem;
+  }
+  .pricing-rules-box, .error-conditions-box {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+  }
+  .pricing-rules-box h3, .error-conditions-box h3 {
+    margin: 0 0 0.5rem;
+    font-size: 0.92rem;
+    font-family: var(--font-mono);
+  }
+  .pricing-rules-box p {
+    margin: 0.35rem 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+  .error-conditions-box ul {
+    margin: 0.5rem 0 0;
+    padding-left: 1.25rem;
+  }
+  .error-conditions-box li {
+    margin: 0.35rem 0;
+    font-size: 0.82rem;
   }
   .sibling-tools-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 1rem;
   }
   .sibling-tool-card {
     display: block;
-    padding: 1rem;
-    border-radius: 5px;
+    padding: 1.15rem;
+    border-radius: 6px;
     border: 1px solid var(--border);
     background: var(--card-bg);
     text-decoration: none;
     color: inherit;
-    transition: border-color 0.15s ease;
+    transition: all 0.15s ease;
   }
   .sibling-tool-card:hover {
     border-color: var(--text);
+    transform: translateY(-1px);
+  }
+  .sibling-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
   }
   .sibling-name {
-    display: block;
     font-weight: 600;
-    font-size: 0.92rem;
-    margin-bottom: 0.25rem;
+    font-size: 0.95rem;
+  }
+  .sibling-badge {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 2px;
+  }
+  .sibling-badge.free {
+    background: color-mix(in srgb, #22c55e 15%, transparent);
+    color: #16a34a;
+  }
+  .sibling-badge.paid {
+    background: var(--bg-alt);
+    color: var(--muted);
   }
   .sibling-code {
     font-family: var(--font-mono);
@@ -1236,8 +1570,8 @@ export const MARKETING_CSS = `
   .sibling-summary {
     font-size: 0.8rem;
     color: var(--muted);
-    margin: 0.5rem 0 0;
-    line-height: 1.4;
+    margin: 0.65rem 0 0;
+    line-height: 1.45;
   }
   .tool-cta-row {
     margin: 3.5rem 0 2rem;
@@ -1250,6 +1584,7 @@ export const MARKETING_CSS = `
     color: var(--muted);
     text-decoration: none;
     font-size: 0.88rem;
+    transition: color 0.15s ease;
   }
   .tool-footer-nav a:hover {
     color: var(--text);

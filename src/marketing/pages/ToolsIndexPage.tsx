@@ -16,6 +16,8 @@ const DOMAIN_DESCRIPTIONS: Record<string, string> = {
   audit: "Deliberately held back until queue-based BFS crawling is adapted for Cloudflare Workers."
 };
 
+const DOMAIN_ORDER = ["gsc", "analytics", "seo", "serp", "backlinks", "ai_visibility", "core", "audit"];
+
 function groupByDomain(pages: ToolPageContent[]): Map<string, ToolPageContent[]> {
   const byDomain = new Map<string, ToolPageContent[]>();
   for (const page of pages) {
@@ -23,7 +25,21 @@ function groupByDomain(pages: ToolPageContent[]): Map<string, ToolPageContent[]>
     list.push(page);
     byDomain.set(page.entry.domain, list);
   }
-  return byDomain;
+
+  // Ensure GSC and first-party integrations are at the very top of documentation
+  const sorted = new Map<string, ToolPageContent[]>();
+  for (const domain of DOMAIN_ORDER) {
+    const list = byDomain.get(domain);
+    if (list && list.length > 0) {
+      sorted.set(domain, list);
+    }
+  }
+  for (const [domain, list] of byDomain.entries()) {
+    if (!sorted.has(domain)) {
+      sorted.set(domain, list);
+    }
+  }
+  return sorted;
 }
 
 const MCP_CONNECT_SNIPPET = `claude mcp add --transport http ${MCP_SERVER_NAME} \\

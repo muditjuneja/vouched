@@ -25,12 +25,6 @@ interface DomainSummary {
 
 const DOMAIN_SUMMARIES: DomainSummary[] = [
   {
-    icon: <SearchIcon />,
-    name: "core",
-    description: "Capability discovery, tracked-site listing, dataset export.",
-    examplePrompt: 'list_websites() · export_dataset("mcpseo://...")'
-  },
-  {
     icon: <BarChartIcon />,
     name: "gsc",
     description: "First-party Google Search Console queries, URL indexing inspection, and sitemaps.",
@@ -65,6 +59,12 @@ const DOMAIN_SUMMARIES: DomainSummary[] = [
     name: "ai_visibility",
     description: "Which sources AI answers cite in your category, and how your domain shows up.",
     examplePrompt: 'discover_ai_citations({ topic: "developer tools" })'
+  },
+  {
+    icon: <SearchIcon />,
+    name: "core",
+    description: "Capability discovery, tracked-site listing, dataset export.",
+    examplePrompt: 'list_websites() · export_dataset("mcpseo://...")'
   }
 ];
 
@@ -132,6 +132,7 @@ function LandingPage({ cloudMode }: { cloudMode: boolean }) {
           </a>
         </div>
         <div class="hero-chips">
+          <span>Direct Google Search Console (1.0 Ground Truth)</span>
           <span>MIT</span>
           <span>18 MCP tools</span>
           <span>$0 to self-host</span>
