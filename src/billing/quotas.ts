@@ -22,6 +22,17 @@ export const MONTHLY_QUOTA_USD: Record<Plan, number> = {
 };
 
 /**
+ * Monthly recurring subscription price per plan in USD.
+ * Community/free is $0 forever. Pro is $10/mo (with $4/mo bundled usage),
+ * and Team is $50/mo (with $20/mo bundled usage).
+ */
+export const PLAN_PRICES_USD: Record<Plan, number> = {
+  free: 0,
+  pro: 10,
+  team: 50
+};
+
+/**
  * Multiplier applied to a call's real DataForSEO cost once a tenant is
  * past their plan's bundled quota and drawing from their prepaid wallet
  * (src/db/subscriptions.ts's wallet_balance_usd) instead of being

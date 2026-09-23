@@ -1,5 +1,5 @@
 import type { Child } from "hono/jsx";
-import { MONTHLY_QUOTA_USD } from "../../billing/quotas";
+import { MONTHLY_QUOTA_USD, PLAN_PRICES_USD } from "../../billing/quotas";
 import { Button, Card, CodeWindow, Table } from "../../design";
 import { DISPLAY_NAME, MCP_SERVER_NAME, cloudCtaHref } from "../brand";
 import { AgentPreview } from "../components/AgentPreview";
@@ -193,7 +193,7 @@ function LandingPage({ cloudMode }: { cloudMode: boolean }) {
           ))}
         </div>
         <p style="margin-top:1.5rem">
-          <a href="/tools">Browse all 18 tools →</a>
+          <a href="/docs">Browse all 19 tools in documentation →</a>
         </p>
       </section>
 
@@ -256,7 +256,7 @@ ${CONNECT_COMMAND}`}</CodeWindow>
             <span class="rail-tag">Self-Host · Free Forever</span>
             <p class="rail-name">Community</p>
             <p class="price-amount">
-              ${MONTHLY_QUOTA_USD.free} <small>/mo</small>
+              ${PLAN_PRICES_USD.free} <small>/mo</small>
             </p>
             <p>Self-host on Cloudflare Workers. All 18 tools. Free tier needs no vendor; BYOK for DataForSEO.</p>
           </div>
@@ -264,7 +264,7 @@ ${CONNECT_COMMAND}`}</CodeWindow>
             <span class="rail-tag highlight">Most Popular · Bundled Quota</span>
             <p class="rail-name">Cloud Pro</p>
             <p class="price-amount">
-              ${MONTHLY_QUOTA_USD.pro} <small>/mo</small>
+              ${PLAN_PRICES_USD.pro} <small>/mo</small>
             </p>
             <p>Hosted for you. Includes ${MONTHLY_QUOTA_USD.pro}/mo of DataForSEO usage, dashboard, and key management.</p>
           </div>
@@ -272,7 +272,7 @@ ${CONNECT_COMMAND}`}</CodeWindow>
             <span class="rail-tag">Scale · Team Allowance</span>
             <p class="rail-name">Cloud Team</p>
             <p class="price-amount">
-              ${MONTHLY_QUOTA_USD.team} <small>/mo</small>
+              ${PLAN_PRICES_USD.team} <small>/mo</small>
             </p>
             <p>For teams tracking more sites. Includes ${MONTHLY_QUOTA_USD.team}/mo of DataForSEO usage.</p>
           </div>

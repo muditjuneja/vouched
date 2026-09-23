@@ -42,15 +42,32 @@ describe("marketing routes", () => {
     expect(body).toContain('rel="icon"');
   });
 
-  it("GET /pricing shows the real quota-derived plan amounts", async () => {
+  it("GET /pricing shows the real plan amounts and included quotas", async () => {
     const res = await marketing.request("/pricing", {}, fakeEnv());
     expect(res.status).toBe(200);
     const body = await res.text();
     expect(body).toContain("Community (self-host)");
     expect(body).toContain("Pro (Cloud)");
     expect(body).toContain("Team (Cloud)");
+    expect(body).toContain("$10");
+    expect(body).toContain("$50");
     expect(body).toContain("$4");
     expect(body).toContain("$20");
+  });
+
+  it("GET /docs renders the tools/docs index and /docs/:slug redirects", async () => {
+    const docs = await marketing.request("/docs", {}, fakeEnv());
+    expect(docs.status).toBe(200);
+    const docsBody = await docs.text();
+    expect(docsBody).toContain("All");
+
+    const slugRedirect = await marketing.request("/docs/research-keywords", {}, fakeEnv());
+    expect(slugRedirect.status).toBe(301);
+    expect(slugRedirect.headers.get("Location")).toBe("/tools/research-keywords");
+
+    const toolsRedirect = await marketing.request("/docs/tools", {}, fakeEnv());
+    expect(toolsRedirect.status).toBe(301);
+    expect(toolsRedirect.headers.get("Location")).toBe("/tools");
   });
 
   it("GET /tools lists every real tool", async () => {

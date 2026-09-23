@@ -13,7 +13,7 @@ export function Nav({ cloudMode }: NavProps) {
         <em>{DISPLAY_NAME}</em>
       </a>
       <div class="nav-links">
-        <a href="/tools">Tools</a>
+        <a href="/docs">Docs</a>
         <a href="/pricing">Pricing</a>
         <a href="/vs/open-seo">vs OpenRush</a>
         <a href={GITHUB_URL}>GitHub</a>

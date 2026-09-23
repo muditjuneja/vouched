@@ -45,6 +45,10 @@ marketing.get("/", (c) => c.html(renderLanding(canonicalFor(c.req.url), isCloudM
 marketing.get("/pricing", (c) => c.html(renderPricing(canonicalFor(c.req.url), isCloudMode(c.env))));
 
 marketing.get("/tools", (c) => c.html(renderToolsIndex(canonicalFor(c.req.url), isCloudMode(c.env))));
+marketing.get("/docs", (c) => c.html(renderToolsIndex(canonicalFor(c.req.url), isCloudMode(c.env))));
+marketing.get("/docs/tools", (c) => c.redirect("/tools", 301));
+marketing.get("/docs/tools/:slug", (c) => c.redirect(`/tools/${c.req.param("slug")}`, 301));
+marketing.get("/docs/:slug", (c) => c.redirect(`/tools/${c.req.param("slug")}`, 301));
 
 marketing.get("/tools/:slug", (c) => {
   const page = findToolPage(c.req.param("slug"));

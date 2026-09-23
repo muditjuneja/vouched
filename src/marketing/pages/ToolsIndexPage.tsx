@@ -1,7 +1,20 @@
+import { CodeWindow } from "../../design";
+import { MCP_SERVER_NAME } from "../brand";
 import { Hero } from "../components/Hero";
 import { ToolCard } from "../components/ToolCard";
 import { DOMAIN_LABELS, TOOL_PAGES, type ToolPageContent } from "../content/tool-pages";
 import { renderPage } from "../Layout";
+
+const DOMAIN_DESCRIPTIONS: Record<string, string> = {
+  core: "Server capability discovery, tracked website listing, and full dataset export.",
+  gsc: "First-party Google Search Console performance, live URL indexing inspection, and sitemaps (confidence 1.0).",
+  analytics: "First-party Google Analytics 4 traffic metrics, landing pages, and engagement rates.",
+  seo: "Keyword research, organic competitor discovery, ranking coverage, and search visibility.",
+  serp: "Live SERP snapshots, organic ranks, featured snippets, and search result features.",
+  backlinks: "Link profile inspection, referring domains, and competitor backlink gap analysis.",
+  ai_visibility: "Generative AI engine citations, mention presence, and brand visibility tracking.",
+  audit: "Deliberately held back until queue-based BFS crawling is adapted for Cloudflare Workers."
+};
 
 function groupByDomain(pages: ToolPageContent[]): Map<string, ToolPageContent[]> {
   const byDomain = new Map<string, ToolPageContent[]>();
@@ -13,16 +26,70 @@ function groupByDomain(pages: ToolPageContent[]): Map<string, ToolPageContent[]>
   return byDomain;
 }
 
+const MCP_CONNECT_SNIPPET = `claude mcp add --transport http ${MCP_SERVER_NAME} \\
+  https://vouched.dev/mcp \\
+  --header "Authorization: Bearer <your-mcp-key>"`;
+
 function ToolsIndexPage({ byDomain }: { byDomain: Map<string, ToolPageContent[]> }) {
+  const domainEntries = [...byDomain.entries()];
+
   return (
     <>
-      <Hero eyebrow="Tool reference" heading={`All ${TOOL_PAGES.length} MCP tools`} lede="Every tool Vouched offers, grouped by domain. Each one returns a typed, cited fact envelope, not free text." />
-      {[...byDomain.entries()].map(([domain, pages]) => (
-        <section>
-          <h2>{DOMAIN_LABELS[domain] ?? domain}</h2>
+      <Hero
+        eyebrow="Documentation & API Reference"
+        heading={`All ${TOOL_PAGES.length} MCP Tools`}
+        lede="Reference for every tool Vouched exposes over Model Context Protocol. Each tool returns a typed, cited fact envelope, not ungrounded text."
+      />
+
+      <section class="docs-quickstart">
+        <div class="docs-quickstart-grid">
+          <div>
+            <p class="chapter">Connect</p>
+            <h2>Instant agent setup</h2>
+            <p class="muted">
+              Add Vouched to Claude Desktop, Cursor, Claude Code, or any MCP client in one command. All {TOOL_PAGES.length} tools
+              become instantly callable from your agent.
+            </p>
+            <div class="docs-domain-nav">
+              <span class="docs-domain-nav-label">Jump to domain:</span>
+              <div class="docs-domain-pills">
+                {domainEntries.map(([domain, pages]) => (
+                  <a href={`#${domain}`} class="docs-domain-pill">
+                    {DOMAIN_LABELS[domain] ?? domain} <small>({pages.length})</small>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div>
+            <CodeWindow title="Terminal / MCP Config">{MCP_CONNECT_SNIPPET}</CodeWindow>
+          </div>
+        </div>
+      </section>
+
+      {domainEntries.map(([domain, pages]) => (
+        <section id={domain} class="docs-domain-section">
+          <div class="docs-domain-header">
+            <div>
+              <p class="chapter">{domain}</p>
+              <h2>{DOMAIN_LABELS[domain] ?? domain}</h2>
+            </div>
+            {DOMAIN_DESCRIPTIONS[domain] ? (
+              <p class="muted docs-domain-desc">{DOMAIN_DESCRIPTIONS[domain]}</p>
+            ) : null}
+          </div>
           <div class="tool-index-grid">
             {pages.map((page) => (
-              <ToolCard href={page.path} domainLabel={DOMAIN_LABELS[domain] ?? domain} title={page.title} summary={page.entry.summary} />
+              <ToolCard
+                href={page.path}
+                domainLabel={DOMAIN_LABELS[domain] ?? domain}
+                title={page.title}
+                toolName={page.entry.name}
+                summary={page.entry.summary}
+                billing={page.entry.billing}
+                factTypes={page.entry.fact_types}
+                requiresConnection={page.entry.requires_connection}
+              />
             ))}
           </div>
         </section>
@@ -34,8 +101,8 @@ function ToolsIndexPage({ byDomain }: { byDomain: Map<string, ToolPageContent[]>
 export function renderToolsIndex(canonicalUrl: string, cloudMode: boolean): string {
   const byDomain = groupByDomain(TOOL_PAGES);
   return renderPage({
-    title: `All ${TOOL_PAGES.length} tools · Vouched`,
-    description: `Reference for every MCP tool Vouched offers across ${byDomain.size} domains: keyword research, backlinks, SERP, AI-visibility, URL indexing inspection, Search Console, and GA4.`,
+    title: `All ${TOOL_PAGES.length} tools · Vouched Documentation`,
+    description: `Documentation and reference for all ${TOOL_PAGES.length} MCP tools across ${byDomain.size} domains: keyword research, backlinks, SERP, AI-visibility, URL indexing inspection, Search Console, and GA4.`,
     canonicalUrl,
     cloudMode,
     children: <ToolsIndexPage byDomain={byDomain} />

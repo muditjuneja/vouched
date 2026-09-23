@@ -1,5 +1,5 @@
 import { Table } from "../../design";
-import { MONTHLY_QUOTA_USD } from "../../billing/quotas";
+import { MONTHLY_QUOTA_USD, PLAN_PRICES_USD } from "../../billing/quotas";
 import { TOOL_MANIFEST } from "../../mcp/manifest";
 import { Hero } from "../components/Hero";
 import { CheckIcon } from "../components/icons";
@@ -40,7 +40,7 @@ function PricingPage({ cloudMode }: { cloudMode: boolean }) {
 
         <PricingCard
           name="Pro (Cloud)"
-          price={`$${MONTHLY_QUOTA_USD.pro}`}
+          price={`$${PLAN_PRICES_USD.pro}`}
           priceNote="/mo, included usage"
           ctaLabel="Start on Pro"
           ctaHref={cloudMode ? cloudCtaHref(true) : "/pricing#cloud"}
@@ -53,7 +53,7 @@ function PricingPage({ cloudMode }: { cloudMode: boolean }) {
           </p>
           <ul>
             <li>Everything in Community</li>
-            <li>No DataForSEO account needed</li>
+            <li>${MONTHLY_QUOTA_USD.pro}/mo bundled DataForSEO included</li>
             <li>Dashboard: connection status, usage, API keys</li>
             <li>MCP API key management (create / revoke)</li>
           </ul>
@@ -62,7 +62,7 @@ function PricingPage({ cloudMode }: { cloudMode: boolean }) {
 
         <PricingCard
           name="Team (Cloud)"
-          price={`$${MONTHLY_QUOTA_USD.team}`}
+          price={`$${PLAN_PRICES_USD.team}`}
           priceNote="/mo, included usage"
           ctaLabel="Start on Team"
           ctaHref={cloudMode ? cloudCtaHref(true) : "/pricing#cloud"}
@@ -73,7 +73,7 @@ function PricingPage({ cloudMode }: { cloudMode: boolean }) {
           </p>
           <ul>
             <li>Everything in Pro</li>
-            <li>Higher bundled DataForSEO quota</li>
+            <li>${MONTHLY_QUOTA_USD.team}/mo bundled DataForSEO quota</li>
             <li>Same per-tenant dashboard and key management</li>
           </ul>
           {!cloudMode ? <p class="muted">Not enabled on this deployment; this describes the hosted cloud plan, not this server.</p> : null}
@@ -84,6 +84,12 @@ function PricingPage({ cloudMode }: { cloudMode: boolean }) {
       <section>
         <h2>Full comparison</h2>
         <Table class="compare" headers={["Feature", "Community (self-host)", "Pro (Cloud)", "Team (Cloud)"]}>
+          <tr>
+            <td>Plan price</td>
+            <td>$0 forever</td>
+            <td>${PLAN_PRICES_USD.pro}/mo</td>
+            <td>${PLAN_PRICES_USD.team}/mo</td>
+          </tr>
           <tr>
             <td>Who runs the server</td>
             <td>You</td>

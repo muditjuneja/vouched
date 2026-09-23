@@ -892,15 +892,366 @@ export const MARKETING_CSS = `
   body.marketing .code-window-bar { background: #161310; }
   body.marketing .code-window-dot { opacity: 0.35; }
 
-  body.marketing .tool-index-grid { gap: 0; }
-  body.marketing .tool-index-grid a.card {
-    border-radius: 0; box-shadow: none; border: none;
-    border-bottom: 1px solid var(--border); padding: 1.05rem 0.15rem;
-    background: transparent;
+  /* Documentation Index & Tool Reference */
+  .docs-quickstart {
+    margin: 3.5rem 0 4.5rem;
+    padding-bottom: 3rem;
+    border-bottom: 1px solid var(--border);
   }
-  body.marketing .tool-index-grid .tool-domain { display: none; }
-  body.marketing .tool-index-grid a.card:hover {
-    transform: none; box-shadow: none; border-color: var(--border);
+  .docs-quickstart-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+    gap: 2.5rem;
+    align-items: center;
+  }
+  @media (max-width: 860px) {
+    .docs-quickstart-grid { grid-template-columns: 1fr; }
+  }
+  .docs-domain-nav {
+    margin-top: 1.5rem;
+  }
+  .docs-domain-nav-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 0.6rem;
+  }
+  .docs-domain-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+  .docs-domain-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: 4px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    text-decoration: none;
+    color: var(--text);
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    transition: all 0.15s ease;
+  }
+  .docs-domain-pill small {
+    font-family: var(--font-mono);
+    color: var(--muted);
+  }
+  .docs-domain-pill:hover {
+    border-color: var(--text);
+    background: var(--paper-deep);
+  }
+  .docs-domain-section {
+    margin: 4.5rem 0;
+    scroll-margin-top: 5rem;
+  }
+  .docs-domain-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .docs-domain-header h2 {
+    margin: 0;
+  }
+  .docs-domain-desc {
+    max-width: 36rem;
+    font-size: 0.92rem;
+    margin: 0;
+  }
+
+  /* Tool Cards */
+  body.marketing .tool-index-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.25rem;
+  }
+  body.marketing .tool-card {
+    display: flex;
+    flex-direction: column;
+    padding: 1.35rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  body.marketing .tool-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--text);
+    box-shadow: var(--shadow-sm);
+  }
+  .tool-card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.65rem;
+  }
+  body.marketing .tool-card .tool-domain {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+  .tool-tier-badge {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+  .tool-tier-badge.free {
+    background: color-mix(in srgb, #2e7d32 15%, transparent);
+    color: #4caf50;
+    border-color: color-mix(in srgb, #2e7d32 35%, transparent);
+  }
+  .tool-tier-badge.paid {
+    background: color-mix(in srgb, var(--gold) 15%, transparent);
+    color: var(--gold);
+    border-color: color-mix(in srgb, var(--gold) 35%, transparent);
+  }
+  body.marketing .tool-card h3 {
+    margin: 0 0 0.35rem;
+    font-size: 1.12rem;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+  .tool-code-name {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--muted);
+    background: var(--bg-alt);
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    margin-bottom: 0.65rem;
+    display: inline-block;
+    align-self: flex-start;
+  }
+  .tool-summary {
+    font-size: 0.88rem;
+    color: var(--muted);
+    line-height: 1.5;
+    margin: 0 0 0.85rem;
+    flex-grow: 1;
+  }
+  .tool-fact-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-bottom: 0.85rem;
+  }
+  .tool-fact-chip {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    color: var(--muted);
+  }
+  .tool-fact-chip-more {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--muted);
+    align-self: center;
+  }
+  .tool-card-link {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-top: auto;
+  }
+
+  /* Tool Detail Page */
+  .tool-detail-page {
+    max-width: 52rem;
+    margin: 0 auto;
+    padding: 1.5rem 0 3.5rem;
+  }
+  .docs-breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    margin-bottom: 1.75rem;
+    color: var(--muted);
+  }
+  .docs-breadcrumbs a {
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .docs-breadcrumbs a:hover {
+    color: var(--text);
+  }
+  .docs-breadcrumbs .sep {
+    opacity: 0.4;
+  }
+  .docs-breadcrumbs .current {
+    color: var(--text);
+    font-family: var(--font-mono);
+  }
+  .tool-header {
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .tool-header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  .tool-domain-tag {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .tool-conn-badge, .tool-status-badge {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 3px;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .tool-header h1 {
+    margin: 0 0 0.5rem;
+    font-size: clamp(2rem, 4vw, 2.75rem);
+    letter-spacing: -0.02em;
+  }
+  .tool-signature {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    padding: 0.35rem 0.75rem;
+    border-radius: 4px;
+    color: var(--text);
+    margin-bottom: 1.25rem;
+  }
+  .tool-lede {
+    font-size: 1.15rem;
+    line-height: 1.6;
+    color: var(--muted);
+    max-width: 44rem;
+    margin: 0;
+  }
+  .tool-section {
+    margin: 3.25rem 0;
+  }
+  .tool-section h2 {
+    font-size: 1.45rem;
+    letter-spacing: -0.02em;
+    margin: 0 0 1rem;
+  }
+  .type-code {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .badge-required {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    padding: 0.12rem 0.35rem;
+    border-radius: 3px;
+    background: color-mix(in srgb, #e53935 15%, transparent);
+    color: #e53935;
+    border: 1px solid color-mix(in srgb, #e53935 30%, transparent);
+  }
+  .badge-optional {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    padding: 0.12rem 0.35rem;
+    border-radius: 3px;
+    background: var(--bg-alt);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .fact-types-list ul {
+    margin: 0.75rem 0 0;
+    padding-left: 1.25rem;
+  }
+  .fact-types-list li {
+    margin: 0.4rem 0;
+  }
+  .provenance-box {
+    margin-top: 1.5rem;
+    padding: 1.25rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-alt);
+  }
+  .provenance-box h3 {
+    margin: 0 0 0.5rem;
+    font-size: 0.95rem;
+  }
+  .sibling-tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+  .sibling-tool-card {
+    display: block;
+    padding: 1rem;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s ease;
+  }
+  .sibling-tool-card:hover {
+    border-color: var(--text);
+  }
+  .sibling-name {
+    display: block;
+    font-weight: 600;
+    font-size: 0.92rem;
+    margin-bottom: 0.25rem;
+  }
+  .sibling-code {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+  .sibling-summary {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin: 0.5rem 0 0;
+    line-height: 1.4;
+  }
+  .tool-cta-row {
+    margin: 3.5rem 0 2rem;
+  }
+  .tool-footer-nav {
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+  .tool-footer-nav a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.88rem;
+  }
+  .tool-footer-nav a:hover {
     color: var(--text);
   }
 

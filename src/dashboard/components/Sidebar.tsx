@@ -43,7 +43,7 @@ export function Sidebar({ activePath, user }: { activePath: string; user?: Dashb
             </div>
           </div>
           <div class="dash-user-actions">
-            <a href="/tools" class="dash-user-action">
+            <a href="/docs" class="dash-user-action">
               Docs
             </a>
             <span class="dash-user-action-sep">·</span>

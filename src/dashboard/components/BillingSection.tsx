@@ -1,5 +1,5 @@
 import { Badge, Button } from "../../design";
-import { MONTHLY_QUOTA_USD, TOPUP_PRESETS_USD } from "../../billing/quotas";
+import { MONTHLY_QUOTA_USD, PLAN_PRICES_USD, TOPUP_PRESETS_USD } from "../../billing/quotas";
 import type { BillingData } from "../types";
 
 function UpgradeForm({
@@ -55,7 +55,7 @@ export function BillingSection({ data }: { data: BillingData }) {
             </div>
             <ul class="tier-features">
               <li>Free GSC &amp; GA4 tools</li>
-              <li>Site audit &amp; crawler</li>
+              <li>URL indexing inspection</li>
               <li>Prepaid wallet compatible</li>
               <li>Self-host BYOK support</li>
             </ul>
@@ -76,7 +76,7 @@ export function BillingSection({ data }: { data: BillingData }) {
           <div>
             <div class="tier-card-header">
               <span class="tier-title">Pro</span>
-              <span class="tier-price">$10/mo</span>
+              <span class="tier-price">${PLAN_PRICES_USD.pro}/mo</span>
             </div>
             <ul class="tier-features">
               <li>${MONTHLY_QUOTA_USD.pro}/mo bundled DataForSEO</li>
@@ -89,7 +89,7 @@ export function BillingSection({ data }: { data: BillingData }) {
             {data.plan === "pro" ? (
               <Badge status="good" label="Current Plan" />
             ) : data.dodoConfigured ? (
-              <UpgradeForm plan="pro" buttonLabel={`Upgrade to Pro ($10/mo)`} prefillEmail={data.prefillEmail} />
+              <UpgradeForm plan="pro" buttonLabel={`Upgrade to Pro ($${PLAN_PRICES_USD.pro}/mo)`} prefillEmail={data.prefillEmail} />
             ) : (
               <span class="muted">Billing unavailable</span>
             )}
@@ -101,7 +101,7 @@ export function BillingSection({ data }: { data: BillingData }) {
           <div>
             <div class="tier-card-header">
               <span class="tier-title">Team</span>
-              <span class="tier-price">$50/mo</span>
+              <span class="tier-price">${PLAN_PRICES_USD.team}/mo</span>
             </div>
             <ul class="tier-features">
               <li>${MONTHLY_QUOTA_USD.team}/mo bundled DataForSEO</li>
@@ -114,7 +114,7 @@ export function BillingSection({ data }: { data: BillingData }) {
             {data.plan === "team" ? (
               <Badge status="good" label="Current Plan" />
             ) : data.dodoConfigured ? (
-              <UpgradeForm plan="team" buttonLabel={`Upgrade to Team ($50/mo)`} prefillEmail={data.prefillEmail} />
+              <UpgradeForm plan="team" buttonLabel={`Upgrade to Team ($${PLAN_PRICES_USD.team}/mo)`} prefillEmail={data.prefillEmail} />
             ) : (
               <span class="muted">Billing unavailable</span>
             )}

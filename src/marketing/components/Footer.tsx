@@ -18,8 +18,8 @@ export function Footer({ cloudMode }: FooterProps) {
         </div>
         <div>
           <p class="footer-heading">Product</p>
+          <a href="/docs">Documentation</a>
           <a href="/pricing">Pricing</a>
-          <a href="/tools">All tools</a>
           {cloudMode ? <a href="/dashboard">Cloud dashboard</a> : <a href="/#self-host">Self-host guide</a>}
         </div>
         <div>
