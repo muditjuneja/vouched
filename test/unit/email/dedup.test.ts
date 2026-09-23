@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { markNotifiedOnce, markNotifiedWithCooldown } from "../../../src/email/dedup";
 
-/** A tiny in-memory fake of the one table this touches — same pattern as test/unit/lib/rate-limit.test.ts. */
+/** A tiny in-memory fake of the one table this touches. */
 function fakeNotificationsDb() {
   const rows = new Map<string, string>(); // "tenant:noticeKey" -> sent_at (ISO)
 

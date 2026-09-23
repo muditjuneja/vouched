@@ -57,8 +57,14 @@ export interface Env {
 
   /** Optional Slack/Discord incoming-webhook URL for operator alerts (billing failures, budget warnings). No-op when unset. */
   ADMIN_ALERT_WEBHOOK_URL?: string;
-  /** Requests per minute per cloud tenant on /mcp, see src/lib/rate-limit.ts. Defaults to 60 when unset. */
-  RATE_LIMIT_PER_MINUTE?: string;
+  /**
+   * Native per-minute burst limiters for cloud-mode /mcp, one per plan tier
+   * (limits configured in wrangler.jsonc's "ratelimits"). Optional in the
+   * type because only cloud mode reads them; src/index.ts fails closed with
+   * a 500 if cloud mode is on and the binding is missing.
+   */
+  MCP_RATE_LIMIT_FREE?: RateLimit;
+  MCP_RATE_LIMIT_PAID?: RateLimit;
 
   /**
    * NOT a real Worker binding/secret: a per-request field `buildMcpServer`

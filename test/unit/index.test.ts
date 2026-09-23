@@ -1,20 +1,27 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "../../src/types/env";
 
-const { authenticateBillingRequest, getSubscription, startCheckout, startWalletTopup, startCustomerPortalSession } = vi.hoisted(() => ({
-  authenticateBillingRequest: vi.fn(),
-  getSubscription: vi.fn(),
-  startCheckout: vi.fn(),
-  startWalletTopup: vi.fn(),
-  startCustomerPortalSession: vi.fn()
-}));
+const { authenticateBillingRequest, getSubscription, getEffectivePlan, verifyApiKey, startCheckout, startWalletTopup, startCustomerPortalSession } =
+  vi.hoisted(() => ({
+    authenticateBillingRequest: vi.fn(),
+    getSubscription: vi.fn(),
+    getEffectivePlan: vi.fn(),
+    verifyApiKey: vi.fn(),
+    startCheckout: vi.fn(),
+    startWalletTopup: vi.fn(),
+    startCustomerPortalSession: vi.fn()
+  }));
 vi.mock("../../src/auth/clerk", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/auth/clerk")>();
   return { ...actual, authenticateBillingRequest };
 });
 vi.mock("../../src/db/subscriptions", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/db/subscriptions")>();
-  return { ...actual, getSubscription };
+  return { ...actual, getSubscription, getEffectivePlan };
+});
+vi.mock("../../src/db/mcp-api-keys", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../src/db/mcp-api-keys")>();
+  return { ...actual, verifyApiKey };
 });
 vi.mock("../../src/billing/dodo-client", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/billing/dodo-client")>();
@@ -143,6 +150,51 @@ describe("/billing/topup", () => {
       cloudEnv,
       expect.objectContaining({ tenantId: "user_1", returnUrl: expect.stringContaining("/dashboard/billing?topup=success") })
     );
+  });
+});
+
+describe("/mcp in cloud mode: per-plan burst limit", () => {
+  function fakeLimiter(success: boolean) {
+    return { limit: vi.fn(async () => ({ success })) } as unknown as RateLimit & { limit: ReturnType<typeof vi.fn> };
+  }
+  const authed = { headers: { Authorization: "Bearer vsm_key" } };
+
+  it("uses the free limiter for a free-plan tenant and 429s when it says no", async () => {
+    const free = fakeLimiter(false);
+    const paid = fakeLimiter(true);
+    verifyApiKey.mockResolvedValueOnce("tenant-1");
+    getEffectivePlan.mockResolvedValueOnce("free");
+    const res = await app.request("/mcp", authed, { ...cloudEnv, MCP_RATE_LIMIT_FREE: free, MCP_RATE_LIMIT_PAID: paid });
+    expect(res.status).toBe(429);
+    expect(res.headers.get("Retry-After")).toBe("60");
+    expect(free.limit).toHaveBeenCalledWith({ key: "tenant-1" });
+    expect(paid.limit).not.toHaveBeenCalled();
+  });
+
+  it("uses the paid limiter for a paid-plan tenant", async () => {
+    const free = fakeLimiter(true);
+    const paid = fakeLimiter(false);
+    verifyApiKey.mockResolvedValueOnce("tenant-1");
+    getEffectivePlan.mockResolvedValueOnce("pro");
+    const res = await app.request("/mcp", authed, { ...cloudEnv, MCP_RATE_LIMIT_FREE: free, MCP_RATE_LIMIT_PAID: paid });
+    expect(res.status).toBe(429);
+    expect(paid.limit).toHaveBeenCalledWith({ key: "tenant-1" });
+    expect(free.limit).not.toHaveBeenCalled();
+  });
+
+  it("fails closed with a 500, not an unlimited pass, when the binding is missing", async () => {
+    verifyApiKey.mockResolvedValueOnce("tenant-1");
+    getEffectivePlan.mockResolvedValueOnce("free");
+    const res = await app.request("/mcp", authed, cloudEnv);
+    expect(res.status).toBe(500);
+    expect(await res.text()).toContain("rate limit binding is missing");
+  });
+
+  it("never touches the plan or limiter for an invalid API key", async () => {
+    verifyApiKey.mockResolvedValueOnce(null);
+    const res = await app.request("/mcp", authed, cloudEnv);
+    expect(res.status).toBe(401);
+    expect(getEffectivePlan).not.toHaveBeenCalled();
   });
 });
 

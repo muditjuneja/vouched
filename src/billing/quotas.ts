@@ -47,5 +47,14 @@ export const OVERAGE_MARKUP_MULTIPLIER = 1.15;
 /** The smallest wallet top-up Dodo will process, in USD; below this, the card-processing fee alone eats too much of the payment to be worth it. */
 export const MIN_TOPUP_USD = 5;
 
+/**
+ * Tool calls a free-plan tenant can make per UTC day on cloud-mode /mcp
+ * (src/db/daily-tool-calls.ts). Paid plans have no daily cap, only the
+ * per-minute burst limit. The per-minute limits themselves live in
+ * wrangler.jsonc's "ratelimits" bindings, not here, since the native
+ * binding takes its limit from config.
+ */
+export const FREE_DAILY_TOOL_CALLS = 100;
+
 /** Fixed top-up amounts offered on the dashboard's "buy credits" form. Nothing stops a future custom-amount field from calling startWalletTopup with any value >= MIN_TOPUP_USD. */
 export const TOPUP_PRESETS_USD = [10, 25, 100];

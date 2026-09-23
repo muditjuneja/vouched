@@ -78,9 +78,9 @@ XMIT_API_BASE_URL=
 CLOUD_DATAFORSEO_LOGIN=
 CLOUD_DATAFORSEO_PASSWORD=
 
-# Requests per minute per cloud tenant on /mcp (see src/lib/rate-limit.ts).
-# Defaults to 60 when unset.
-RATE_LIMIT_PER_MINUTE=
+# Per-minute /mcp limits per plan are no longer an env var: they live in
+# wrangler.jsonc's "ratelimits" bindings (free 10/min, paid 60/min). The
+# free tier's daily cap is FREE_DAILY_TOOL_CALLS in src/billing/quotas.ts.
 
 # Optional Slack/Discord incoming-webhook URL for operator alerts (billing
 # failures, DataForSEO budget warnings). No-op when unset.

@@ -19,10 +19,12 @@ import { inspectSearchVisibility } from "../domains/seo/inspect-search-visibilit
 import { researchKeywords } from "../domains/seo/research-keywords";
 import { inspectSerp } from "../domains/serp/inspect-serp";
 import type { ToolModule } from "../domains/types";
+import type { Plan } from "../db/subscriptions";
 import { ofeEnvelopeSchema } from "../envelope/schema";
 import { ConnectionRequiredError, QuotaExceededError } from "../lib/errors";
 import { MCP_SERVER_NAME } from "../lib/product";
 import { hasDataForSEO, type Env } from "../types/env";
+import { checkDailyCap } from "./daily-cap";
 
 // Free, no keys needed. Grows as each milestone lands.
 // audit_site is intentionally NOT registered here despite being fully
@@ -73,8 +75,11 @@ const DATAFORSEO_TOOL_MODULES: ToolModule<any>[] = [
  * per-request copy of `env` (see Env.__tenantId's doc comment) rather than
  * changing every ToolModule's handler signature, only a few tools
  * currently need it.
+ *
+ * `plan` is the tenant's effective plan (cloud mode only, null otherwise),
+ * resolved once by the caller and used here for the free-tier daily cap.
  */
-export function buildMcpServer(env: Env, tenantId: string | null = null): McpServer {
+export function buildMcpServer(env: Env, tenantId: string | null = null, plan: Plan | null = null): McpServer {
   const server = new McpServer({ name: MCP_SERVER_NAME, version: "0.1.0" });
   const requestEnv: Env = { ...env, __tenantId: tenantId };
 
@@ -92,6 +97,10 @@ export function buildMcpServer(env: Env, tenantId: string | null = null): McpSer
         outputSchema: ofeEnvelopeSchema
       },
       async (args: Record<string, unknown>) => {
+        const capError = await checkDailyCap(requestEnv, tenantId, plan);
+        if (capError) {
+          return { isError: true, content: [{ type: "text" as const, text: capError }] };
+        }
         try {
           const result = await tool.handler(args, requestEnv);
           return {

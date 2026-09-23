@@ -7,9 +7,8 @@ import { MIN_TOPUP_USD } from "./billing/quotas";
 import { buildDodoWebhookHandler } from "./billing/webhook-handlers";
 import { dashboard } from "./dashboard/routes";
 import { verifyApiKey } from "./db/mcp-api-keys";
-import { getSubscription } from "./db/subscriptions";
+import { getEffectivePlan, getSubscription, type Plan } from "./db/subscriptions";
 import { ConfigError } from "./lib/errors";
-import { checkAndIncrementRateLimit } from "./lib/rate-limit";
 import { marketing } from "./marketing/routes";
 import { buildMcpServer } from "./mcp/server";
 import { HEALTH_BODY } from "./lib/product";
@@ -180,6 +179,7 @@ app.route("/dashboard", dashboard);
 
 app.all("/mcp", async (c) => {
   let tenantId: string | null = null;
+  let plan: Plan | null = null;
 
   if (isCloudMode(c.env)) {
     // Cloud mode: a per-tenant issued API key (mcp_api_keys), not the
@@ -195,9 +195,13 @@ app.all("/mcp", async (c) => {
       return c.text("unauthorized", 401, { "WWW-Authenticate": "Bearer" });
     }
 
-    const limit = c.env.RATE_LIMIT_PER_MINUTE ? Number(c.env.RATE_LIMIT_PER_MINUTE) : undefined;
-    const withinLimit = await checkAndIncrementRateLimit(c.env.DB, tenantId, limit);
-    if (!withinLimit) {
+    plan = await getEffectivePlan(c.env.DB, tenantId);
+    const limiter = plan === "free" ? c.env.MCP_RATE_LIMIT_FREE : c.env.MCP_RATE_LIMIT_PAID;
+    if (!limiter) {
+      return c.text("server misconfigured: /mcp rate limit binding is missing (wrangler.jsonc ratelimits)", 500);
+    }
+    const { success } = await limiter.limit({ key: tenantId });
+    if (!success) {
       return c.text("rate limit exceeded, try again in a minute", 429, { "Retry-After": "60" });
     }
   } else {
@@ -212,7 +216,7 @@ app.all("/mcp", async (c) => {
   // A fresh factory per request, closing over this request's `env`:
   // `McpRequestContext` (what the SDK actually hands the factory) carries
   // no Worker bindings, so this closure is how tool handlers reach D1/R2.
-  const handler = createMcpHandler(() => buildMcpServer(c.env, tenantId));
+  const handler = createMcpHandler(() => buildMcpServer(c.env, tenantId, plan));
   // Hono types executionCtx with its own (older, simpler) local
   // ExecutionContext interface; @cloudflare/workers-types' current one adds
   // fields (tracing/abort) Hono's doesn't declare. Same real object at
