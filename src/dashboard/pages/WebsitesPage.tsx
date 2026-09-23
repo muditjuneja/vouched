@@ -16,5 +16,12 @@ function WebsitesPage({ data }: { data: WebsitesData }) {
 }
 
 export function renderWebsites(data: WebsitesData): string {
-  return renderPage({ title: "Websites", activePath: "/dashboard/websites", children: <WebsitesPage data={data} /> });
+  return renderPage({
+    title: "Websites",
+    activePath: "/dashboard/websites",
+    user: data.user,
+    notice: data.notice,
+    children: <WebsitesPage data={data} />
+  });
 }
+

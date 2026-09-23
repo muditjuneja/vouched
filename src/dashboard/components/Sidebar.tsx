@@ -1,5 +1,6 @@
 import { NavItem } from "../../design";
 import { DISPLAY_NAME } from "../../lib/product";
+import type { DashboardUser } from "../types";
 
 interface NavEntry {
   href: string;
@@ -17,7 +18,9 @@ const NAV_ENTRIES: NavEntry[] = [
 ];
 
 /** activePath is computed server-side per page (each render*Page() knows which page it is), never from the request path directly: see Layout.tsx's doc comment. */
-export function Sidebar({ activePath }: { activePath: string }) {
+export function Sidebar({ activePath, user }: { activePath: string; user?: DashboardUser }) {
+  const initial = (user?.email ? user.email[0] : "U")?.toUpperCase() ?? "U";
+
   return (
     <nav class="dash-sidebar">
       <a class="brand" href="/">
@@ -28,9 +31,40 @@ export function Sidebar({ activePath }: { activePath: string }) {
           <NavItem href={entry.href} label={entry.label} active={entry.match(activePath)} />
         ))}
       </div>
-      <a class="dash-back-link" href="/">
-        ← Back to site
-      </a>
+      {user ? (
+        <div class="dash-user-card">
+          <div class="dash-user-row">
+            <span class="dash-user-avatar">{initial}</span>
+            <div class="dash-user-meta">
+              <span class="dash-user-email" title={user.email ?? user.tenantId}>
+                {user.email ?? user.tenantId}
+              </span>
+              <span class="dash-plan-badge">{user.plan} plan</span>
+            </div>
+          </div>
+          <div class="dash-user-actions">
+            <a href="/tools" class="dash-user-action">
+              Docs
+            </a>
+            <span class="dash-user-action-sep">·</span>
+            <a href="/dashboard/settings" class="dash-user-action">
+              Settings
+            </a>
+            <span class="dash-user-action-sep">·</span>
+            <a href="/dashboard/logout" class="dash-user-action dash-logout-link">
+              Sign out
+            </a>
+          </div>
+          <a class="dash-back-link" href="/">
+            ← Public site
+          </a>
+        </div>
+      ) : (
+        <a class="dash-back-link" href="/">
+          ← Back to site
+        </a>
+      )}
     </nav>
   );
 }
+

@@ -18,11 +18,15 @@ function ConnectRow({
 }) {
   return (
     <div class="widget-connect-row">
-      <span>{label}</span>
-      <ConnectionBadge state={state} />
-      {googleOAuthConfigured && state !== "connected" ? (
-        <a href={`/oauth/google/start?scope=${scope}&returnTo=websites`}>{state === "reconnect_required" ? "Reconnect" : "Connect"}</a>
-      ) : null}
+      <span class="widget-connect-label">{label}</span>
+      <div class="widget-connect-action">
+        <ConnectionBadge state={state} />
+        {googleOAuthConfigured && state !== "connected" ? (
+          <a href={`/oauth/google/start?scope=${scope}&returnTo=websites`} class="btn btn-sm btn-primary">
+            {state === "reconnect_required" ? "Reconnect" : "Connect"}
+          </a>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -42,7 +46,7 @@ function DiscoveredRow({ property }: { property: DiscoveredProperty }) {
         <div class="discovered-row-name">{property.name}</div>
         <div class="muted discovered-row-source">{source}</div>
       </div>
-      <button type="submit" class="btn btn-primary">
+      <button type="submit" class="btn btn-sm btn-primary">
         Track
       </button>
     </form>
@@ -84,7 +88,12 @@ export function AddWebsiteWidget({ data }: { data: WebsitesData }) {
       <label for={DRAWER_TOGGLE_ID} class="drawer-backdrop" aria-hidden="true" />
       <aside class="widget panel add-website-drawer">
         <div class="drawer-header">
-          <h2>Add a website</h2>
+          <div>
+            <h2>Add a website</h2>
+            <p class="muted drawer-subtitle">
+              Discovered from your connected Google Search Console or Analytics account.
+            </p>
+          </div>
           <label for={DRAWER_TOGGLE_ID} class="drawer-close" aria-label="Close">
             ✕
           </label>
@@ -101,9 +110,9 @@ export function AddWebsiteWidget({ data }: { data: WebsitesData }) {
               <ConnectRow label="Analytics" scope="analytics_property" state={data.ga4State} googleOAuthConfigured={data.googleOAuthConfigured} />
             </div>
             {data.gscState !== "connected" && data.ga4State !== "connected" ? (
-              <p class="muted">Connect or reconnect Search Console/Analytics above to see your properties here.</p>
+              <p class="muted drawer-empty-text">Connect or reconnect Search Console/Analytics above to see your properties here.</p>
             ) : data.discovered.length === 0 ? (
-              <p class="muted">No new properties found. Everything your connected Google account can see is already tracked.</p>
+              <p class="muted drawer-empty-text">No new properties found. Everything your connected Google account can see is already tracked.</p>
             ) : (
               <div class="discovered-list">
                 {data.discovered.map((property) => (
@@ -113,7 +122,7 @@ export function AddWebsiteWidget({ data }: { data: WebsitesData }) {
             )}
           </>
         ) : (
-          <p class="muted">Google OAuth isn't configured on this deployment yet.</p>
+          <p class="muted drawer-empty-text">Google OAuth isn't configured on this deployment yet.</p>
         )}
       </aside>
     </>

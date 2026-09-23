@@ -108,3 +108,23 @@ describe("dashboard's catch-all GET fallback", () => {
     expect(res.headers.get("Set-Cookie")).toBe("__session=fresh-token; Path=/");
   });
 });
+
+describe("dashboard logout", () => {
+  it("clears session cookies and redirects to marketing page with logged_out param", async () => {
+    const env = fakeEnv({ CLOUD_MODE: "1", CLERK_SECRET_KEY: "sk_test" });
+    const res = await dashboard.request("/logout", { method: "POST" }, env);
+    expect(res.status).toBe(303);
+    expect(res.headers.get("Location")).toBe("/?logged_out=1");
+    const setCookies = res.headers.getSetCookie();
+    expect(setCookies.some((c) => c.includes("__session="))).toBe(true);
+    expect(setCookies.some((c) => c.includes("__client_uat="))).toBe(true);
+  });
+
+  it("handles GET request to logout identically", async () => {
+    const env = fakeEnv({ CLOUD_MODE: "1", CLERK_SECRET_KEY: "sk_test" });
+    const res = await dashboard.request("/logout", { method: "GET" }, env);
+    expect(res.status).toBe(303);
+    expect(res.headers.get("Location")).toBe("/?logged_out=1");
+  });
+});
+

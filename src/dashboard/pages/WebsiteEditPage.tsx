@@ -6,6 +6,7 @@ import { renderPage } from "../Layout";
 import { Ga4PropertyField, GscSiteField } from "../components/GoogleAssetFields";
 
 export interface WebsiteEditData {
+  user?: import("../types").DashboardUser;
   website: WebsiteRow;
   gscSites: SearchConsoleSite[] | null;
   ga4Properties: GA4Property[] | null;
@@ -57,5 +58,12 @@ function WebsiteEditPage({ data }: { data: WebsiteEditData }) {
 }
 
 export function renderWebsiteEdit(data: WebsiteEditData): string {
-  return renderPage({ title: "Edit website", activePath: "/dashboard/websites", children: <WebsiteEditPage data={data} /> });
+  return renderPage({
+    title: `Edit ${data.website.name}`,
+    activePath: "/dashboard/websites",
+    user: data.user,
+    breadcrumbs: [{ label: "Websites", href: "/dashboard/websites" }, { label: `Edit ${data.website.name}` }],
+    children: <WebsiteEditPage data={data} />
+  });
 }
+

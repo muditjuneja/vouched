@@ -27,9 +27,33 @@ import { renderSignInRequired } from "./pages/SignInRequiredPage";
 import { renderUsage } from "./pages/UsagePage";
 import { renderWebsiteEdit } from "./pages/WebsiteEditPage";
 import { renderWebsites } from "./pages/WebsitesPage";
-import type { DashboardWebsite } from "./types";
+import type { ActionNotice, DashboardUser, DashboardWebsite } from "./types";
 
 const RECONNECT_NUDGE_COOLDOWN_HOURS = 24;
+
+function parseActionNotice(action: string | undefined): ActionNotice | null {
+  if (!action) return null;
+  switch (action) {
+    case "added":
+      return { type: "success", message: "Website added and tracking initiated." };
+    case "updated":
+      return { type: "success", message: "Website settings saved successfully." };
+    case "deleted":
+      return { type: "warn", message: "Website removed from tracking." };
+    case "revoked":
+      return { type: "warn", message: "MCP API key was revoked." };
+    case "disconnected":
+      return { type: "warn", message: "Google account disconnected." };
+    default:
+      return null;
+  }
+}
+
+async function getDashboardUser(env: Env, tenantId: string): Promise<DashboardUser> {
+  const [email, plan] = await Promise.all([getTenantEmail(env, tenantId), getEffectivePlan(env.DB, tenantId)]);
+  return { email, plan, tenantId };
+}
+
 
 /** Fires the reconnect-nudge email at most once per cooldown window per scope group. */
 async function maybeNotifyReconnect(env: Env, tenantId: string, scope: ScopeGroup, state: ConnectionState) {
@@ -115,6 +139,9 @@ dashboard.use("*", async (c, next) => {
     // is only the safety net for a visitor who arrives some other way.
     return c.html(renderCloudDisabled(), 404);
   }
+  if (c.req.path === "/logout" || c.req.path === "/dashboard/logout") {
+    return next();
+  }
   let auth;
   try {
     auth = await authenticateDashboardRequest(c.req.raw, c.env);
@@ -139,6 +166,16 @@ dashboard.use("*", async (c, next) => {
   }
 });
 
+// Clears session cookies and redirects out to the marketing home page
+dashboard.all("/logout", (_c) => {
+  const headers = new Headers();
+
+  headers.append("Set-Cookie", "__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax");
+  headers.append("Set-Cookie", "__client_uat=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax");
+  headers.append("Location", "/?logged_out=1");
+  return new Response(null, { status: 303, headers });
+});
+
 dashboard.get("/", async (c) => {
   const tenantId = c.get("tenantId");
   const env = c.env;
@@ -150,17 +187,25 @@ dashboard.get("/", async (c) => {
     await notifyWelcome(env, tenantId);
   }
 
-  const [websiteRows, sub, usage, recentActivity] = await Promise.all([
+  const [websiteRows, sub, usage, recentActivity, email, apiKeys, gscState, ga4State] = await Promise.all([
     listWebsites(env.DB, tenantId),
     getSubscription(env.DB, tenantId),
     getUsage(env.DB, tenantId),
-    listCostLog(env, tenantId, { limit: 5 })
+    listCostLog(env, tenantId, { limit: 5 }),
+    getTenantEmail(env, tenantId),
+    listApiKeys(env.DB, tenantId),
+    checkConnectionState(env, "webmaster_console", tenantId),
+    checkConnectionState(env, "analytics_property", tenantId)
   ]);
   const plan = await getEffectivePlan(env.DB, tenantId);
   const walletBalanceUsd = await getWalletBalance(env.DB, tenantId);
+  const user: DashboardUser = { email, plan, tenantId };
+  const workerOrigin = new URL(c.req.url).origin;
+  const notice = parseActionNotice(c.req.query("action"));
 
   return c.html(
     renderOverview({
+      user,
       plan,
       status: sub?.status ?? null,
       currentPeriodEnd: sub?.current_period_end ?? null,
@@ -170,7 +215,12 @@ dashboard.get("/", async (c) => {
       websiteCount: websiteRows.length,
       recentActivity,
       dodoConfigured: hasDodo(env),
-      hasDodoCustomer: Boolean(sub?.dodo_customer_id)
+      hasDodoCustomer: Boolean(sub?.dodo_customer_id),
+      workerOrigin,
+      hasApiKeys: apiKeys.length > 0,
+      gscConnected: gscState === "connected",
+      ga4Connected: ga4State === "connected",
+      notice
     })
   );
 });
@@ -179,7 +229,10 @@ dashboard.get("/websites", async (c) => {
   const tenantId = c.get("tenantId");
   const env = c.env;
 
-  const websiteRows = await listWebsites(env.DB, tenantId);
+  const [websiteRows, user] = await Promise.all([
+    listWebsites(env.DB, tenantId),
+    getDashboardUser(env, tenantId)
+  ]);
   // Same caveat as list_websites the MCP tool: one connection check per
   // scope group, not per site (see getAnyToken's doc comment).
   const [gscState, ga4State] = await Promise.all([
@@ -198,18 +251,23 @@ dashboard.get("/websites", async (c) => {
   const existingDomains = new Set(websiteRows.map((row) => normalizeDomain(row.primary_domain)));
   const discovered = await discoverProperties(env, tenantId, gscState, ga4State, existingDomains);
   const connectedParam = c.req.query("connected");
+  const actionParam = c.req.query("action");
+  const notice = parseActionNotice(actionParam);
 
   return c.html(
     renderWebsites({
+      user,
       websites,
       googleOAuthConfigured: hasGoogleOAuth(env),
       gscState,
       ga4State,
       discovered,
-      justConnected: connectedParam && isScopeGroup(connectedParam) ? connectedParam : null
+      justConnected: connectedParam && isScopeGroup(connectedParam) ? connectedParam : null,
+      notice
     })
   );
 });
+
 
 dashboard.post("/websites", async (c) => {
   const tenantId = c.get("tenantId");
@@ -234,13 +292,13 @@ dashboard.post("/websites", async (c) => {
     tenantId
   );
 
-  return c.redirect("/dashboard/websites", 303);
+  return c.redirect("/dashboard/websites?action=added", 303);
 });
 
 dashboard.get("/websites/:websiteId/edit", async (c) => {
   const tenantId = c.get("tenantId");
   const env = c.env;
-  const website = await getWebsiteById(env.DB, c.req.param("websiteId"), tenantId);
+  const [website, user] = await Promise.all([getWebsiteById(env.DB, c.req.param("websiteId"), tenantId), getDashboardUser(env, tenantId)]);
   if (!website) return c.text("not found", 404);
 
   const [gscState, ga4State] = await Promise.all([
@@ -249,7 +307,7 @@ dashboard.get("/websites/:websiteId/edit", async (c) => {
   ]);
   const { gscSites, ga4Properties } = await fetchGoogleProperties(env, tenantId, gscState, ga4State);
 
-  return c.html(renderWebsiteEdit({ website, gscSites, ga4Properties }));
+  return c.html(renderWebsiteEdit({ user, website, gscSites, ga4Properties }));
 });
 
 dashboard.post("/websites/:websiteId/update", async (c) => {
@@ -277,13 +335,13 @@ dashboard.post("/websites/:websiteId/update", async (c) => {
   );
   if (!updated) return c.text("not found", 404);
 
-  return c.redirect("/dashboard/websites", 303);
+  return c.redirect("/dashboard/websites?action=updated", 303);
 });
 
 dashboard.post("/websites/:websiteId/delete", async (c) => {
   const tenantId = c.get("tenantId");
   await deleteWebsite(c.env.DB, c.req.param("websiteId"), tenantId);
-  return c.redirect("/dashboard/websites", 303);
+  return c.redirect("/dashboard/websites?action=deleted", 303);
 });
 
 dashboard.get("/usage", async (c) => {
@@ -292,12 +350,25 @@ dashboard.get("/usage", async (c) => {
   const beforeId = beforeParam ? Number(beforeParam) : undefined;
 
   const limit = 50;
-  const rows = await listCostLog(c.env, tenantId, { limit: limit + 1, beforeId });
+  const [rows, user, usage] = await Promise.all([
+    listCostLog(c.env, tenantId, { limit: limit + 1, beforeId }),
+    getDashboardUser(c.env, tenantId),
+    getUsage(c.env.DB, tenantId)
+  ]);
   const hasMore = rows.length > limit;
   const page = rows.slice(0, limit);
   const lastRow = page[page.length - 1];
 
-  return c.html(renderUsage({ rows: page, nextBeforeId: hasMore && lastRow ? lastRow.id : null }));
+  return c.html(
+    renderUsage({
+      user,
+      rows: page,
+      nextBeforeId: hasMore && lastRow ? lastRow.id : null,
+      totalCalls: page.length,
+      periodSpendUsd: usage?.cost_incurred_usd ?? 0,
+      quotaUsd: MONTHLY_QUOTA_USD[user.plan]
+    })
+  );
 });
 
 dashboard.get("/billing", async (c) => {
@@ -312,9 +383,13 @@ dashboard.get("/billing", async (c) => {
     getTenantEmail(env, tenantId)
   ]);
   const plan = await getEffectivePlan(env.DB, tenantId);
+  const user: DashboardUser = { email, plan, tenantId };
+  const actionParam = c.req.query("action");
+  const notice = parseActionNotice(actionParam);
 
   return c.html(
     renderBilling({
+      user,
       plan,
       status: sub?.status ?? null,
       currentPeriodEnd: sub?.current_period_end ?? null,
@@ -326,7 +401,8 @@ dashboard.get("/billing", async (c) => {
       hasDodoCustomer: Boolean(sub?.dodo_customer_id),
       checkoutSuccess: c.req.query("checkout") === "success",
       topupSuccess: c.req.query("topup") === "success",
-      prefillEmail: email
+      prefillEmail: email,
+      notice
     })
   );
 });
@@ -335,22 +411,30 @@ dashboard.get("/settings", async (c) => {
   const tenantId = c.get("tenantId");
   const env = c.env;
 
-  const [apiKeys, email, gsc, ga4] = await Promise.all([
+  const [apiKeys, email, gsc, ga4, plan] = await Promise.all([
     listApiKeys(env.DB, tenantId),
     getTenantEmail(env, tenantId),
     checkConnectionState(env, "webmaster_console", tenantId),
-    checkConnectionState(env, "analytics_property", tenantId)
+    checkConnectionState(env, "analytics_property", tenantId),
+    getEffectivePlan(env.DB, tenantId)
   ]);
+  const user: DashboardUser = { email, plan, tenantId };
   const connectedParam = c.req.query("connected");
+  const actionParam = c.req.query("action");
+  const notice = parseActionNotice(actionParam);
 
   return c.html(
     renderSettings({
+      user,
       email,
+      tenantId,
+      plan,
       apiKeys,
       gsc,
       ga4,
       googleOAuthConfigured: hasGoogleOAuth(env),
-      justConnected: connectedParam && isScopeGroup(connectedParam) ? connectedParam : null
+      justConnected: connectedParam && isScopeGroup(connectedParam) ? connectedParam : null,
+      notice
     })
   );
 });
@@ -362,13 +446,15 @@ dashboard.post("/api-keys", async (c) => {
 
   const created = await createApiKey(c.env.DB, tenantId, label);
   await notifyApiKeyIssued(c.env, tenantId, label ?? null);
-  return c.html(renderApiKeyCreated(created.plaintext));
+  const workerOrigin = new URL(c.req.url).origin;
+  const user = await getDashboardUser(c.env, tenantId);
+  return c.html(renderApiKeyCreated(created.plaintext, workerOrigin, user));
 });
 
 dashboard.post("/api-keys/:keyId/revoke", async (c) => {
   const tenantId = c.get("tenantId");
   await revokeApiKey(c.env.DB, tenantId, c.req.param("keyId"));
-  return c.redirect("/dashboard/settings", 303);
+  return c.redirect("/dashboard/settings?action=revoked", 303);
 });
 
 dashboard.post("/google/:scopeGroup/disconnect", async (c) => {
@@ -378,8 +464,9 @@ dashboard.post("/google/:scopeGroup/disconnect", async (c) => {
     return c.text(`scope must be one of: ${SCOPE_GROUPS.join(", ")}`, 400);
   }
   await deleteToken(c.env.DB, scope, tenantId);
-  return c.redirect("/dashboard/settings", 303);
+  return c.redirect("/dashboard/settings?action=disconnected", 303);
 });
+
 
 // Every write action above is POST-only; nothing in this app ever links
 // to a bare GET on one of these paths. The one thing that can still land

@@ -5,6 +5,17 @@ import type { Plan, SubscriptionStatus, WalletLedgerRow } from "../db/subscripti
 import type { WebsiteRow } from "../db/websites";
 import type { DiscoveredProperty } from "./discovery";
 
+export interface DashboardUser {
+  email: string | null;
+  plan: Plan;
+  tenantId: string;
+}
+
+export interface ActionNotice {
+  type: "success" | "warn" | "info";
+  message: string;
+}
+
 export interface DashboardWebsite {
   row: WebsiteRow;
   gsc: ConnectionState | "not_configured";
@@ -19,6 +30,7 @@ export interface DashboardWebsite {
  * shouldn't all pay for wallet-ledger/cost-log queries they don't show.
  */
 export interface OverviewData {
+  user?: DashboardUser;
   plan: Plan;
   status: SubscriptionStatus | null;
   currentPeriodEnd: string | null;
@@ -29,11 +41,18 @@ export interface OverviewData {
   recentActivity: CostLogRow[];
   dodoConfigured: boolean;
   hasDodoCustomer: boolean;
+  workerOrigin?: string;
+  hasApiKeys?: boolean;
+  gscConnected?: boolean;
+  ga4Connected?: boolean;
+  notice?: ActionNotice | null;
 }
 
 export interface WebsitesData {
+  user?: DashboardUser;
   websites: DashboardWebsite[];
   googleOAuthConfigured: boolean;
+
   /**
    * The tenant's scope-wide Google connection state, so the "Add a
    * website" widget can offer a direct Connect action right here instead
@@ -53,14 +72,20 @@ export interface WebsitesData {
   discovered: DiscoveredProperty[];
   /** Set right after the OAuth callback redirects back here (see src/auth/oauth-routes.ts's handleOAuthCallback), so a connect started from this page lands on a real confirmation right here instead of over on Settings. */
   justConnected: "webmaster_console" | "analytics_property" | null;
+  notice?: ActionNotice | null;
 }
 
 export interface UsageData {
+  user?: DashboardUser;
   rows: CostLogRow[];
   nextBeforeId: number | null;
+  totalCalls?: number;
+  periodSpendUsd?: number;
+  quotaUsd?: number;
 }
 
 export interface BillingData {
+  user?: DashboardUser;
   plan: Plan;
   status: SubscriptionStatus | null;
   currentPeriodEnd: string | null;
@@ -74,10 +99,14 @@ export interface BillingData {
   topupSuccess: boolean;
   /** Prefills the upgrade/top-up forms' email field so an already-signed-in tenant never retypes it; null falls back to a visible input. */
   prefillEmail: string | null;
+  notice?: ActionNotice | null;
 }
 
 export interface SettingsData {
+  user?: DashboardUser;
   email: string | null;
+  tenantId?: string;
+  plan?: Plan;
   apiKeys: McpApiKeyRow[];
   /** Tenant-wide connection state, unlike WebsitesData's per-website "not_configured" concept: Settings manages the one underlying Google connection itself, not any specific website's use of it. */
   gsc: ConnectionState;
@@ -85,4 +114,13 @@ export interface SettingsData {
   googleOAuthConfigured: boolean;
   /** Set right after the OAuth callback redirects back here (see src/auth/oauth-routes.ts's handleOAuthCallback), so the tenant lands on a real confirmation instead of a dead-end text page. */
   justConnected: "webmaster_console" | "analytics_property" | null;
+  notice?: ActionNotice | null;
 }
+
+export interface ApiKeyCreatedData {
+  user?: DashboardUser;
+  plaintext: string;
+  workerOrigin?: string;
+}
+
+

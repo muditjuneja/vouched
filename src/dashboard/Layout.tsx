@@ -3,247 +3,8 @@ import { BASE_CSS, FAVICON_HREF, TOKENS_CSS, renderToString } from "../design";
 import { DISPLAY_NAME } from "../lib/product";
 import { Sidebar } from "./components/Sidebar";
 
-/**
- * Dashboard is the same brand as marketing, denser: a control panel on
- * paper, not the public editorial spread and not leftover Inter/blue SaaS.
- */
-const DASHBOARD_CSS = `
-  body.dash {
-    --bg: #f3eadc;
-    --matte: #e6d7c0;
-    --bg-alt: #ebe1cf;
-    --paper: #efe6d6;
-    --text: #161310;
-    --muted: #5c564e;
-    --border: #d4c8ae;
-    --accent: #1a1916;
-    --accent-2: #1a1916;
-    --accent-contrast: #f3eadc;
-    --card-bg: #efe6d6;
-    --gold: #c9953a;
-    --moss: #3f5340;
-    --ink: #1a1916;
-    --status-good-bg: #3f5340;
-    --status-warn-bg: #9a6700;
-    --status-neutral-bg: #6e5c46;
-    --font: "Instrument Sans", "Segoe UI", sans-serif;
-    --font-display: "Fraunces", Georgia, serif;
-    --font-mono: "IBM Plex Mono", ui-monospace, monospace;
-    --radius-sm: 4px;
-    --radius-md: 8px;
-    --shadow-sm: none;
-    --shadow-md: none;
-    --shadow-lg: none;
-    --shadow-glow: none;
-    color-scheme: light;
-    font-family: var(--font);
-    background: var(--matte);
-    max-width: none;
-    margin: 0;
-    padding: 14px;
-    overflow-x: hidden;
-  }
-  body.dash::before {
-    content: "";
-    pointer-events: none;
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    opacity: 0.09;
-    mix-blend-mode: multiply;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
-  }
-  @media (prefers-color-scheme: dark) {
-    body.dash:not([data-theme="light"]) {
-      --bg: #1b1713;
-      --matte: #14110e;
-      --bg-alt: #241f19;
-      --paper: #221d18;
-      --text: #f2e8d6;
-      --muted: #b3a794;
-      --border: #3c342a;
-      --accent: #f2e8d6;
-      --accent-2: #f2e8d6;
-      --accent-contrast: #1b1713;
-      --card-bg: #221d18;
-      --ink: #f2e8d6;
-      --status-good-bg: #8aa07a;
-      color-scheme: dark;
-    }
-    body.dash:not([data-theme="light"])::before { mix-blend-mode: overlay; opacity: 0.1; }
-  }
-  .sheet {
-    position: relative; z-index: 1;
-    background: var(--bg);
-    border: 1px solid var(--border); min-height: calc(100vh - 28px);
-  }
-  .sheet-tick {
-    position: absolute; width: 11px; height: 11px; pointer-events: none; z-index: 3;
-    border: 1px solid var(--ink); background: var(--bg);
-  }
-  .sheet-tick.tl { top: -1px; left: -1px; border-right: none; border-bottom: none; }
-  .sheet-tick.tr { top: -1px; right: -1px; border-left: none; border-bottom: none; }
-  .sheet-tick.bl { bottom: -1px; left: -1px; border-right: none; border-top: none; }
-  .sheet-tick.br { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+import { DASHBOARD_CSS } from "./styles";
 
-  /* Mobile-only hamburger; toggles .dash-sidebar via the [open] ~ sibling
-     rule further down. On desktop this whole element is display: none, so
-     the details/summary semantics never matter there: the sidebar is
-     just always visible as a normal flex column. */
-  .dash-mobile-toggle { display: none; }
-  .dash-mobile-toggle summary {
-    cursor: pointer; list-style: none; padding: 0.9rem 1.25rem;
-    font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase;
-    border-bottom: 1px solid var(--border);
-  }
-  .dash-mobile-toggle summary::-webkit-details-marker { display: none; }
-  .dash-mobile-toggle summary::before { content: "☰ Menu"; }
-  .dash-mobile-toggle[open] summary::before { content: "✕ Close"; }
-
-  .dash-shell { display: flex; align-items: stretch; min-height: calc(100vh - 30px); }
-  .dash-sidebar {
-    display: flex; flex-direction: column; gap: 1.5rem;
-    width: 15rem; flex-shrink: 0; padding: 1.5rem 1.25rem;
-    border-right: 1px solid var(--border);
-  }
-  .dash-sidebar > a.brand {
-    font-family: var(--font-display); font-style: italic; font-weight: 500;
-    font-size: 1.35rem; letter-spacing: -0.03em; text-decoration: none; color: var(--text);
-  }
-  .dash-nav-items { display: flex; flex-direction: column; gap: 0.15rem; flex: 1; }
-  .dash-back-link {
-    font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
-    text-decoration: none; color: var(--muted);
-  }
-  .dash-back-link:hover { color: var(--text); }
-  .dash-main { flex: 1; min-width: 0; }
-  main.dash-content { padding: 1.75rem 1.75rem 3rem; }
-  .kicker {
-    font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.14em;
-    text-transform: uppercase; color: var(--muted); margin: 0 0 0.35rem;
-  }
-  body.dash h1 {
-    font-size: clamp(1.7rem, 3vw, 2.2rem); font-weight: 650; letter-spacing: -0.03em;
-    margin: 0 0 1.35rem; line-height: 1.1;
-  }
-  body.dash h2 {
-    font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.14em;
-    text-transform: uppercase; font-weight: 500; color: var(--muted);
-    margin: 0 0 0.75rem;
-  }
-  body.dash a { color: inherit; }
-  body.dash .btn {
-    border-radius: 4px; box-shadow: none; background: transparent;
-    border-color: var(--border); color: var(--text);
-  }
-  body.dash .btn:hover { transform: none; box-shadow: none; background: var(--paper); }
-  body.dash .btn-primary {
-    background: var(--ink); background-image: none; border-color: var(--ink);
-    color: var(--accent-contrast); box-shadow: none;
-  }
-  body.dash .btn-primary:hover { filter: none; transform: none; box-shadow: none; background: color-mix(in srgb, var(--ink) 88%, var(--gold)); }
-  section.panel {
-    border: 1px solid var(--border); padding: 1.25rem 1.3rem 1.35rem; margin-bottom: 1.1rem;
-  }
-  form.inline { display: inline-block; margin: 0; }
-  .row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-  input, select {
-    /* var(--paper), not a fixed color-mix toward white: that mix reads as a
-       subtle lift off the page in light mode but turns into a jarring flat
-       gray box in dark mode, since mixing 50% white into a near-black --bg
-       lands in the middle of the scale, ignoring the theme entirely.
-       --paper already flips per theme (see body.dash's two variable
-       blocks), so this stays a subtle paper-toned field in both. */
-    border-radius: 4px; background: var(--paper);
-    min-width: 10rem;
-  }
-  .page-header-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-  .page-header-row h1 { margin-bottom: 0; }
-  .widget-connections { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.3rem; }
-  .widget-connect-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; }
-  .widget-connect-row > span:first-child { flex: 1; }
-  .discovered-list { display: flex; flex-direction: column; gap: 0.6rem; }
-  form.discovered-row {
-    display: flex; align-items: center; gap: 0.6rem; margin: 0;
-    border: 1px solid var(--border); padding: 0.65rem 0.8rem;
-  }
-  .discovered-row > div:first-child { flex: 1; min-width: 0; }
-  .discovered-row-name { font-weight: 600; overflow-wrap: anywhere; }
-  .discovered-row-source { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.05em; text-transform: uppercase; }
-  .discovered-row button { flex-shrink: 0; }
-
-  /* Add-website drawer: checkbox+label toggle (see AddWebsiteWidget's doc
-     comment for why this uses that instead of <details>/<summary>). The
-     checkbox itself is visually hidden but stays keyboard-focusable. */
-  .drawer-toggle-input {
-    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
-    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
-  }
-  label.drawer-open-btn { cursor: pointer; }
-  .drawer-backdrop {
-    position: fixed; inset: 0; z-index: 19; cursor: pointer;
-    background: rgba(20, 17, 14, 0.4); opacity: 0; pointer-events: none;
-    transition: opacity 0.2s ease;
-  }
-  aside.add-website-drawer {
-    position: fixed; top: 0; right: 0; z-index: 20;
-    width: min(26rem, 92vw); height: 100%; overflow-y: auto;
-    display: flex; flex-direction: column; gap: 0.9rem;
-    background: var(--bg); padding: 1.25rem 1.3rem 1.35rem;
-    border-left: 1px solid var(--border); border-radius: 0; margin: 0;
-    box-shadow: var(--shadow-lg);
-    transform: translateX(100%); transition: transform 0.2s ease;
-  }
-  .drawer-toggle-input:checked ~ .drawer-backdrop { opacity: 1; pointer-events: auto; }
-  .drawer-toggle-input:checked ~ aside.add-website-drawer { transform: translateX(0); }
-  .drawer-header { display: flex; align-items: center; justify-content: space-between; }
-  .drawer-header h2 { margin: 0; }
-  label.drawer-close { cursor: pointer; font-family: var(--font-mono); font-size: 1rem; line-height: 1; }
-  .callout { border-radius: 0; background: var(--paper); }
-  .key {
-    font-family: var(--font-mono); background: var(--paper); border: 1px solid var(--border);
-    display: block; padding: 0.75rem 0.9rem; border-radius: 4px; word-break: break-all;
-  }
-  .meter {
-    height: 6px; background: var(--paper); border: 1px solid var(--border); margin: 0.65rem 0 1rem;
-  }
-  .meter > span { display: block; height: 100%; background: var(--moss); }
-  .stat-grid { display: grid; gap: 0.9rem; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); margin-bottom: 1.1rem; }
-  body.dash .stat-card { border-radius: 0; box-shadow: none; }
-  table { font-size: 0.9rem; }
-  th { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; }
-  body.dash .badge { border-radius: 4px; font-weight: 500; letter-spacing: 0.02em; }
-  ::selection { background: color-mix(in srgb, var(--gold) 45%, white); color: var(--ink); }
-  :focus-visible { outline: 1px solid var(--ink); outline-offset: 3px; }
-  @media (max-width: 780px) {
-    .dash-mobile-toggle { display: block; }
-    .dash-shell { position: relative; overflow: hidden; }
-    .dash-sidebar {
-      position: absolute; top: 0; left: 0; height: 100%; width: 15rem; z-index: 5;
-      background: var(--bg); transform: translateX(-100%); transition: transform 0.2s ease;
-      box-shadow: var(--shadow-lg);
-    }
-    .dash-mobile-toggle[open] ~ .dash-shell .dash-sidebar { transform: translateX(0); }
-    main.dash-content { padding: 1.5rem 1.25rem 3rem; }
-  }
-  @media (max-width: 640px) {
-    .row { flex-direction: column; align-items: stretch; }
-    input { min-width: 0; width: 100%; }
-    body.dash .table-scroll { overflow: visible; }
-    body.dash thead { display: none; }
-    body.dash table, body.dash tbody, body.dash tr, body.dash td { display: block; width: 100%; }
-    body.dash tr { border-bottom: 1px solid var(--border); padding: 0.65rem 0; }
-    body.dash td {
-      border: none; padding: 0.22rem 0;
-      display: grid; grid-template-columns: 7.2rem minmax(0, 1fr); gap: 0.45rem; align-items: start;
-    }
-    body.dash td::before {
-      content: attr(data-label);
-      font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.1em;
-      text-transform: uppercase; color: var(--muted); padding-top: 0.18rem;
-    }
-  }
-`;
 
 export interface LayoutProps {
   title: string;
@@ -255,9 +16,34 @@ export interface LayoutProps {
    * itself, so no request/context needs to be threaded through here.
    */
   activePath: string;
+  user?: import("./types").DashboardUser;
+  notice?: import("./types").ActionNotice | null;
+  breadcrumbs?: { label: string; href?: string }[];
 }
 
-function Layout({ title, activePath, children }: PropsWithChildren<LayoutProps>) {
+function FlashAlert({ notice }: { notice: import("./types").ActionNotice }) {
+  const typeClass = notice.type === "success" ? "dash-alert-success" : notice.type === "warn" ? "dash-alert-warn" : "dash-alert-info";
+  return (
+    <div class={`dash-alert ${typeClass}`} role="status">
+      <span>{notice.message}</span>
+    </div>
+  );
+}
+
+function Breadcrumbs({ items }: { items: { label: string; href?: string }[] }) {
+  return (
+    <nav class="dash-breadcrumbs" aria-label="Breadcrumb">
+      {items.map((item, idx) => (
+        <>
+          {idx > 0 ? <span class="sep">/</span> : null}
+          {item.href ? <a href={item.href}>{item.label}</a> : <span>{item.label}</span>}
+        </>
+      ))}
+    </nav>
+  );
+}
+
+function Layout({ title, activePath, user, notice, breadcrumbs, children }: PropsWithChildren<LayoutProps>) {
   return (
     <html lang="en">
       <head>
@@ -289,10 +75,35 @@ function Layout({ title, activePath, children }: PropsWithChildren<LayoutProps>)
             <summary />
           </details>
           <div class="dash-shell">
-            <Sidebar activePath={activePath} />
-            <main class="dash-main dash-content">{children}</main>
+            <Sidebar activePath={activePath} user={user} />
+            <main class="dash-main dash-content">
+              {notice ? <FlashAlert notice={notice} /> : null}
+              {breadcrumbs && breadcrumbs.length > 0 ? <Breadcrumbs items={breadcrumbs} /> : null}
+              {children}
+            </main>
           </div>
         </div>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+document.addEventListener('click', function(e) {
+  var btn = e.target.closest('[data-copy]');
+  if (!btn) return;
+  var text = btn.getAttribute('data-copy');
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(function() {
+    var orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.textContent = orig;
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+});
+`
+          }}
+        />
       </body>
     </html>
   );
@@ -302,3 +113,4 @@ function Layout({ title, activePath, children }: PropsWithChildren<LayoutProps>)
 export function renderPage(props: PropsWithChildren<LayoutProps>): string {
   return "<!doctype html>" + renderToString(<Layout {...props} />);
 }
+

@@ -50,5 +50,12 @@ function BillingPage({ data }: { data: BillingData }) {
 }
 
 export function renderBilling(data: BillingData): string {
-  return renderPage({ title: "Billing", activePath: "/dashboard/billing", children: <BillingPage data={data} /> });
+  return renderPage({
+    title: "Billing",
+    activePath: "/dashboard/billing",
+    user: data.user,
+    notice: data.notice,
+    children: <BillingPage data={data} />
+  });
 }
+
