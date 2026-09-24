@@ -61,7 +61,8 @@ export function keywordIdeas(env: Env, toolName: string, seedKeywords: string[],
     keywords: seedKeywords,
     location_code: DEFAULT_LOCATION_CODE,
     language_code: DEFAULT_LANGUAGE_CODE,
-    limit
+    limit,
+    order_by: ["keyword_info.search_volume,desc"]
   });
 }
 
@@ -78,16 +79,20 @@ export function domainIntersection(
   toolName: string,
   target1: string,
   target2: string,
-  limit = 100
+  limit = 100,
+  opts: { maxTarget1Position?: number } = {}
 ) {
   // intersections: false returns keywords target1 ranks for and target2
   // doesn't: the gap. Without it the endpoint returns shared keywords.
+  // Highest search volume first; optionally only where target1 ranks well.
   return dfsLiveItems(env, toolName, "/v3/dataforseo_labs/google/domain_intersection/live", {
     target1,
     target2,
     intersections: false,
     location_code: DEFAULT_LOCATION_CODE,
     language_code: DEFAULT_LANGUAGE_CODE,
-    limit
+    limit,
+    order_by: ["keyword_data.keyword_info.search_volume,desc"],
+    ...(opts.maxTarget1Position ? { filters: ["first_domain_serp_element.rank_group", "<=", opts.maxTarget1Position] } : {})
   });
 }

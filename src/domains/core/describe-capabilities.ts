@@ -1,3 +1,4 @@
+import { TOOL_COST_ESTIMATES } from "../../billing/tool-costs";
 import { z } from "zod";
 import { envelope } from "../../envelope/builder";
 import { TOOL_MANIFEST } from "../../mcp/manifest";
@@ -21,6 +22,8 @@ async function handler(_args: Record<string, never>, env: Env) {
     requires_connection: entry.requires_connection,
     // "paid" rather than the internal "dataforseo": responses never name the data supplier.
     billing: entry.billing === "dataforseo" ? "paid" : "free",
+    // Typical market-data cost of one call, so an agent can plan spend; null for free tools.
+    typical_cost_usd: TOOL_COST_ESTIMATES[entry.name] ?? null,
     implemented: entry.implemented,
     enabled: isEnabled(entry, env)
   }));

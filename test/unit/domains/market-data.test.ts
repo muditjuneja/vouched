@@ -12,6 +12,7 @@ import { inspectPage } from "../../../src/domains/seo/inspect-page";
 import { inspectSearchVisibility } from "../../../src/domains/seo/inspect-search-visibility";
 import { researchKeywords } from "../../../src/domains/seo/research-keywords";
 import { inspectSerp } from "../../../src/domains/serp/inspect-serp";
+import { toolError } from "../../../src/mcp/server";
 import type { Env } from "../../../src/types/env";
 
 /**
@@ -60,6 +61,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 /** Self-host with its own key: no quota or wallet logic, and a D1 that accepts the cost log write. */
 const env = {
+  DATASETS: { put: async () => undefined },
   DB: { prepare: () => ({ bind: () => ({ run: async () => ({ meta: { changes: 1 } }) }) }) },
   DATAFORSEO_LOGIN: "login",
   DATAFORSEO_PASSWORD: "password"
@@ -79,8 +81,9 @@ describe("Labs tools read the rows, not the wrapper", () => {
     expect(rivals).toEqual(["dentaly.org", "youtube.com"]);
   });
 
-  it("discover_competitors: leaves the domain out of its own competitor list", async () => {
-    const result = await discoverCompetitors.handler({ domain: "newmouth.com" }, env);
+  it("discover_competitors: leaves the domain out of its own competitor list, fetching one extra to make up for it", async () => {
+    const result = await discoverCompetitors.handler({ domain: "newmouth.com", limit: 2 }, env);
+    expect(requests[0]!.body.limit).toBe(3);
     expect(result.facts.map((f) => f.data.competitor_domain)).toEqual(["dentaly.org", "youtube.com"]);
     expect(result.coverage.returned).toBe(2);
   });
@@ -93,6 +96,31 @@ describe("Labs tools read the rows, not the wrapper", () => {
       ["tin can phone", 135000, 5]
     ]);
     expect(result.coverage.returned).toBe(3);
+    expect(requests[0]!.body.order_by).toEqual(["keyword_info.search_volume,desc"]);
+  });
+
+  it("research_keywords: keeps only ideas that share a word with a seed, and says how many were left out", async () => {
+    const result = await researchKeywords.handler({ seedKeywords: ["nothing"] }, env);
+    expect(result.facts.map((f) => f.data.keyword)).toEqual(["nothing phone"]);
+    expect(result.coverage.scope_note).toContain("2 broader ideas left out");
+  });
+
+  it("compare_keyword_coverage: top-20 positions only, highest volume first, brand searches left out, rest exported", async () => {
+    const result = await compareKeywordCoverage.handler({ domain: "xmit.sh", competitors: ["source.com"], limit: 1 }, env);
+    expect(requests[0]!.body).toMatchObject({
+      filters: ["first_domain_serp_element.rank_group", "<=", 20],
+      order_by: ["keyword_data.keyword_info.search_volume,desc"]
+    });
+    // Both fixture keywords contain "source", the competitor's brand.
+    expect(result.facts).toHaveLength(0);
+    expect(result.coverage.scope_note).toContain("2 searches for a competitor's own brand left out");
+  });
+
+  it("compare_keyword_coverage: lists up to the limit and exports the rest", async () => {
+    const result = await compareKeywordCoverage.handler({ domain: "semrush.com", competitors: ["ahrefs.com"], limit: 1 }, env);
+    expect(result.facts).toHaveLength(1);
+    expect(result.resources[0]?.uri).toMatch(/^mcpseo:\/\/seo\//);
+    expect(result.coverage).toMatchObject({ returned: 1, total: 2 });
   });
 
   it("compare_keyword_coverage: asks for the competitor's keywords the domain lacks, and lists them", async () => {
@@ -113,7 +141,13 @@ describe("Labs tools read the rows, not the wrapper", () => {
   it("inspect_search_visibility: organic position comes from rank_group", async () => {
     const result = await inspectSearchVisibility.handler({ domain: "dataforseo.com", keywords: ["1000 keywords"] }, env);
     const ranking = result.facts.find((f) => f.data.keyword === "1000 keywords");
-    expect(ranking?.data.position).toBe(1); // rank_group 1, even though rank_absolute is 2
+    expect(ranking?.data).toMatchObject({ ranking: true, position: 1 }); // rank_group 1, even though rank_absolute is 2
+  });
+
+  it("inspect_search_visibility: says explicitly when a keyword isn't ranking, and lists it as an entity", async () => {
+    const result = await inspectSearchVisibility.handler({ domain: "dataforseo.com", keywords: ["not in the fixture"] }, env);
+    expect(result.facts.find((f) => f.data.keyword === "not in the fixture")?.data).toMatchObject({ ranking: false, position: null });
+    expect(result.entities.some((e) => e.label === "not in the fixture")).toBe(true);
   });
 
   it("inspect_keyword: volume, difficulty and intent from the overview, positions from the live results", async () => {
@@ -133,6 +167,9 @@ describe("the live SERP tool", () => {
     for (const fact of result.facts) expect(fact.subject[0]).toBe("keyword:en:US:pizza");
     const feature = result.facts.find((f) => f.type === "serp.feature");
     expect(feature?.data).toHaveProperty("slot_on_page");
+    const paa = result.facts.find((f) => f.data.feature_type === "people_also_ask");
+    expect(paa?.data.questions).toEqual(["What is the 2 hour rule for pizza?", "What is the best pizza in the UK?", "Which flavour is best in pizza?"]);
+    expect(JSON.stringify(result.facts)).not.toContain("xpath");
   });
 });
 
@@ -152,10 +189,17 @@ describe("backlink tools", () => {
     expect(result.coverage.scope_note).toBe("view=authority");
   });
 
-  it("compare_backlink_gap: sites linking to the competitor but not the domain", async () => {
+  it("compare_backlink_gap: sites linking to the competitor but not the domain, strongest first", async () => {
     const result = await compareBacklinkGap.handler({ domain: "semrush.com", competitors: ["ahrefs.com"] }, env);
     expect(requests[0]!.body).toMatchObject({ targets: { 1: "ahrefs.com" }, exclude_targets: ["semrush.com"] });
-    expect(result.facts[0]?.data).toMatchObject({ referring_domain: "seokicks.de", competitor_domain: "ahrefs.com" });
+    expect(result.facts.map((f) => f.data.referring_domain)).toEqual(["saashub.com", "seokicks.de", "github.com"]);
+  });
+
+  it("compare_backlink_gap: leaves out the competitor's own sites, and exports what's past the limit", async () => {
+    const result = await compareBacklinkGap.handler({ domain: "semrush.com", competitors: ["github.com"], limit: 1 }, env);
+    expect(result.facts.map((f) => f.data.referring_domain)).toEqual(["saashub.com"]);
+    expect(result.coverage.scope_note).toContain("1 of the companies' own sites left out");
+    expect(result.resources[0]?.uri).toMatch(/^mcpseo:\/\/backlinks\//);
   });
 });
 
@@ -174,10 +218,32 @@ describe("AI visibility tools", () => {
   });
 });
 
+describe("costs are explained, not capped", () => {
+  it("inspect_ai_visibility takes up to 5 competitors, like the other comparison tools, and says what that costs", () => {
+    const five = ["b.com", "c.com", "d.com", "e.com", "f.com"];
+    expect(inspectAiVisibility.inputSchema.safeParse({ domain: "a.com", competitors: five }).success).toBe(true);
+    expect(inspectAiVisibility.description).toContain("$0.10 of market data per domain");
+  });
+});
+
+describe("tool errors", () => {
+  it("come back as an MCP error and an envelope with a stable code", () => {
+    const result = toolError("connection_required", "Connect Google Analytics first.", { connection: "analytics_property" });
+    expect(result.isError).toBe(true);
+    expect(result.content[0]!.text).toBe("connection_required: Connect Google Analytics first.");
+    expect(result.structuredContent).toMatchObject({
+      schema_version: "ofe/1.0",
+      data: { error: { code: "connection_required", connection: "analytics_property" } },
+      facts: []
+    });
+  });
+});
+
 describe("no supplier leaks", () => {
   it("never names the provider in facts or methods", async () => {
     const result = await inspectDomain.handler({ domain: "newmouth.com" }, env);
     expect(JSON.stringify(result).toLowerCase()).not.toContain("dataforseo_labs");
+    expect(result.facts.map((f) => f.provenance.method)).toContain("domain_overview");
     expect(JSON.stringify(result.facts)).not.toContain('"raw"');
   });
 });

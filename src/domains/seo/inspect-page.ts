@@ -48,7 +48,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
         search_volume: item.keyword_data?.keyword_info?.search_volume ?? null,
         estimated_traffic: item.ranked_serp_element?.serp_item?.etv ?? null
       },
-      provenance: provenance("search_index", "labs.ranked_keywords", { observedAt })
+      provenance: provenance("search_index", "ranked_keywords", { observedAt })
     });
   }
 
@@ -56,7 +56,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
     type: "seo.top_page",
     subject: [pageId],
     data: { url: args.url, ranked_keyword_count: totalCount ?? results.length },
-    provenance: provenance("search_index", "labs.ranked_keywords", { observedAt })
+    provenance: provenance("search_index", "ranked_keywords", { observedAt })
   });
 
   return builder

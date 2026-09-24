@@ -43,3 +43,16 @@ describe("renderPricing: facts match the product", () => {
     expect(html).not.toContain("quotas.ts");
   });
 });
+
+describe("renderPricing: what market data costs", () => {
+  const html = renderPricing("https://example.com/pricing", true);
+
+  it("lists every paid tool's typical cost and how far Pro's allowance goes, cheapest first", () => {
+    expect(html).toContain('id="costs"');
+    expect(html.indexOf("inspect_serp")).toBeLessThan(html.indexOf("discover_ai_citations"));
+    expect(html).toContain("about $0.002 per call");
+    expect(html).toContain("about $0.10 per domain compared");
+    expect(html).toContain("40 domains compared");
+    expect(html).toContain("Nothing is capped");
+  });
+});

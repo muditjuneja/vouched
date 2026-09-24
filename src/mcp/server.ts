@@ -1,4 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/server";
+import { envelope } from "../envelope/builder";
 import { discoverAiCitations } from "../domains/ai_visibility/discover-ai-citations";
 import { inspectAiVisibility } from "../domains/ai_visibility/inspect-ai-visibility";
 import { getWebsiteAnalytics } from "../domains/analytics/get-website-analytics";
@@ -92,6 +93,22 @@ export function toolAnnotations(name: string) {
   return { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: !CLOSED_WORLD_TOOLS.has(name) };
 }
 
+/**
+ * A failed call, reported the MCP way (isError, with the reason as text) and
+ * also as a normal envelope whose `data.error` carries a stable code, so an
+ * agent can handle failures and results the same way.
+ */
+export function toolError(code: string, message: string, extra: Record<string, unknown> = {}) {
+  const result = envelope("core", { error: { code, message, ...extra } })
+    .setCoverage({ returned: 0, total: 0, as_of: null, scope_note: message })
+    .build();
+  return {
+    isError: true,
+    content: [{ type: "text" as const, text: `${code}: ${message}` }],
+    structuredContent: result
+  };
+}
+
 export function buildMcpServer(env: Env, tenantId: string | null = null, plan: Plan | null = null): McpServer {
   // title/websiteUrl/icons: how clients label this server in their UI.
   const server = new McpServer({
@@ -122,9 +139,7 @@ export function buildMcpServer(env: Env, tenantId: string | null = null, plan: P
       },
       async (args: Record<string, unknown>) => {
         const capError = await checkDailyCap(requestEnv, tenantId, plan);
-        if (capError) {
-          return { isError: true, content: [{ type: "text" as const, text: capError }] };
-        }
+        if (capError) return toolError("daily_limit_exceeded", capError);
         try {
           const result = await tool.handler(args, requestEnv);
           return {
@@ -133,30 +148,11 @@ export function buildMcpServer(env: Env, tenantId: string | null = null, plan: P
           };
         } catch (error) {
           if (error instanceof ConnectionRequiredError) {
-            return {
-              isError: true,
-              content: [
-                {
-                  type: "text" as const,
-                  text: `connection_required (${error.connection}): ${error.message}`
-                }
-              ]
-            };
+            return toolError("connection_required", error.message, { connection: error.connection });
           }
-          if (error instanceof QuotaExceededError) {
-            return {
-              isError: true,
-              content: [{ type: "text" as const, text: `quota_exceeded: ${error.message}` }]
-            };
-          }
-          if (error instanceof UpgradeRequiredError) {
-            return {
-              isError: true,
-              content: [{ type: "text" as const, text: `upgrade_required: ${error.message}` }]
-            };
-          }
-          const message = error instanceof Error ? error.message : String(error);
-          return { isError: true, content: [{ type: "text" as const, text: message }] };
+          if (error instanceof QuotaExceededError) return toolError("quota_exceeded", error.message);
+          if (error instanceof UpgradeRequiredError) return toolError("upgrade_required", error.message);
+          return toolError("tool_failed", error instanceof Error ? error.message : String(error));
         }
       }
     );

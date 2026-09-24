@@ -33,6 +33,11 @@ function normalizeUrl(url: string): string {
   return u.toString();
 }
 
+/** A domain's brand word, for spotting a company's own sites and brand searches: "www.resend.com" -> "resend". */
+export function brandOf(domainOrUrl: string): string {
+  return normalizeDomain(domainOrUrl).split(".")[0] ?? "";
+}
+
 /** Canonical id for a domain/site, e.g. "domain:example.com". */
 export function domainEntityId(domainOrUrl: string): string {
   return `domain:${normalizeDomain(domainOrUrl)}`;

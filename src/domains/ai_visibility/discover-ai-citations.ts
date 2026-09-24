@@ -39,7 +39,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
       },
       // Lower than a live SERP result: which sources an AI answer mentions
       // shifts more from day to day than an organic ranking does.
-      provenance: provenance("ai_answer", "llm_mentions.top_mentioned_domains", { observedAt, confidence: 0.5 })
+      provenance: provenance("ai_answer", "ai_answer_citations", { observedAt, confidence: 0.5 })
     });
   });
 
@@ -51,7 +51,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const discoverAiCitations: ToolModule<typeof inputSchema> = {
   name: "discover_ai_citations",
   title: "Discover AI citations",
-  description: "Which websites AI answers (Google AI Overviews or ChatGPT) cite for a topic. Paid market data (Pro and Team plans).",
+  description: "Which websites AI answers (Google AI Overviews or ChatGPT) cite for a topic. Costs about $0.12 of market data per call, more than most tools. Paid market data (Pro and Team plans).",
   inputSchema,
   handler
 };

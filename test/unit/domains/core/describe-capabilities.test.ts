@@ -12,4 +12,11 @@ describe("describe_capabilities", () => {
     expect(tools.find((t) => t.name === "inspect_serp")?.billing).toBe("paid");
     expect(JSON.stringify(result).toLowerCase()).not.toContain("dataforseo");
   });
+
+  it("tells an agent what each paid tool typically costs, and that free tools cost nothing", async () => {
+    const result = await describeCapabilities.handler({}, env);
+    const tools = (result.data as { tools: Array<{ name: string; typical_cost_usd: unknown }> }).tools;
+    expect(tools.find((t) => t.name === "inspect_ai_visibility")?.typical_cost_usd).toEqual({ usd: 0.1, per: "domain compared" });
+    expect(tools.find((t) => t.name === "get_search_performance")?.typical_cost_usd).toBeNull();
+  });
 });

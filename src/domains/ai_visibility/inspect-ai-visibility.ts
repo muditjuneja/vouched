@@ -8,7 +8,7 @@ import type { ToolModule } from "../types";
 
 const inputSchema = z.object({
   domain: z.string(),
-  competitors: z.array(z.string()).max(5).optional().describe("Named competitors to compare against"),
+  competitors: z.array(z.string()).max(5).optional().describe("Up to 5 competitors to compare against; each adds about $0.10 of market data"),
   platform: z.enum(["google", "chat_gpt"]).optional()
 });
 
@@ -43,7 +43,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
         share_of_voice: allMentions > 0 ? Math.round((t.mentions / allMentions) * 1000) / 1000 : null,
         top_cited_sources: t.topSources
       },
-      provenance: provenance("ai_answer", "llm_mentions.target_metrics", { observedAt, confidence: 0.5 })
+      provenance: provenance("ai_answer", "ai_answer_mentions", { observedAt, confidence: 0.5 })
     });
   });
 
@@ -60,7 +60,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const inspectAiVisibility: ToolModule<typeof inputSchema> = {
   name: "inspect_ai_visibility",
   title: "Inspect AI visibility",
-  description: "How often a domain is mentioned in AI answers compared with named competitors. Paid market data (Pro and Team plans).",
+  description: "How often a domain is mentioned in AI answers compared with up to 5 competitors, with share of voice. Costs about $0.10 of market data per domain compared (so $0.60 with 5 competitors), more than most tools. Paid market data (Pro and Team plans).",
   inputSchema,
   handler
 };

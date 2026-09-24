@@ -8,6 +8,7 @@ import {
   RATE_LIMIT_PER_MINUTE,
   TEAM_SEATS
 } from "../../billing/quotas";
+import { TOOL_COST_ESTIMATES, callsIncludedInPro, costUnit, describeCost } from "../../billing/tool-costs";
 import { TOOL_MANIFEST } from "../../mcp/manifest";
 import { Hero } from "../components/Hero";
 import { CheckIcon } from "../components/icons";
@@ -24,6 +25,8 @@ const LIVE_TOOLS = TOOL_MANIFEST.filter((tool) => tool.implemented);
 const GOOGLE_TOOL_COUNT = LIVE_TOOLS.filter((tool) => tool.billing === "free").length;
 const MARKET_TOOL_COUNT = LIVE_TOOLS.filter((tool) => tool.billing === "dataforseo").length;
 const MARKUP_PCT = Math.round((OVERAGE_MARKUP_MULTIPLIER - 1) * 100);
+/** Cheapest first, so the table reads from everyday calls to the expensive ones. */
+const COST_ROWS = Object.entries(TOOL_COST_ESTIMATES).sort(([, a], [, b]) => a.usd - b.usd);
 
 function Yes() {
   return (
@@ -227,6 +230,35 @@ function PricingPage({ cloudMode, signedIn }: { cloudMode: boolean; signedIn: bo
             <td>You</td>
           </tr>
         </Table>
+      </section>
+
+      <section id="costs">
+        <h2>What market data costs</h2>
+        <p>
+          Market data is bought per call, and calls cost different amounts. These are typical costs from real calls, at cost, which is
+          what your plan's included amount is spent at. Past it, the wallet pays the same plus {MARKUP_PCT}%. Nothing is capped: you
+          decide how to spend it, and every call and its cost is listed under Usage in your dashboard.
+        </p>
+        <Table class="compare" headers={["Tool", "Typical cost", `Pro's $${MONTHLY_QUOTA_USD.pro} covers about`]}>
+          {COST_ROWS.map(([name, cost]) => (
+            <tr>
+              <td>
+                <a href={`/tools/${name.replace(/_/g, "-")}`}>
+                  <code>{name}</code>
+                </a>
+              </td>
+              <td>{describeCost(cost)}</td>
+              <td>
+                {callsIncludedInPro(cost).toLocaleString("en-US")} {costUnit(cost)}
+              </td>
+            </tr>
+          ))}
+        </Table>
+        <p class="muted">
+          The two AI-visibility tools cost the most, because they query AI answers rather than a search index. Comparing a domain with 5
+          competitors in AI answers is about $0.60, while a live Google results check is a fraction of a cent. Your own Search Console
+          and Analytics tools cost nothing.
+        </p>
       </section>
 
       <section class="faq">

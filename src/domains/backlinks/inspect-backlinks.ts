@@ -71,7 +71,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
           referring_domains: summary.referring_domains ?? null,
           referring_main_domains: summary.referring_main_domains ?? null
         },
-        provenance: provenance("backlink_index", "backlinks.summary", { observedAt })
+        provenance: provenance("backlink_index", "backlink_summary", { observedAt })
       });
     }
   } else if (view === "referring_domains") {
@@ -90,7 +90,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
         type: "backlinks.referring_domain",
         subject: [domainId, referringId],
         data: { referring_domain: item.domain, backlinks: item.backlinks ?? null, rank: item.rank ?? null },
-        provenance: provenance("backlink_index", "backlinks.referring_domains", { observedAt })
+        provenance: provenance("backlink_index", "referring_domains", { observedAt })
       });
     }
   } else if (view === "anchors") {
@@ -106,7 +106,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
           backlinks: item.backlinks ?? null,
           referring_domains: item.referring_domains ?? null
         },
-        provenance: provenance("backlink_index", "backlinks.anchors", { observedAt })
+        provenance: provenance("backlink_index", "anchor_texts", { observedAt })
       });
     }
   } else {
@@ -125,7 +125,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
           dofollow: item.dofollow ?? null,
           first_seen: item.first_seen ?? null
         },
-        provenance: provenance("backlink_index", "backlinks.backlinks", { observedAt })
+        provenance: provenance("backlink_index", "backlink_list", { observedAt })
       });
     }
   }

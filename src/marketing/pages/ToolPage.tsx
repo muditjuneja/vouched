@@ -1,13 +1,20 @@
+import { MONTHLY_QUOTA_USD } from "../../billing/quotas";
+import { TOOL_COST_ESTIMATES, callsIncludedInPro, costUnit, describeCost } from "../../billing/tool-costs";
 import { Button, CodeWindow, Table } from "../../design";
 import { GITHUB_URL } from "../github-url";
 import { renderPage } from "../Layout";
 import { getToolDocs } from "../content/tool-docs";
 import { DOMAIN_LABELS, TOOL_PAGES, type ToolPageContent } from "../content/tool-pages";
 
-function billingNote(billing: ToolPageContent["entry"]["billing"]): string {
-  return billing === "free"
-    ? "Free tier: $0. No DataForSEO account or API key needed. Runs out-of-the-box on self-host or cloud."
-    : "Part of the DataForSEO-backed tier (Pro / BYOK). Self-host with your own DataForSEO API key (zero markup, billed directly by DataForSEO), or use the bundled monthly allowance on Vouched Cloud plans.";
+function billingNote(entry: ToolPageContent["entry"]): string {
+  if (entry.billing === "free") {
+    return "Free on every plan: it reads your own Google data, so there's no per-call cost. Works the same when self-hosted.";
+  }
+  const cost = TOOL_COST_ESTIMATES[entry.name];
+  const costLine = cost
+    ? ` A call typically costs ${describeCost(cost)} of market data, so Pro's included $${MONTHLY_QUOTA_USD.pro} covers roughly ${callsIncludedInPro(cost)} ${costUnit(cost)}.`
+    : "";
+  return `Paid market data, on Pro and Team.${costLine} Self-hosted, it uses your own DataForSEO key and bills you directly, with nothing added. See pricing for what each tool costs.`;
 }
 
 function confidenceLabel(sourceClass: string, score: number): { label: string; badgeClass: string } {
@@ -334,12 +341,12 @@ function ToolPage({ page, cloudMode, signedIn }: { page: ToolPageContent; cloudM
 
           <div class="pricing-rules-box">
             <h3>Billing &amp; API Keys</h3>
-            <p>{billingNote(entry.billing)}</p>
+            <p>{billingNote(entry)}</p>
             {entry.requires_connection ? (
               <p>
                 <strong>Connection Required:</strong> Requires connecting your Google{" "}
                 {entry.requires_connection === "webmaster_console" ? "Search Console" : "Analytics (GA4)"} property via OAuth.
-                Unauthenticated calls return a typed <code>ConnectionRequiredError</code> directing the user to connect via <code>/dashboard/connections</code>.
+                Until it's connected, calls return a <code>connection_required</code> error saying where to connect it (Settings in the dashboard).
               </p>
             ) : null}
           </div>

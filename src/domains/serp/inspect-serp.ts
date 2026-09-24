@@ -3,6 +3,7 @@ import { organicSerp } from "../../clients/dataforseo/endpoints/serp";
 import { envelope } from "../../envelope/builder";
 import { domainEntityId, keywordEntityId, pageEntityId } from "../../envelope/entities";
 import { provenance } from "../../envelope/provenance";
+import { featureContent } from "./features";
 import type { Env } from "../../types/env";
 import type { ToolModule } from "../types";
 
@@ -58,7 +59,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
             url: item.url,
             title: item.title ?? null
           },
-          provenance: provenance("live_serp", "serp.google.organic", { observedAt })
+          provenance: provenance("live_serp", "google_serp", { observedAt })
         });
     } else if (item.type) {
       // Non-organic SERP furniture: featured snippet, People Also Ask, AI
@@ -67,8 +68,8 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
       builder.addFact({
         type: "serp.feature",
         subject: [keywordId],
-        data: { feature_type: item.type, slot_on_page: item.rank_absolute ?? null },
-        provenance: provenance("live_serp", "serp.google.organic", {
+        data: { feature_type: item.type, slot_on_page: item.rank_absolute ?? null, ...featureContent(item as unknown as Record<string, unknown>) },
+        provenance: provenance("live_serp", "google_serp", {
           observedAt,
           confidence: 0.6
         })

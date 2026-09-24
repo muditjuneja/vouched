@@ -56,18 +56,21 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
     builder.addFact({
       type: "seo.keyword_ranking",
       subject: [domainId, keywordId],
-      data: { keyword, position: item.ranked_serp_element?.serp_item?.rank_group ?? null },
-      provenance: provenance("search_index", "labs.ranked_keywords", { observedAt })
+      data: { keyword, ranking: true, position: item.ranked_serp_element?.serp_item?.rank_group ?? null },
+      provenance: provenance("search_index", "ranked_keywords", { observedAt })
     });
   }
 
   for (const keyword of args.keywords) {
     if (!foundKeywords.has(keyword)) {
+      // Explicitly not ranking (not in the top 100), rather than a missing value.
+      const keywordId = keywordEntityId(keyword);
+      builder.addEntity({ id: keywordId, kind: "keyword", label: keyword });
       builder.addFact({
         type: "seo.keyword_ranking",
-        subject: [domainId, keywordEntityId(keyword)],
-        data: { keyword, position: null },
-        provenance: provenance("search_index", "labs.ranked_keywords", {
+        subject: [domainId, keywordId],
+        data: { keyword, ranking: false, position: null },
+        provenance: provenance("search_index", "ranked_keywords", {
           observedAt,
           confidence: 0.6
         })
@@ -89,8 +92,8 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
       builder.addFact({
         type: "seo.keyword_ranking",
         subject: [domainId, keywordEntityId(keyword)],
-        data: { keyword, position: hit?.rank_group ?? null, live_recheck: true },
-        provenance: provenance("live_serp", "serp.google.organic", { observedAt })
+        data: { keyword, ranking: Boolean(hit), position: hit?.rank_group ?? null, live_recheck: true },
+        provenance: provenance("live_serp", "google_serp", { observedAt })
       });
     }
   }

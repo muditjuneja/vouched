@@ -22,7 +22,8 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
     env,
     "discover_competitors",
     args.domain,
-    args.limit ?? 20
+    // One extra: the endpoint counts the domain itself among its competitors.
+    (args.limit ?? 20) + 1
   )) as CompetitorResult[];
   const observedAt = new Date();
 
@@ -33,7 +34,9 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   });
 
   // The endpoint lists the domain itself among its own competitors.
-  const rivals = results.filter((item) => item.domain && normalizeDomain(item.domain) !== normalizeDomain(args.domain));
+  const rivals = results
+    .filter((item) => item.domain && normalizeDomain(item.domain) !== normalizeDomain(args.domain))
+    .slice(0, args.limit ?? 20);
   for (const item of rivals) {
     if (!item.domain) continue;
     const competitorId = domainEntityId(item.domain);
@@ -46,7 +49,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
         avg_position: item.avg_position ?? null,
         shared_keyword_count: item.intersections ?? null
       },
-      provenance: provenance("search_index", "labs.competitors_domain", { observedAt })
+      provenance: provenance("search_index", "organic_competitors", { observedAt })
     });
   }
 

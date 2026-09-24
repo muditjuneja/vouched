@@ -63,8 +63,8 @@ describe("pSEO tool page generation", () => {
     const freeHtml = renderToolPage(freePage, "https://example.com/tools/free", true);
     const paidHtml = renderToolPage(paidPage, "https://example.com/tools/paid", true);
 
-    expect(freeHtml).toContain("No DataForSEO account or API key needed");
-    expect(paidHtml).toContain("DataForSEO-backed tier");
+    expect(freeHtml).toContain("Free on every plan");
+    expect(paidHtml).toContain("Paid market data, on Pro and Team.");
   });
 
   it("the tools index page links to every tool page and has exactly one h1", () => {
@@ -73,5 +73,18 @@ describe("pSEO tool page generation", () => {
       expect(html).toContain(`href="${page.path}"`);
     }
     expect((html.match(/<h1/g) ?? []).length).toBe(1);
+  });
+});
+
+describe("tool pages explain what a call costs", () => {
+  it("paid tools show their typical cost and how far Pro's allowance goes", () => {
+    const html = renderToolPage(findToolPage("inspect-serp")!, "https://example.com/tools/inspect-serp", true);
+    expect(html).toContain("about $0.002 per call");
+    expect(html).toContain("covers roughly 2000 calls");
+  });
+
+  it("Google tools say they cost nothing", () => {
+    const html = renderToolPage(findToolPage("get-search-performance")!, "https://example.com/tools/get-search-performance", true);
+    expect(html).toContain("Free on every plan");
   });
 });
