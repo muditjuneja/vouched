@@ -20,6 +20,8 @@ export const MARKETING_CSS = `
     --accent-2: #1a1916;
     --accent-contrast: #f3eadc;
     --card-bg: #efe6d6;
+    /* A surface one step lighter than the page (the Ask-AI bar). */
+    --raised: #f8f3ea;
     --gold: #c9953a;
     --moss: #3f5340;
     --ink: #1a1916;
@@ -55,6 +57,7 @@ export const MARKETING_CSS = `
       --bg-alt: #241f19;
       --paper: #221d18;
       --paper-deep: #2c261f;
+      --raised: #241f19;
       --text: #f2e8d6;
       --muted: #b3a794;
       --border: #3c342a;
@@ -867,7 +870,7 @@ export const MARKETING_CSS = `
   }
   .ask-ai-shell {
     display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
-    border: 1px solid var(--border); background: color-mix(in srgb, var(--bg) 70%, white);
+    border: 1px solid var(--border); background: var(--raised);
     padding: 0.7rem 0.75rem 0.7rem 1.05rem;
     border-radius: 0;
     box-shadow: none;

@@ -1,3 +1,8 @@
+import { MCP_SERVER_NAME } from "../../lib/product";
+import { TOOL_MANIFEST } from "../../mcp/manifest";
+
+const EXPOSED_TOOL_COUNT = TOOL_MANIFEST.filter((tool) => tool.implemented).length;
+
 export interface Scenario {
   id: string;
   tabLabel: string;
@@ -11,6 +16,13 @@ export interface Scenario {
   agentNote: string;
 }
 
+/**
+ * Illustrative, not live: the numbers are made up, but every tool name,
+ * argument, fact type, source class and confidence below is what the real
+ * tool emits (see src/domains/, src/envelope/provenance.ts). Keep it that
+ * way: the envelope never names the upstream vendor, so neither does the
+ * agent's reply here.
+ */
 const SCENARIOS: Scenario[] = [
   {
     id: "keywords",
@@ -19,7 +31,7 @@ const SCENARIOS: Scenario[] = [
     toolCall: 'research_keywords({ seedKeywords: ["open source seo"] })',
     sourceClass: "search_index",
     confidence: "0.75",
-    freshness: "2h ago",
+    freshness: "just now",
     factType: "seo.keyword_opportunity",
     rows: [
       { label: "open source seo tools", meta: "Vol: 2,400 · KD: 28 · CPC: $3.20" },
@@ -27,41 +39,42 @@ const SCENARIOS: Scenario[] = [
       { label: "mcp seo server", meta: "Vol: 1,600 · KD: 19 · CPC: $4.10" }
     ],
     agentNote:
-      "DataForSEO search index (confidence 0.75). 'self hosted search console' has KD 14 with 880 monthly searches."
+      "Search-index estimates (confidence 0.75, modeled rather than first-party). 'self hosted search console' is the easiest win: KD 14 with 880 monthly searches."
   },
   {
     id: "serp",
-    tabLabel: "Live SERP & Citations",
-    userPrompt: "Snapshot Google SERP for 'best developer seo tool', then check organic ranks and AI Overview citations.",
-    toolCall: 'inspect_serp({ keyword: "best developer seo tool" })',
+    tabLabel: "Live SERP",
+    userPrompt: "Where does vouchedhq.com rank for 'mcp seo server' right now, and is Google showing an AI Overview?",
+    toolCall: 'inspect_serp({ keyword: "mcp seo server" })',
     sourceClass: "live_serp",
     confidence: "0.85",
-    freshness: "3m ago",
-    factType: "serp.snapshot",
+    freshness: "just now",
+    factType: "serp.result",
     rows: [
-      { label: "1. vouchedhq.com", meta: "Title: Open-source SEO MCP · Snippet: Verified facts..." },
-      { label: "2. github.com/open-seo", meta: "Stars: 1.2k · Lang: TypeScript" },
-      { label: "AI Overview Citation", meta: "Source: vouchedhq.com/docs" }
+      { label: "#3 vouchedhq.com/docs/tools", meta: "serp.result · 0.85" },
+      { label: "#7 vouchedhq.com/vs/open-seo", meta: "serp.result · 0.85" },
+      { label: "AI Overview", meta: "serp.feature · 0.6" }
     ],
     agentNote:
-      "Live SERP (confidence 0.85). Position #1 confirmed. Google AI Overview cites vouchedhq.com/docs as a source."
+      "Live Google results (confidence 0.85): vouchedhq.com ranks #3 and #7. An AI Overview is showing too, reported at lower confidence (0.6) because SERP features change more often than rankings."
   },
   {
     id: "gsc",
     tabLabel: "First-Party GSC",
-    userPrompt: "Which pages had the largest CTR drops over the past 28 days? Pull Search Console data.",
-    toolCall: 'get_search_performance({ domain: "vouchedhq.com", startDate: "2026-08-25", endDate: "2026-09-22", dimensions: ["page"] })',
+    userPrompt: "Which pages lost the most CTR over the last 28 days compared with the 28 before?",
+    toolCall:
+      'get_search_performance({ domain: "vouchedhq.com", startDate: "2026-08-26", endDate: "2026-09-22", dimensions: ["page"], compareToPreviousPeriod: true })',
     sourceClass: "webmaster_console",
     confidence: "1.0",
-    freshness: "15m ago",
-    factType: "gsc.search_performance",
+    freshness: "just now",
+    factType: "gsc.query_performance",
     rows: [
-      { label: "/blog/mcp-setup", meta: "1,240 clicks (+34%) · Avg pos: 4.2" },
-      { label: "/docs/tools", meta: "310 clicks (-12%) · CTR: 2.3% vs 4.1%" },
-      { label: "/vs/open-seo", meta: "890 clicks (+55%) · Avg pos: 2.1" }
+      { label: "/docs/tools", meta: "CTR 2.3% (was 4.1%) · Pos 5.8 (was 4.9)" },
+      { label: "/pricing", meta: "CTR 3.0% (was 3.9%) · Pos 6.2 (was 6.0)" },
+      { label: "/vs/open-seo", meta: "CTR 5.1% (was 5.6%) · Pos 3.4 (was 3.3)" }
     ],
     agentNote:
-      "First-party Google Search Console (confidence 1.0, unmodeled). /docs/tools CTR fell from 4.1% to 2.3%."
+      "Your own Search Console data (confidence 1.0). /docs/tools dropped the most: CTR fell from 4.1% to 2.3% as its average position slipped from 4.9 to 5.8."
   }
 ];
 
@@ -76,8 +89,9 @@ const PREVIEW_SCRIPT = `
   tabs.forEach(function (btn) {
     btn.addEventListener('click', function () {
       var targetId = btn.getAttribute('data-tab-target');
-      tabs.forEach(function (b) { b.classList.remove('is-active'); });
+      tabs.forEach(function (b) { b.classList.remove('is-active'); b.setAttribute('aria-selected', 'false'); });
       btn.classList.add('is-active');
+      btn.setAttribute('aria-selected', 'true');
 
       scenarios.forEach(function (s) {
         if (s.getAttribute('data-scenario-id') === targetId) {
@@ -119,9 +133,9 @@ export function AgentPreview() {
         </div>
         <div class="agent-preview-server">
           <span class="agent-status-indicator" />
-          <code>vouched-seo-mcp</code> · HTTP stream
+          <code>{MCP_SERVER_NAME}</code> · Streamable HTTP
         </div>
-        <span style="font-size:0.65rem; color:#857a6c;">18 tools</span>
+        <span style="font-size:0.65rem; color:#857a6c;">{EXPOSED_TOOL_COUNT} tools</span>
       </div>
 
       <div class="agent-preview-tabs" role="tablist">
@@ -188,7 +202,7 @@ export function AgentPreview() {
       </div>
 
       <div class="agent-preview-footer">
-        <span>Structured facts with provenance, not unverified text</span>
+        <span>Example output · every fact carries its source and confidence</span>
         <button type="button" class="agent-copy-prompt" data-copy-prompt>
           Copy Prompt
         </button>
