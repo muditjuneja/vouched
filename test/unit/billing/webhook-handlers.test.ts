@@ -20,6 +20,17 @@ vi.mock("../../../src/email/notifications", () => ({
 }));
 import { notifyPaymentFailed, notifyPaymentReceipt, notifySubscriptionCancelled, notifyWalletTopup } from "../../../src/email/notifications";
 
+// A real "send once" ledger, so retried and follow-up events can be tested.
+const sentKeys = new Set<string>();
+vi.mock("../../../src/email/dedup", () => ({
+  markNotifiedOnce: vi.fn(async (_db: unknown, tenantId: string, key: string) => {
+    const k = `${tenantId}|${key}`;
+    if (sentKeys.has(k)) return false;
+    sentKeys.add(k);
+    return true;
+  })
+}));
+
 function fakeEnv(overrides: Partial<Env> = {}): Env {
   return {
     DB: {
@@ -81,6 +92,7 @@ describe("planFromProductId", () => {
 describe("Dodo event handlers' lifecycle-email calls", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    sentKeys.clear();
   });
 
   it("handleSubscriptionActive syncs and sends a payment receipt", async () => {
@@ -101,6 +113,32 @@ describe("Dodo event handlers' lifecycle-email calls", () => {
   it("handleSubscriptionCancelled sends a cancellation confirmation", async () => {
     await handleSubscriptionCancelled(fakeEnv(), fakePayload({ status: "cancelled" }));
     expect(notifySubscriptionCancelled).toHaveBeenCalledWith(expect.anything(), "user_1");
+  });
+
+  it("sends each receipt once, however many times Dodo retries the delivery", async () => {
+    await handleSubscriptionActive(fakeEnv(), fakePayload());
+    await handleSubscriptionActive(fakeEnv(), fakePayload());
+    expect(notifyPaymentReceipt).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends a fresh receipt for the next billing period, and for a plan change", async () => {
+    await handleSubscriptionActive(fakeEnv(), fakePayload());
+    await handleSubscriptionActive(fakeEnv(), fakePayload({ next_billing_date: "2026-11-01T00:00:00Z" }));
+    await handleSubscriptionActive(fakeEnv(), fakePayload({ product_id: "prod_team_456", next_billing_date: "2026-11-01T00:00:00Z" }));
+    expect(notifyPaymentReceipt).toHaveBeenCalledTimes(3);
+    expect(notifyPaymentReceipt).toHaveBeenLastCalledWith(expect.anything(), "user_1", "team");
+  });
+
+  it("sends one payment-failed email when on_hold is followed by failed", async () => {
+    await handleSubscriptionOnHold(fakeEnv(), fakePayload({ status: "on_hold" }));
+    await handleSubscriptionFailed(fakeEnv(), fakePayload({ status: "failed" }));
+    expect(notifyPaymentFailed).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends one cancellation email per subscription, even on a retried delivery", async () => {
+    await handleSubscriptionCancelled(fakeEnv(), fakePayload({ status: "cancelled" }));
+    await handleSubscriptionCancelled(fakeEnv(), fakePayload({ status: "cancelled" }));
+    expect(notifySubscriptionCancelled).toHaveBeenCalledTimes(1);
   });
 
   it("sends no email when the payload has no tenant_id in metadata", async () => {

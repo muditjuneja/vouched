@@ -6,6 +6,7 @@ import {
   notifySubscriptionCancelled,
   notifyWalletTopup
 } from "../email/notifications";
+import { markNotifiedOnce } from "../email/dedup";
 import { sendAdminAlert } from "../lib/alerts";
 import type { Env } from "../types/env";
 
@@ -75,10 +76,24 @@ export async function syncSubscription(env: Env, payload: SubscriptionWebhookPay
 // test/unit/billing/webhook-handlers.test.ts, which mocks src/email/
 // notifications.ts and asserts these call the right sender.
 
+/**
+ * Dodo retries a delivery that doesn't get a quick 2xx, and a failed charge
+ * usually arrives as on_hold and then failed. The subscription sync above is
+ * safe to repeat; the customer email isn't, so each one is sent once per
+ * subscription and billing period (per plan, for receipts, so a plan change
+ * still gets its own).
+ */
+async function onceFor(env: Env, tenantId: string, key: string): Promise<boolean> {
+  return markNotifiedOnce(env.DB, tenantId, key);
+}
+
 /** Exported for unit testing. */
 export async function handleSubscriptionActive(env: Env, payload: SubscriptionWebhookPayload): Promise<void> {
   const tenantId = await syncSubscription(env, payload);
-  if (tenantId) await notifyPaymentReceipt(env, tenantId, planFromProductId(env, payload.data.product_id));
+  const { subscription_id, product_id, next_billing_date } = payload.data;
+  if (tenantId && (await onceFor(env, tenantId, `receipt:${subscription_id}:${product_id}:${next_billing_date}`))) {
+    await notifyPaymentReceipt(env, tenantId, planFromProductId(env, product_id));
+  }
 }
 
 /** Exported for unit testing. Same as onSubscriptionActive: a renewal is also a successful payment. */
@@ -87,7 +102,9 @@ export const handleSubscriptionRenewed = handleSubscriptionActive;
 /** Exported for unit testing. */
 export async function handleSubscriptionOnHold(env: Env, payload: SubscriptionWebhookPayload): Promise<void> {
   const tenantId = await syncSubscription(env, payload);
-  if (tenantId) await notifyPaymentFailed(env, tenantId);
+  if (tenantId && (await onceFor(env, tenantId, `payment_failed:${payload.data.subscription_id}:${payload.data.next_billing_date}`))) {
+    await notifyPaymentFailed(env, tenantId);
+  }
   // Operator-facing side of the same event, alongside the tenant email above.
   await sendAdminAlert(env, `Dodo subscription ${payload.data.subscription_id} went on_hold`);
 }
@@ -95,13 +112,17 @@ export async function handleSubscriptionOnHold(env: Env, payload: SubscriptionWe
 /** Exported for unit testing. */
 export async function handleSubscriptionCancelled(env: Env, payload: SubscriptionWebhookPayload): Promise<void> {
   const tenantId = await syncSubscription(env, payload);
-  if (tenantId) await notifySubscriptionCancelled(env, tenantId);
+  if (tenantId && (await onceFor(env, tenantId, `cancelled:${payload.data.subscription_id}`))) {
+    await notifySubscriptionCancelled(env, tenantId);
+  }
 }
 
 /** Exported for unit testing. */
 export async function handleSubscriptionFailed(env: Env, payload: SubscriptionWebhookPayload): Promise<void> {
   const tenantId = await syncSubscription(env, payload);
-  if (tenantId) await notifyPaymentFailed(env, tenantId);
+  if (tenantId && (await onceFor(env, tenantId, `payment_failed:${payload.data.subscription_id}:${payload.data.next_billing_date}`))) {
+    await notifyPaymentFailed(env, tenantId);
+  }
   await sendAdminAlert(env, `Dodo subscription ${payload.data.subscription_id} failed`);
 }
 
