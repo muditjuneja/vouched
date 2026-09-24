@@ -46,9 +46,10 @@ describe("marketing routes", () => {
     const res = await marketing.request("/pricing", {}, fakeEnv());
     expect(res.status).toBe(200);
     const body = await res.text();
-    expect(body).toContain("Community (self-host)");
-    expect(body).toContain("Pro (Cloud)");
-    expect(body).toContain("Team (Cloud)");
+    expect(body).toContain("Community: free, MIT licensed");
+    expect(body).toContain(">Free<");
+    expect(body).toContain(">Pro<");
+    expect(body).toContain(">Team<");
     expect(body).toContain("$10");
     expect(body).toContain("$50");
     expect(body).toContain("$4");

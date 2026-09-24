@@ -56,6 +56,13 @@ export const MIN_TOPUP_USD = 5;
  */
 export const FREE_DAILY_TOOL_CALLS = 100;
 
+/**
+ * Per-minute /mcp limits, for display on the pricing page only. The real
+ * limits are the MCP_RATE_LIMIT_FREE / _PAID bindings in wrangler.jsonc:
+ * change both together.
+ */
+export const RATE_LIMIT_PER_MINUTE = { free: 10, paid: 60 } as const;
+
 /** People (owner included) who can share one Team workspace. Flat, part of the $50 Team plan, no per-seat billing. */
 export const TEAM_SEATS = 5;
 
