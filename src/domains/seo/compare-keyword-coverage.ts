@@ -28,7 +28,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 
   let totalReturned = 0;
 
-  // One domain_intersection call per competitor — DataForSEO's endpoint is
+  // One domain_intersection call per competitor: DataForSEO's endpoint is
   // pairwise (target1/target2), so an N-way gap is N calls, not one.
   const perCompetitor = await Promise.all(
     args.competitors.map((competitor) =>
@@ -74,7 +74,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const compareKeywordCoverage: ToolModule<typeof inputSchema> = {
   name: "compare_keyword_coverage",
   title: "Compare keyword coverage",
-  description: "Keyword gap vs competitors (requires a DataForSEO key).",
+  description: "Keyword gap: keywords the competitors rank for that the domain doesn't, with volumes. Paid market data (Pro and Team plans).",
   inputSchema,
   handler
 };

@@ -1,3 +1,4 @@
+import { ICON_SMALL_SVG } from "../../marketing/brand-assets.generated";
 import { NavItem } from "../../design";
 import { DISPLAY_NAME } from "../../lib/product";
 import type { DashboardUser } from "../types";
@@ -25,6 +26,7 @@ export function Sidebar({ activePath, user }: { activePath: string; user?: Dashb
   return (
     <nav class="dash-sidebar">
       <a class="brand" href="/">
+        <span class="brand-mark" aria-hidden="true" dangerouslySetInnerHTML={{ __html: ICON_SMALL_SVG }} />
         <em>{DISPLAY_NAME}</em>
       </a>
       <div class="dash-nav-items">

@@ -57,13 +57,18 @@ function Layout({ title, description, canonicalUrl, cloudMode, signedIn = false,
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,600&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-        {/* No OG/Twitter image: none exists in this repo, and a broken image reference is worse than none. Add one (and og:image/twitter:card="summary_large_image") once real artwork exists. */}
+        <link rel="apple-touch-icon" href="/brand/icon-180.png" />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content={DISPLAY_NAME} />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonicalUrl} />
-        <meta name="twitter:card" content="summary" />
+        <meta property="og:image" content={`${new URL(canonicalUrl).origin}/og.png`} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content={`${DISPLAY_NAME}: SEO facts your AI can cite`} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content={`${new URL(canonicalUrl).origin}/og.png`} />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={description} />
         <style dangerouslySetInnerHTML={{ __html: TOKENS_CSS + BASE_CSS + MARKETING_CSS }} />

@@ -7,8 +7,12 @@
 	"name": "vouched-hq",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-06-11",
+	// global_fetch_strictly_public: the MCP OAuth provider fetches Client ID
+	// Metadata Documents from URLs clients supply; this keeps those fetches
+	// on the public internet (SSRF protection). See src/auth/mcp-oauth.ts.
 	"compatibility_flags": [
-		"nodejs_compat"
+		"nodejs_compat",
+		"global_fetch_strictly_public"
 	],
 	// D1: config (websites), Google OAuth tokens, DataForSEO cost log,
 	// prior-observation snapshots (backs the OFE `deltas` field).
@@ -37,6 +41,12 @@
 		{
 			"binding": "CACHE",
 			"id": "69e2d321e8454eeb8c3044cf78393718"
+		},
+		// MCP OAuth (cloud mode): registered clients, grants and hashed
+		// tokens, titled "vouched-seo-mcp-oauth". Self-host never reads it.
+		{
+			"binding": "OAUTH_KV",
+			"id": "ca5b7fc201114081bf8a59530f0bceae"
 		}
 	],
 	// Per-tenant burst limits on cloud-mode /mcp (see src/index.ts). The limit

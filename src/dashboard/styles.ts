@@ -122,7 +122,10 @@ export const DASHBOARD_CSS = `
   .dash-sidebar > a.brand {
     font-family: var(--font-display); font-style: italic; font-weight: 500;
     font-size: 1.25rem; letter-spacing: -0.03em; text-decoration: none; color: var(--text);
+    display: inline-flex; align-items: center; gap: 0.5rem;
   }
+  .dash-sidebar .brand-mark { display: inline-flex; flex-shrink: 0; }
+  .dash-sidebar .brand-mark svg { width: 1.3rem; height: 1.3rem; }
   .dash-nav-items { display: flex; flex-direction: column; gap: 0.12rem; flex: 1; }
   .dash-sidebar .nav-item {
     padding: 0.42rem 0.65rem;
@@ -158,6 +161,12 @@ export const DASHBOARD_CSS = `
     margin: 0 0 0.6rem;
   }
   body.dash a { color: inherit; }
+  /* Per-client connect instructions under the MCP URL on Overview. */
+  .connect-guide { margin-top: 0.85rem; display: flex; flex-direction: column; gap: 0.35rem; }
+  .connect-guide details { border-top: 1px solid var(--border); padding: 0.55rem 0 0.2rem; }
+  .connect-guide summary { cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+  .connect-guide p { margin: 0.4rem 0; font-size: 0.82rem; }
+  .connect-guide pre.key { margin: 0.4rem 0; white-space: pre-wrap; word-break: break-all; font-size: 0.78rem; }
   .page-header-row {
     display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
     margin-bottom: 1rem;

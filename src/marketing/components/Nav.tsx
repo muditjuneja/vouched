@@ -1,3 +1,4 @@
+import { ICON_SMALL_SVG } from "../brand-assets.generated";
 import { DISPLAY_NAME } from "../brand";
 import { GITHUB_URL } from "../github-url";
 
@@ -12,6 +13,7 @@ export function Nav({ cloudMode, signedIn = false }: NavProps) {
   return (
     <nav class="nav">
       <a class="brand" href="/">
+        <span class="brand-mark" aria-hidden="true" dangerouslySetInnerHTML={{ __html: ICON_SMALL_SVG }} />
         <em>{DISPLAY_NAME}</em>
       </a>
       <div class="nav-links">

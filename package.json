@@ -1,6 +1,6 @@
 {
   "name": "vouched-seo-mcp",
-  "description": "Open-source, self-hosted MCP server for SEO/marketing data on Cloudflare Workers — free GSC/GA4/site-audit tools plus optional DataForSEO-backed keyword/backlink/SERP/AI-visibility tools.",
+  "description": "Open-source MCP server for SEO data on Cloudflare Workers: your own Search Console and GA4 data, plus keyword, backlink, SERP and AI-visibility data. Hosted at vouchedhq.com or self-hosted.",
   "private": true,
   "type": "module",
   "version": "0.1.0",
@@ -15,10 +15,12 @@
     "db:migrate:local": "wrangler d1 migrations apply vouched-seo-mcp --local",
     "db:migrate:remote": "wrangler d1 migrations apply vouched-seo-mcp --remote",
     "doctor": "tsx scripts/check-env.ts",
-    "docs:tools": "tsx scripts/generate-tools-doc.ts"
+    "docs:tools": "tsx scripts/generate-tools-doc.ts",
+    "brand:assets": "tsx scripts/generate-brand-assets.ts"
   },
   "dependencies": {
     "@clerk/backend": "^3.17.0",
+    "@cloudflare/workers-oauth-provider": "^1.1.0",
     "@dodopayments/hono": "^0.2.10",
     "@modelcontextprotocol/sdk": "1.30.0",
     "@modelcontextprotocol/server": "2.0.0",

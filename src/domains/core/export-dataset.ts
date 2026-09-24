@@ -25,7 +25,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const exportDataset: ToolModule<typeof inputSchema> = {
   name: "export_dataset",
   title: "Export dataset",
-  description: "Fetch a full dataset by mcpseo:// uri (for results a summary call truncated).",
+  description: "Download the full result behind an mcpseo:// URI when a tool's response was truncated. Results are kept for 7 days.",
   inputSchema,
   handler
 };

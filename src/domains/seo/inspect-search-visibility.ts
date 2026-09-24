@@ -42,7 +42,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 
   // NOTE: this `filters` shape (an "in" match on keyword_data.keyword)
   // follows DataForSEO's documented filter conventions but isn't verified
-  // against a live call — see client.ts's caveat.
+  // against a live call; see client.ts's caveat.
   const results = (await rankedKeywords(env, "inspect_search_visibility", args.domain, {
     limit: 1000,
     filters: [["keyword_data.keyword", "in", args.keywords]]
@@ -110,7 +110,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const inspectSearchVisibility: ToolModule<typeof inputSchema> = {
   name: "inspect_search_visibility",
   title: "Inspect search visibility",
-  description: "Ranking positions across a keyword set (requires a DataForSEO key).",
+  description: "Where a domain ranks in Google for a given list of keywords. Paid market data (Pro and Team plans).",
   inputSchema,
   handler
 };

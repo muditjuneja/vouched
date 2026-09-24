@@ -27,7 +27,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   if (!website?.ga4_property_id) {
     throw new ConnectionRequiredError(
       "analytics_property",
-      `no GA4 property configured for ${args.domain} — add it to the websites table first`
+      `no GA4 property configured for ${args.domain}; add it to the websites table first`
     );
   }
 
@@ -99,7 +99,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const getWebsiteAnalytics: ToolModule<typeof inputSchema> = {
   name: "get_website_analytics",
   title: "Get website analytics",
-  description: "Sessions/users/engagement from owned website analytics (GA4).",
+  description: "Sessions, users and engagement from your own Google Analytics (GA4) for a tracked website.",
   inputSchema,
   handler
 };

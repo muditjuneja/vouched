@@ -1,3 +1,5 @@
+import type { OAuthHelpers } from "@cloudflare/workers-oauth-provider";
+
 /**
  * The Worker's bindings + secrets. `D1Database`/`R2Bucket`/`ExecutionContext`
  * come from the ambient `@cloudflare/workers-types` types (see tsconfig).
@@ -10,6 +12,10 @@ export interface Env {
   DATASETS: R2Bucket;
   /** Short-TTL response cache, see src/lib/cache.ts. */
   CACHE: KVNamespace;
+  /** Cloud mode only: MCP OAuth clients, grants and hashed tokens (src/auth/mcp-oauth.ts). */
+  OAUTH_KV?: KVNamespace;
+  /** Injected by the OAuth provider into every request it forwards (cloud mode): parse /authorize requests, complete them, list and revoke grants. */
+  OAUTH_PROVIDER?: OAuthHelpers;
 
   // Secrets: required
   MCP_BEARER_TOKEN: string;

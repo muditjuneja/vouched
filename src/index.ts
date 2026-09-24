@@ -2,11 +2,12 @@ import { createMcpHandler } from "agents/mcp/server";
 import { Hono } from "hono";
 import { handleOAuthCallback, handleOAuthStart } from "./auth/oauth-routes";
 import { authenticateBillingRequest } from "./auth/clerk";
+import { authorizeRoutes } from "./auth/authorize-routes";
+import { oauthProviderFor, type McpCaller } from "./auth/mcp-oauth";
 import { startCheckout, startCustomerPortalSession, startWalletTopup } from "./billing/dodo-client";
 import { MIN_TOPUP_USD } from "./billing/quotas";
 import { buildDodoWebhookHandler } from "./billing/webhook-handlers";
 import { dashboard } from "./dashboard/routes";
-import { verifyApiKey } from "./db/mcp-api-keys";
 import { getEffectivePlan, getSubscription, type Plan } from "./db/subscriptions";
 import { getMembership, resolveTenant } from "./db/team";
 import { ConfigError } from "./lib/errors";
@@ -202,32 +203,45 @@ app.get("/billing/portal", async (c) => {
 // Clerk-session gates, see src/dashboard/routes.ts.
 app.route("/dashboard", dashboard);
 
+// MCP OAuth sign-in and consent (cloud mode), see src/auth/authorize-routes.ts.
+app.route("/", authorizeRoutes);
+
+/** Who the OAuth provider says is calling (cloud mode). Absent when the request didn't come through it. */
+function callerFrom(c: { executionCtx: ExecutionContext }): McpCaller | null {
+  try {
+    return (c.executionCtx.props as McpCaller | undefined) ?? null;
+  } catch {
+    return null; // no execution context at all (e.g. a unit test calling the app directly)
+  }
+}
+
 app.all("/mcp", async (c) => {
   let tenantId: string | null = null;
   let plan: Plan | null = null;
 
   if (isCloudMode(c.env)) {
-    // Cloud mode: a per-tenant issued API key (mcp_api_keys), not the
-    // shared bearer token: see src/db/mcp-api-keys.ts's doc comment on
-    // why this is a separate mechanism from a Clerk session.
-    const header = c.req.raw.headers.get("Authorization") ?? "";
-    const [scheme, token] = header.split(" ");
-    if (scheme !== "Bearer" || !token) {
+    // The OAuth provider (src/auth/mcp-oauth.ts) has already checked the
+    // bearer token, an OAuth access token or an API key, and says who it
+    // belongs to. Anything unauthenticated got its 401 there.
+    const caller = callerFrom(c as unknown as { executionCtx: ExecutionContext });
+    if (!caller) {
       return c.text("unauthorized", 401, { "WWW-Authenticate": "Bearer" });
     }
-    const key = await verifyApiKey(c.env.DB, token);
-    if (!key) {
-      return c.text("unauthorized", 401, { "WWW-Authenticate": "Bearer" });
-    }
-    tenantId = key.tenantId;
-    // A key a team member created only works while they're still on that
-    // team and it's still on the Team plan. Removing a member also deletes
-    // their keys; this covers the plan lapsing, where keys aren't deleted
-    // because renewal should bring access straight back.
-    if (key.createdBy !== key.tenantId) {
-      const creator = await resolveTenant(c.env.DB, key.createdBy);
-      if (creator.tenantId !== key.tenantId) {
-        return c.text("forbidden: this key belongs to a team you're no longer active on", 403);
+    if (caller.kind === "oauth") {
+      // Resolved per request, so joining, leaving or a lapsed team plan
+      // applies straight away, same as the dashboard.
+      tenantId = (await resolveTenant(c.env.DB, caller.userId)).tenantId;
+    } else {
+      tenantId = caller.tenantId;
+      // A key a team member created only works while they're still on that
+      // team and it's still on the Team plan. Removing a member also deletes
+      // their keys; this covers the plan lapsing, where keys aren't deleted
+      // because renewal should bring access straight back.
+      if (caller.createdBy !== caller.tenantId) {
+        const creator = await resolveTenant(c.env.DB, caller.createdBy);
+        if (creator.tenantId !== caller.tenantId) {
+          return c.text("forbidden: this key belongs to a team you're no longer active on", 403);
+        }
       }
     }
 
@@ -260,4 +274,17 @@ app.all("/mcp", async (c) => {
   return handler(c.req.raw, c.env, c.executionCtx as unknown as ExecutionContext);
 });
 
-export default app;
+/**
+ * Cloud mode runs every request through the MCP OAuth provider: it answers
+ * the OAuth endpoints itself, validates the bearer token on /mcp, and hands
+ * everything (including /mcp, with the caller attached) to `app`.
+ * Self-host mode skips it entirely and keeps its shared bearer token.
+ */
+export default {
+  fetch(request: Request, env: Env, ctx: ExecutionContext): Response | Promise<Response> {
+    if (!isCloudMode(env)) return app.fetch(request, env, ctx);
+    return oauthProviderFor(new URL(request.url).origin, app).fetch(request, env, ctx);
+  }
+};
+
+export { app };

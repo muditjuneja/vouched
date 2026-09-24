@@ -43,9 +43,11 @@ function groupByDomain(pages: ToolPageContent[]): Map<string, ToolPageContent[]>
   return sorted;
 }
 
-const MCP_CONNECT_SNIPPET = `claude mcp add --transport http ${MCP_SERVER_NAME} \\
-  ${SITE_URL}/mcp \\
-  --header "Authorization: Bearer <your-mcp-key>"`;
+const MCP_CONNECT_SNIPPET = `# Claude: Settings → Connectors → Add custom connector
+${SITE_URL}/mcp
+
+# Claude Code (then run /mcp and choose Authenticate)
+claude mcp add --transport http ${MCP_SERVER_NAME} ${SITE_URL}/mcp`;
 
 function ToolsIndexPage({ byDomain }: { byDomain: Map<string, ToolPageContent[]> }) {
   const domainEntries = [...byDomain.entries()];
@@ -64,8 +66,8 @@ function ToolsIndexPage({ byDomain }: { byDomain: Map<string, ToolPageContent[]>
             <p class="chapter">Connect</p>
             <h2>Instant agent setup</h2>
             <p class="muted">
-              Add Vouched to Claude Desktop, Cursor, Claude Code, or any MCP client in one command. All {TOOL_PAGES.length} tools
-              become instantly callable from your agent.
+              Add the URL to Claude, Claude Code, Cursor, VS Code or any MCP client and sign in with your Vouched account. No key to
+              copy. Scripts can use an API key instead.
             </p>
             <div class="docs-domain-nav">
               <span class="docs-domain-nav-label">Jump to domain:</span>

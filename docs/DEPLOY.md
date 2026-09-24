@@ -12,6 +12,7 @@ is simpler and lives in `docs/SELF_HOST.md`.
 | D1 database (binding `DB`) | `vouched-seo-mcp` | `wrangler.jsonc` `d1_databases` |
 | R2 bucket (binding `DATASETS`) | `vouched-seo-mcp-datasets` | `wrangler.jsonc` `r2_buckets` |
 | KV namespace (binding `CACHE`) | `vouched-seo-mcp-cache` | `wrangler.jsonc` `kv_namespaces` (by id) |
+| KV namespace (binding `OAUTH_KV`) | `vouched-seo-mcp-oauth` | `wrangler.jsonc` `kv_namespaces` (by id): MCP sign-in clients, grants and hashed tokens |
 | Rate limiters | `MCP_RATE_LIMIT_FREE`, `MCP_RATE_LIMIT_PAID` | `wrangler.jsonc` `ratelimits` (created on deploy, nothing to set up) |
 
 The R2 bucket only holds `export_dataset` files, which the privacy policy
@@ -31,6 +32,7 @@ npx wrangler d1 create vouched-seo-mcp
 npx wrangler r2 bucket create vouched-seo-mcp-datasets
 npx wrangler r2 bucket lifecycle add vouched-seo-mcp-datasets expire-exports-7d --expire-days 7
 npx wrangler kv namespace create vouched-seo-mcp-cache
+npx wrangler kv namespace create vouched-seo-mcp-oauth
 ```
 
 ## 2. CI/CD (Workers Builds)
@@ -154,6 +156,23 @@ the domain each request arrives on, and email links use
 **xmit.sh**
 - Verify `vouchedhq.com` as a sending domain (SPF/DKIM records), then set
   `XMIT_FROM_EMAIL`.
+
+## 6b. MCP sign-in (OAuth)
+
+Nothing to configure beyond the `OAUTH_KV` binding: the Worker is its own
+OAuth server (`src/auth/mcp-oauth.ts`) and signs people in with Clerk. What
+clients discover, all on the production domain:
+
+- `/.well-known/oauth-protected-resource/mcp` and
+  `/.well-known/oauth-authorization-server`: discovery documents.
+- `/authorize` (Clerk sign-in, then our consent page), `/oauth/token`,
+  `/oauth/register` (dynamic client registration). Client ID Metadata
+  Documents are on too, which needs the `global_fetch_strictly_public`
+  compatibility flag already in `wrangler.jsonc`.
+
+Clerk's sign-in must be able to return to `/authorize` on this domain: for a
+development Clerk app, set its development origin to the site (see the
+Clerk step above).
 
 ## 7. Check it works
 

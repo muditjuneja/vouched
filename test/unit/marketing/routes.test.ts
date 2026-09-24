@@ -32,7 +32,7 @@ describe("marketing routes", () => {
     expect(body).toContain('property="og:title"');
     expect(body).toContain('property="og:description"');
     expect(body).toContain('property="og:url"');
-    expect(body).toContain('name="twitter:card" content="summary"');
+    expect(body).toContain('name="twitter:card" content="summary_large_image"');
     expect(body).toContain('name="twitter:title"');
   });
 
@@ -178,5 +178,27 @@ describe("marketing pages for a signed-in visitor", () => {
     const res = await marketing.request("/", signedIn, cloudEnv);
     expect(res.headers.get("Cache-Control")).toBe("private, no-cache");
     expect(res.headers.get("Vary")).toContain("Cookie");
+  });
+});
+
+describe("brand images", () => {
+  it.each([
+    ["/og.png", "image/png"],
+    ["/brand/icon-512.png", "image/png"],
+    ["/brand/icon-180.png", "image/png"],
+    ["/brand/icon.svg", "image/svg+xml"]
+  ])("serves %s as %s", async (path, type) => {
+    const res = await marketing.request(path, {}, fakeEnv());
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Type")).toBe(type);
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (type === "image/png") expect([...bytes.slice(1, 4)].map((b) => String.fromCharCode(b)).join("")).toBe("PNG");
+  });
+
+  it("points every page's share preview at the social image, on the page's own origin", async () => {
+    const body = await (await marketing.request("https://vouchedhq.com/pricing", {}, fakeEnv())).text();
+    expect(body).toContain('property="og:image" content="https://vouchedhq.com/og.png"');
+    expect(body).toContain('name="twitter:card" content="summary_large_image"');
+    expect(body).toContain('rel="apple-touch-icon" href="/brand/icon-180.png"');
   });
 });

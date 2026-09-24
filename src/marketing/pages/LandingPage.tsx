@@ -87,7 +87,7 @@ const HOW_IT_WORKS: Step[] = [
   {
     title: "Connect MCP",
     description:
-      "Add Vouched to Claude, Cursor, or any Model Context Protocol client. Same 18 tools on Cloud or self-host."
+      "Add Vouched to Claude, Cursor, or any Model Context Protocol client, and sign in. Same tools on Cloud or self-host."
   },
   {
     title: "Ask in the conversation",

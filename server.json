@@ -1,0 +1,30 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "com.vouchedhq/vouched",
+  "title": "Vouched",
+  "description": "SEO data your AI can cite: Search Console, GA4, keywords, backlinks, SERPs and AI visibility.",
+  "version": "0.1.0",
+  "websiteUrl": "https://vouchedhq.com",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://vouchedhq.com/mcp"
+    }
+  ],
+  "icons": [
+    {
+      "src": "https://vouchedhq.com/brand/icon-512.png",
+      "mimeType": "image/png",
+      "sizes": [
+        "512x512"
+      ]
+    },
+    {
+      "src": "https://vouchedhq.com/brand/icon.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ]
+    }
+  ]
+}

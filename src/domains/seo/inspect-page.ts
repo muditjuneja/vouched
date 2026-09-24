@@ -23,7 +23,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 
   // NOTE: this `filters` shape (targeting ranked_serp_element.serp_item's
   // relative_url) follows DataForSEO's documented ranked_keywords filter
-  // fields but — per client.ts's caveat — hasn't been confirmed against a
+  // fields but (per client.ts's caveat) hasn't been confirmed against a
   // live call. If it's wrong, DataForSEO returns an empty/unfiltered
   // result rather than an error, so treat a suspiciously large or zero
   // result count here as a signal to re-check this filter at build time.
@@ -72,7 +72,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const inspectPage: ToolModule<typeof inputSchema> = {
   name: "inspect_page",
   title: "Inspect page",
-  description: "Keywords + traffic for a single URL (requires a DataForSEO key).",
+  description: "Ranking keywords and estimated traffic for a single URL. Paid market data (Pro and Team plans).",
   inputSchema,
   handler
 };

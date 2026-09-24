@@ -58,8 +58,8 @@ export function ApiKeysSection({ apiKeys, openCreate = false }: { apiKeys: McpAp
   return (
     <section class="panel">
       <p class="muted">
-        Use one of these to connect Claude or another MCP client: send it as <code>Authorization: Bearer &lt;key&gt;</code>. Each key is
-        shown once, at creation.
+        For scripts and clients that can't sign in: send a key as <code>Authorization: Bearer &lt;key&gt;</code>. Claude, Claude Code,
+        Cursor and VS Code can connect by signing in instead, see Overview. Each key is shown once, at creation.
       </p>
       {apiKeys.length > 0 && (
         <Table headers={["Label", "Created", "Last used", ""]}>

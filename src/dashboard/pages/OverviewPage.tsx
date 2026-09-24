@@ -1,4 +1,5 @@
 import { StatCard, Table } from "../../design";
+import { ConnectGuide } from "../components/ConnectGuide";
 import { renderPage } from "../Layout";
 import { PaymentStatusBanner } from "../components/PaymentStatusBanner";
 import type { OverviewData } from "../types";
@@ -15,19 +16,10 @@ function OverviewPage({ data }: { data: OverviewData }) {
         <div class="quick-connect-banner">
           <div class="quick-connect-header">
             <div>
-              <h2>MCP Server Endpoint</h2>
+              <h2>Connect your AI app</h2>
               <p class="muted" style="margin: 0.2rem 0 0; font-size: 0.85rem;">
-                Connect this server to Claude Desktop, Cursor, or Claude Code to run SEO commands.
+                Add this URL in Claude, Claude Code, Cursor or VS Code and sign in. No key needed.
               </p>
-            </div>
-            <div>
-              {data.hasApiKeys ? (
-                <span class="badge badge-good">API key active</span>
-              ) : (
-                <a href="/dashboard/api-keys?new=1" class="btn btn-sm btn-primary">
-                  + Create API key
-                </a>
-              )}
             </div>
           </div>
           <div class="quick-connect-endpoint">
@@ -36,6 +28,7 @@ function OverviewPage({ data }: { data: OverviewData }) {
               Copy URL
             </button>
           </div>
+          <ConnectGuide mcpUrl={mcpUrl} />
         </div>
       ) : null}
 

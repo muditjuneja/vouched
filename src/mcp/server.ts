@@ -22,7 +22,7 @@ import type { ToolModule } from "../domains/types";
 import type { Plan } from "../db/subscriptions";
 import { ofeEnvelopeSchema } from "../envelope/schema";
 import { ConnectionRequiredError, QuotaExceededError, UpgradeRequiredError } from "../lib/errors";
-import { MCP_SERVER_NAME } from "../lib/product";
+import { DISPLAY_NAME, MCP_SERVER_NAME, SITE_URL } from "../lib/product";
 import { hasDataForSEO, type Env } from "../types/env";
 import { checkDailyCap } from "./daily-cap";
 
@@ -79,8 +79,31 @@ const DATAFORSEO_TOOL_MODULES: ToolModule<any>[] = [
  * `plan` is the tenant's effective plan (cloud mode only, null otherwise),
  * resolved once by the caller and used here for the free-tier daily cap.
  */
+/** Tools that only read this server's own data; every other tool queries Google or a market-data provider. */
+const CLOSED_WORLD_TOOLS = new Set(["describe_capabilities", "list_websites", "export_dataset"]);
+
+/**
+ * MCP tool annotations, which clients use to decide what needs a
+ * confirmation and which directories (Anthropic's among them) require.
+ * Every tool here only reads: nothing creates, changes or deletes anything,
+ * so repeating a call is always safe.
+ */
+export function toolAnnotations(name: string) {
+  return { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: !CLOSED_WORLD_TOOLS.has(name) };
+}
+
 export function buildMcpServer(env: Env, tenantId: string | null = null, plan: Plan | null = null): McpServer {
-  const server = new McpServer({ name: MCP_SERVER_NAME, version: "0.1.0" });
+  // title/websiteUrl/icons: how clients label this server in their UI.
+  const server = new McpServer({
+    name: MCP_SERVER_NAME,
+    title: DISPLAY_NAME,
+    version: "0.1.0",
+    websiteUrl: SITE_URL,
+    icons: [
+      { src: `${SITE_URL}/brand/icon-512.png`, mimeType: "image/png", sizes: ["512x512"] },
+      { src: `${SITE_URL}/brand/icon.svg`, mimeType: "image/svg+xml", sizes: ["any"] }
+    ]
+  });
   const requestEnv: Env = { ...env, __tenantId: tenantId };
 
   const toolModules = hasDataForSEO(env)
@@ -94,7 +117,8 @@ export function buildMcpServer(env: Env, tenantId: string | null = null, plan: P
         title: tool.title,
         description: tool.description,
         inputSchema: tool.inputSchema,
-        outputSchema: ofeEnvelopeSchema
+        outputSchema: ofeEnvelopeSchema,
+        annotations: { title: tool.title, ...toolAnnotations(tool.name) }
       },
       async (args: Record<string, unknown>) => {
         const capError = await checkDailyCap(requestEnv, tenantId, plan);

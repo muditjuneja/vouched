@@ -43,7 +43,7 @@ import { renderSettings } from "./pages/SettingsPage";
 import { renderSignInRequired } from "./pages/SignInRequiredPage";
 import { renderUsage } from "./pages/UsagePage";
 import { renderWebsites } from "./pages/WebsitesPage";
-import type { ActionNotice, DashboardUser, DashboardWebsite, TeamSettings } from "./types";
+import type { ActionNotice, ConnectedApp, DashboardUser, DashboardWebsite, TeamSettings } from "./types";
 
 const RECONNECT_NUDGE_COOLDOWN_HOURS = 24;
 
@@ -76,6 +76,8 @@ function parseActionNotice(action: string | undefined): ActionNotice | null {
       return { type: "warn", message: "That doesn't look like an email address." };
     case "left_team":
       return { type: "info", message: "You left the team and are back in your own workspace." };
+    case "app_disconnected":
+      return { type: "warn", message: "App disconnected. It no longer has access." };
     case "joined_team":
       return { type: "success", message: "You joined the team. Everything here is now the team's workspace." };
     default:
@@ -493,7 +495,7 @@ async function settingsHtml(env: Env, ctx: TenantContext, notice: ActionNotice |
     checkConnectionState(env, "webmaster_console", tenantId),
     checkConnectionState(env, "analytics_property", tenantId)
   ]);
-  const team = await loadTeamSettings(env, ctx, user.plan);
+  const [team, connectedApps] = await Promise.all([loadTeamSettings(env, ctx, user.plan), loadConnectedApps(env, ctx.userId)]);
   return renderSettings({
     user,
     email: user.email,
@@ -504,9 +506,28 @@ async function settingsHtml(env: Env, ctx: TenantContext, notice: ActionNotice |
     googleOAuthConfigured: hasGoogleOAuth(env),
     justConnected: justConnected && isScopeGroup(justConnected) ? justConnected : null,
     notice,
-    team
+    team,
+    connectedApps
   });
 }
+
+/** Apps this person connected over MCP OAuth, newest first. Null when the provider isn't running (self-host). */
+async function loadConnectedApps(env: Env, userId: string): Promise<ConnectedApp[] | null> {
+  if (!env.OAUTH_PROVIDER) return null;
+  const { items } = await env.OAUTH_PROVIDER.listUserGrants(userId);
+  return items
+    .map((grant) => {
+      const meta = (grant.metadata ?? {}) as { clientName?: string; redirectHost?: string; approvedAt?: string };
+      return { grantId: grant.id, name: meta.clientName ?? grant.clientId, host: meta.redirectHost ?? null, approvedAt: meta.approvedAt ?? null };
+    })
+    .sort((a, b) => (b.approvedAt ?? "").localeCompare(a.approvedAt ?? ""));
+}
+
+dashboard.post("/connected-apps/:grantId/revoke", async (c) => {
+  // revokeGrant only removes a grant belonging to this user, so a guessed id can't touch anyone else's.
+  await c.env.OAUTH_PROVIDER?.revokeGrant(c.req.param("grantId"), c.get("ctx").userId);
+  return c.redirect("/dashboard/settings?action=app_disconnected", 303);
+});
 
 dashboard.get("/settings", async (c) => {
   return c.html(await settingsHtml(c.env, c.get("ctx"), parseActionNotice(c.req.query("action")), c.req.query("connected")));

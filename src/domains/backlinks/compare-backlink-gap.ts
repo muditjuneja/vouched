@@ -37,7 +37,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   let returned = 0;
   let spamFiltered = 0;
 
-  // One domain_intersection call per competitor — same pairwise limitation
+  // One domain_intersection call per competitor, same pairwise limitation
   // as compare_keyword_coverage (see that tool's comment).
   const perCompetitor = await Promise.all(
     args.competitors.map((competitor) =>
@@ -96,8 +96,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const compareBacklinkGap: ToolModule<typeof inputSchema> = {
   name: "compare_backlink_gap",
   title: "Compare backlink gap",
-  description:
-    "Backlink gap / link intersect across competitors, ranked by authority, spam-filtered, earned-flagged. Requires a DataForSEO key.",
+  description: "Link gap: sites linking to the competitors but not to the domain, ranked by authority with spam filtered out. Paid market data (Pro and Team plans).",
   inputSchema,
   handler
 };

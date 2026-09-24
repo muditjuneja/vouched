@@ -40,7 +40,7 @@ async function handler(_args: Record<string, never>, env: Env) {
 export const describeCapabilities: ToolModule<z.ZodObject<Record<string, never>>> = {
   name: "describe_capabilities",
   title: "Describe capabilities",
-  description: "Enabled domains, tools, fact types, and source classes.",
+  description: "What this server can do right now: enabled tools, the facts each returns, their sources, and which need a Google connection. A good first call.",
   inputSchema: z.object({}),
   handler
 };

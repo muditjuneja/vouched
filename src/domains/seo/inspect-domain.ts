@@ -92,7 +92,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const inspectDomain: ToolModule<typeof inputSchema> = {
   name: "inspect_domain",
   title: "Inspect domain",
-  description: "Compact factual snapshot for one domain (requires a DataForSEO key).",
+  description: "One-call snapshot of a domain's organic search presence: estimated traffic, ranking keywords, top keywords and main competitors. Paid market data (Pro and Team plans).",
   inputSchema,
   handler
 };

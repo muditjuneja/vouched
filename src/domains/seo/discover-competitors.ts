@@ -57,7 +57,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const discoverCompetitors: ToolModule<typeof inputSchema> = {
   name: "discover_competitors",
   title: "Discover competitors",
-  description: "Organic competitors by overlap (requires a DataForSEO key).",
+  description: "Find the domains competing with a site for the same organic keywords, ranked by keyword overlap. Paid market data (Pro and Team plans).",
   inputSchema,
   handler
 };

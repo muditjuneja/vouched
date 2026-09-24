@@ -55,6 +55,10 @@ function ApiKeyCreatedPage({ plaintext, workerOrigin }: { plaintext: string; wor
       </Callout>
 
       <h2 style="margin-top: 1.5rem;">Connect to your MCP Client</h2>
+      <p class="muted">
+        Most apps (Claude, Claude Code, Cursor, VS Code) can also connect by signing in, with no key: see the Overview page. Use a key
+        for scripts, CI, or clients that only send headers.
+      </p>
 
       <section class="panel">
         <div style="display: flex; justify-content: space-between; align-items: center;">

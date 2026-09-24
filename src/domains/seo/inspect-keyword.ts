@@ -39,7 +39,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   const keywordId = keywordEntityId(args.keyword);
 
   // Per the confirmed manifest, this tool's only fact_types are serp.result
-  // and serp.feature — keyword_overview's search_index data (volume/cpc/
+  // and serp.feature; keyword_overview's search_index data (volume/cpc/
   // difficulty/intent) lives in `data`, not as its own fact type.
   const builder = envelope("seo", {
     keyword: args.keyword,
@@ -83,7 +83,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const inspectKeyword: ToolModule<typeof inputSchema> = {
   name: "inspect_keyword",
   title: "Inspect keyword",
-  description: "Full detail on a single keyword (requires a DataForSEO key).",
+  description: "Everything about one keyword: search volume, difficulty, CPC, intent, and who ranks for it right now. Paid market data (Pro and Team plans).",
   inputSchema,
   handler
 };

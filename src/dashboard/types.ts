@@ -140,6 +140,16 @@ export interface SettingsData {
   justConnected: "webmaster_console" | "analytics_property" | null;
   notice?: ActionNotice | null;
   team?: TeamSettings | null;
+  /** Apps connected over MCP OAuth (Claude, Cursor, ...) by this person. Null outside cloud mode. */
+  connectedApps?: ConnectedApp[] | null;
+}
+
+export interface ConnectedApp {
+  grantId: string;
+  name: string;
+  /** Where the app's access was sent, e.g. claude.ai. */
+  host: string | null;
+  approvedAt: string | null;
 }
 
 export interface ApiKeysData {

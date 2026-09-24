@@ -13,8 +13,8 @@ async function connectionState(
   tenantId: string | null
 ): Promise<ConnectionState> {
   if (!configured) return "not_connected";
-  // NOTE: v1 doesn't bind a specific Google account to a specific website —
-  // see getAnyToken's doc comment — so this reports whether *some* connected
+  // NOTE: v1 doesn't bind a specific Google account to a specific website
+  // (see getAnyToken's doc comment), so this reports whether *some* connected
   // account (this tenant's, in cloud mode) can serve this scope group, not
   // this exact property specifically.
   return checkConnectionState(env, scopeGroup, tenantId);
@@ -60,7 +60,7 @@ async function handler(_args: Record<string, never>, env: Env) {
 export const listWebsitesTool: ToolModule<z.ZodObject<Record<string, never>>> = {
   name: "list_websites",
   title: "List websites",
-  description: "List tracked/owned websites and their connection state.",
+  description: "Your tracked websites and whether Search Console and Google Analytics are connected for each. Pass a returned domain to the Google tools.",
   inputSchema: z.object({}),
   handler
 };

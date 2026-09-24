@@ -78,7 +78,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const inspectSerp: ToolModule<typeof inputSchema> = {
   name: "inspect_serp",
   title: "Inspect SERP",
-  description: "Live SERP snapshot for one query (requires a DataForSEO key).",
+  description: "Live Google results for one query: organic rankings plus features such as AI Overviews and People Also Ask. Paid market data (Pro and Team plans).",
   inputSchema,
   handler
 };

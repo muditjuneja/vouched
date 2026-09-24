@@ -56,7 +56,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const researchKeywords: ToolModule<typeof inputSchema> = {
   name: "research_keywords",
   title: "Research keywords",
-  description: "Expand seed terms into a ranked demand list (requires a DataForSEO key).",
+  description: "Expand seed keywords into related keyword ideas with search volume, difficulty and CPC, to decide what to target. Paid market data (Pro and Team plans).",
   inputSchema,
   handler
 };

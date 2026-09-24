@@ -15,7 +15,7 @@ const VIEWS = ["authority", "referring_domains", "anchors", "backlinks"] as cons
 
 const inputSchema = z.object({
   domain: z.string(),
-  view: z.enum(VIEWS).optional().describe("Which slice to fetch (default authority) — costs one call, not four"),
+  view: z.enum(VIEWS).optional().describe("Which slice to fetch (default authority); one view per call"),
   limit: z.number().int().min(1).max(500).optional()
 });
 
@@ -138,8 +138,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const inspectBacklinks: ToolModule<typeof inputSchema> = {
   name: "inspect_backlinks",
   title: "Inspect backlinks",
-  description:
-    "One domain's link profile, sliced by view (authority / referring domains / anchors / individual backlinks). Requires a DataForSEO key.",
+  description: "A domain's backlink profile, one view per call: authority, referring domains, anchor text, or individual backlinks. Paid market data (Pro and Team plans).",
   inputSchema,
   handler
 };

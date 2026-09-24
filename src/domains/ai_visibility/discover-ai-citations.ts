@@ -38,7 +38,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
       subject: [domainId],
       data: { domain: item.domain, mentions: item.mentions ?? null, rank: item.rank ?? null, raw: item },
       // Confidence lower than a live SERP result: presence/ranking in an AI
-      // answer is less stable and this endpoint's shape is unverified — see
+      // answer is less stable and this endpoint's shape is unverified, see
       // clients/dataforseo/endpoints/llm-mentions.ts.
       provenance: provenance("ai_answer", "ai_optimization.llm_mentions.top_mentioned_domains", {
         observedAt,
@@ -65,7 +65,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const discoverAiCitations: ToolModule<typeof inputSchema> = {
   name: "discover_ai_citations",
   title: "Discover AI citations",
-  description: "Which sources AI cites in your category (requires a DataForSEO key). Shape unverified — see docs.",
+  description: "Which websites AI answers (Google AI Overviews or ChatGPT) cite for a topic. Paid market data (Pro and Team plans).",
   inputSchema,
   handler
 };

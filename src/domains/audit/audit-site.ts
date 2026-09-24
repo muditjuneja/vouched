@@ -14,7 +14,7 @@ const inputSchema = z.object({
     .min(1)
     .max(200)
     .optional()
-    .describe("Page cap for this crawl (default 50) — keeps one call inside a single Worker invocation")
+    .describe("Page cap for this crawl (default 50); keeps one call inside a single Worker invocation")
 });
 
 async function handler(args: z.infer<typeof inputSchema>) {
@@ -70,7 +70,7 @@ async function handler(args: z.infer<typeof inputSchema>) {
       total: crawl.truncated ? null : crawl.pages.length,
       as_of: observedAt.toISOString(),
       scope_note: crawl.truncated
-        ? `stopped at the ${maxPages}-page cap — the site may have more pages`
+        ? `stopped at the ${maxPages}-page cap; the site may have more pages`
         : "crawl exhausted all discoverable internal links"
     })
     .build();
@@ -79,7 +79,7 @@ async function handler(args: z.infer<typeof inputSchema>) {
 export const auditSite: ToolModule<typeof inputSchema> = {
   name: "audit_site",
   title: "Audit site",
-  description: "Fast technical/content health audit — crawls your own site, no paid data.",
+  description: "Fast technical and content health audit of your own site: crawls it directly, no paid data.",
   inputSchema,
   handler
 };

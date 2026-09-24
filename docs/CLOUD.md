@@ -514,6 +514,39 @@ counting the owner.
 **Not built**: transferring ownership, per-member usage breakdown, more
 than one team per person, seat add-ons beyond 5.
 
+## M22: Standard MCP sign-in (OAuth 2.1)
+
+**Why**: hosted clients (Claude's custom connectors, and the directories we
+want to list in) connect with the MCP authorization spec, not a pasted
+header. Claude reserves the `Authorization` header for its own sign-in, so a
+key-only server couldn't be added there at all.
+
+**How**: `@cloudflare/workers-oauth-provider` makes the Worker its own OAuth
+server (`src/auth/mcp-oauth.ts`), with state in the `OAUTH_KV` namespace.
+- In cloud mode every request enters through the provider. It answers the
+  discovery documents, `/oauth/token` and `/oauth/register` itself, returns
+  the standard `401` challenge on `/mcp`, and hands everything else to the
+  Hono app. Self-host mode skips it and keeps the shared bearer token.
+- `/authorize` (`src/auth/authorize-routes.ts`) signs the user in with the
+  same Clerk session as the dashboard, then shows a consent page built to the
+  library's guidance: app name, publisher domain for metadata-document
+  clients, where access goes, a warning for `localhost`, anti-framing and a
+  one-time form handle. Grants are issued to the Clerk user id.
+- `/mcp` gets the caller from the provider (`ctx.props`). An OAuth caller's
+  workspace is resolved on every request (`resolveTenant`), so team changes
+  apply at once; plan, rate limit and daily cap then work as before.
+- API keys still work: `resolveExternalToken` accepts `vsm_` keys, so Claude
+  Code with a header, scripts and CI are unaffected. An unknown key gets the
+  sign-in challenge rather than a bare 401.
+- Settings → Connected apps lists each grant with Disconnect
+  (`revokeGrant`, scoped to the user).
+- Connections last while used: each refresh extends them 30 days.
+
+**Directory readiness**: every tool now carries MCP annotations (all
+read-only, non-destructive, idempotent; open-world except the three that
+read only our own data), and tool descriptions say what each returns
+without naming the data supplier.
+
 ## Verification discipline
 
 Same as self-host: typecheck + lint + unit tests (pure logic, tenant-

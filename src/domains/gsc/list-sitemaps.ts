@@ -85,8 +85,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const listSitemapsTool: ToolModule<typeof inputSchema> = {
   name: "list_sitemaps",
   title: "List sitemaps",
-  description:
-    "Submitted sitemaps for a tracked website: last-read status, warnings/errors, submitted counts per content type. The indexed count Google returns here is deprecated and always 0; use inspect_indexing for real per-URL indexing status.",
+  description: "Submitted sitemaps for one of your tracked websites, from Search Console: last read, warnings, errors and submitted URL counts. Google's indexed count here is deprecated (always 0); use inspect_indexing for real indexing status.",
   inputSchema,
   handler
 };

@@ -22,7 +22,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   const platform = args.platform ?? "google";
   const targets = [args.domain, ...(args.competitors ?? [])];
 
-  // Multi-target in one call, per the confirmed API description — no
+  // Multi-target in one call, per the confirmed API description, no
   // client-side N-way aggregation needed here (unlike the pairwise
   // seo/backlinks domain_intersection tools).
   const results = (await searchMentions(
@@ -64,8 +64,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const inspectAiVisibility: ToolModule<typeof inputSchema> = {
   name: "inspect_ai_visibility",
   title: "Inspect AI visibility",
-  description:
-    "How a domain shows up in AI answers vs named competitors (requires a DataForSEO key). Shape unverified — see docs.",
+  description: "How often a domain is mentioned in AI answers compared with named competitors. Paid market data (Pro and Team plans).",
   inputSchema,
   handler
 };

@@ -2,8 +2,8 @@ import { DISPLAY_NAME } from "../../lib/product";
 import { GITHUB_URL } from "../../marketing/github-url";
 import { renderPage } from "../Layout";
 
-/** `devBrowserToken` is only set on a development Clerk instance, see DashboardAuthResult.devBrowserToken. */
-function buildTarget(currentUrl: string, signInUrl: string | null, devBrowserToken: string | null): string | null {
+/** Clerk sign-in URL that returns to `currentUrl`. `devBrowserToken` is only set on a development Clerk instance, see DashboardAuthResult.devBrowserToken. */
+export function signInTarget(currentUrl: string, signInUrl: string | null, devBrowserToken: string | null): string | null {
   if (!signInUrl) return null;
   const url = new URL(signInUrl);
   url.searchParams.set("redirect_url", currentUrl);
@@ -12,7 +12,7 @@ function buildTarget(currentUrl: string, signInUrl: string | null, devBrowserTok
 }
 
 function SignInPage({ currentUrl, signInUrl, devBrowserToken }: { currentUrl: string; signInUrl: string | null; devBrowserToken: string | null }) {
-  const target = buildTarget(currentUrl, signInUrl, devBrowserToken);
+  const target = signInTarget(currentUrl, signInUrl, devBrowserToken);
   return (
     <>
       <div class="auth-card">

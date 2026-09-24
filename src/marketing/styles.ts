@@ -194,6 +194,9 @@ export const MARKETING_CSS = `
     letter-spacing: -0.03em; text-decoration: none; color: var(--text); line-height: 1;
   }
   .nav .brand em { font-style: italic; font-weight: 500; }
+  .nav .brand { display: inline-flex; align-items: center; gap: 0.55rem; }
+  .brand-mark { display: inline-flex; flex-shrink: 0; }
+  .brand-mark svg { width: 1.45rem; height: 1.45rem; }
   .nav-links { display: flex; align-items: center; gap: 1.6rem; flex-wrap: wrap; }
   .nav-links a {
     text-decoration: none; color: var(--muted); font-size: 0.84rem; font-weight: 500;
