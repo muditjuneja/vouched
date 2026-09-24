@@ -150,3 +150,33 @@ describe("marketing routes", () => {
     expect(body).toContain("Sitemap: https://myworker.example.com/sitemap.xml");
   });
 });
+
+describe("marketing pages for a signed-in visitor", () => {
+  const cloudEnv = { CLOUD_MODE: "1", CLERK_SECRET_KEY: "sk_test" } as unknown as Env;
+  const signedIn = { headers: { Cookie: "__client_uat=1790000000; __session=x" } };
+
+  it("swaps Start on Cloud for Open dashboard, and the nav's Cloud for Dashboard", async () => {
+    const body = await (await marketing.request("/", signedIn, cloudEnv)).text();
+    expect(body).toContain("Open dashboard");
+    expect(body).not.toContain("Start on Cloud");
+    expect(body).toMatch(/class="btn" href="\/dashboard">\s*Dashboard/);
+  });
+
+  it("sends a signed-in visitor's plan buttons to Billing", async () => {
+    const body = await (await marketing.request("/pricing", signedIn, cloudEnv)).text();
+    expect(body).toContain('href="/dashboard/billing"');
+    expect(body).toContain("Choose Pro in Billing");
+  });
+
+  it("shows the normal page once signed out (Clerk resets the cookie to 0)", async () => {
+    const body = await (await marketing.request("/", { headers: { Cookie: "__client_uat=0" } }, cloudEnv)).text();
+    expect(body).toContain("Start on Cloud");
+    expect(body).not.toContain("Open dashboard");
+  });
+
+  it("never lets a shared cache store one visitor's copy for another", async () => {
+    const res = await marketing.request("/", signedIn, cloudEnv);
+    expect(res.headers.get("Cache-Control")).toBe("private, no-cache");
+    expect(res.headers.get("Vary")).toContain("Cookie");
+  });
+});

@@ -40,9 +40,11 @@ export interface LayoutProps {
   canonicalUrl: string;
   /** Whether this deployment has cloud mode enabled (`isCloudMode(c.env)`), threaded down into `Nav`/`Footer` so neither ever links to a `/dashboard` 404 on a self-host-only deployment. */
   cloudMode: boolean;
+  /** Whether the visitor looks signed in (see looksSignedIn): the nav's Cloud button becomes Dashboard. */
+  signedIn?: boolean;
 }
 
-function Layout({ title, description, canonicalUrl, cloudMode, children }: PropsWithChildren<LayoutProps>) {
+function Layout({ title, description, canonicalUrl, cloudMode, signedIn = false, children }: PropsWithChildren<LayoutProps>) {
   return (
     <html lang="en">
       <head>
@@ -72,7 +74,7 @@ function Layout({ title, description, canonicalUrl, cloudMode, children }: Props
           <span class="sheet-tick tr" />
           <span class="sheet-tick bl" />
           <span class="sheet-tick br" />
-          <Nav cloudMode={cloudMode} />
+          <Nav cloudMode={cloudMode} signedIn={signedIn} />
           <main>{children}</main>
           <Footer cloudMode={cloudMode} />
         </div>

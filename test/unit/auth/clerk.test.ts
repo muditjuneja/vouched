@@ -1,6 +1,6 @@
 import type { createClerkClient } from "@clerk/backend";
 import { describe, expect, it, vi } from "vitest";
-import { authenticateBillingRequest, authenticateDashboardRequest, getTenantEmail, revokeClerkSession } from "../../../src/auth/clerk";
+import { authenticateBillingRequest, authenticateDashboardRequest, getTenantEmail, looksSignedIn, revokeClerkSession } from "../../../src/auth/clerk";
 import { ConfigError } from "../../../src/lib/errors";
 import type { Env } from "../../../src/types/env";
 
@@ -277,5 +277,20 @@ describe("revokeClerkSession", () => {
   it("never throws when Clerk refuses, so sign-out still clears cookies", async () => {
     const makeClient = (() => ({ sessions: { revokeSession: async () => { throw new Error("gone"); } } })) as unknown as typeof createClerkClient;
     expect(await revokeClerkSession(fakeEnv(), "sess_1", makeClient)).toBe(false);
+  });
+});
+
+describe("looksSignedIn", () => {
+  const withCookie = (cookie: string) => new Request("https://vouchedhq.com/", { headers: { Cookie: cookie } });
+
+  it("is true while Clerk's __client_uat holds a sign-in timestamp, suffixed or not", () => {
+    expect(looksSignedIn(withCookie("__client_uat=1790000000"))).toBe(true);
+    expect(looksSignedIn(withCookie("a=1; __client_uat_Ab12=1790000000; __client_uat=1790000000"))).toBe(true);
+  });
+
+  it("is false with no cookie, after sign-out (0), or when any copy says signed out", () => {
+    expect(looksSignedIn(new Request("https://vouchedhq.com/"))).toBe(false);
+    expect(looksSignedIn(withCookie("__client_uat=0"))).toBe(false);
+    expect(looksSignedIn(withCookie("__client_uat=1790000000; __client_uat_Ab12=0"))).toBe(false);
   });
 });

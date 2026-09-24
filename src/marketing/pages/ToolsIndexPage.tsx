@@ -115,13 +115,14 @@ function ToolsIndexPage({ byDomain }: { byDomain: Map<string, ToolPageContent[]>
   );
 }
 
-export function renderToolsIndex(canonicalUrl: string, cloudMode: boolean): string {
+export function renderToolsIndex(canonicalUrl: string, cloudMode: boolean, signedIn = false): string {
   const byDomain = groupByDomain(TOOL_PAGES);
   return renderPage({
     title: `All ${TOOL_PAGES.length} tools · Vouched Documentation`,
     description: `Documentation and reference for all ${TOOL_PAGES.length} MCP tools across ${byDomain.size} domains: keyword research, backlinks, SERP, AI-visibility, URL indexing inspection, Search Console, and GA4.`,
     canonicalUrl,
     cloudMode,
+    signedIn,
     children: <ToolsIndexPage byDomain={byDomain} />
   });
 }

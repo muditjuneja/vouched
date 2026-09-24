@@ -1,12 +1,13 @@
 import { Callout, Table } from "../../design";
-import { DISPLAY_NAME, cloudCtaHref } from "../brand";
+import { DISPLAY_NAME, cloudCta } from "../brand";
 import { Hero } from "../components/Hero";
 import type { ComparisonPage as ComparisonPageContent } from "../content/comparisons";
 import { GITHUB_URL } from "../github-url";
 import { renderPage } from "../Layout";
 import { Button } from "../../design";
 
-function ComparisonPage({ page, cloudMode }: { page: ComparisonPageContent; cloudMode: boolean }) {
+function ComparisonPage({ page, cloudMode, signedIn }: { page: ComparisonPageContent; cloudMode: boolean; signedIn: boolean }) {
+  const cta = cloudCta(cloudMode, signedIn);
   return (
     <>
       <Hero eyebrow="Comparison" heading={page.title} lede={page.intro} />
@@ -29,18 +30,19 @@ function ComparisonPage({ page, cloudMode }: { page: ComparisonPageContent; clou
         <Button href={GITHUB_URL} variant="primary">
           Self-host {DISPLAY_NAME}
         </Button>
-        <Button href={cloudCtaHref(cloudMode)}>Start on Cloud</Button>
+        <Button href={cta.href}>{cta.label}</Button>
       </section>
     </>
   );
 }
 
-export function renderComparison(page: ComparisonPageContent, canonicalUrl: string, cloudMode: boolean): string {
+export function renderComparison(page: ComparisonPageContent, canonicalUrl: string, cloudMode: boolean, signedIn = false): string {
   return renderPage({
     title: page.title,
     description: page.metaDescription,
     canonicalUrl,
     cloudMode,
-    children: <ComparisonPage page={page} cloudMode={cloudMode} />
+    signedIn,
+    children: <ComparisonPage page={page} cloudMode={cloudMode} signedIn={signedIn} />
   });
 }

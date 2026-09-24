@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { looksSignedIn } from "../auth/clerk";
 import { isCloudMode, type Env } from "../types/env";
 import { findComparisonPage } from "./content/comparisons";
 import { findIndustryPage } from "./content/industries";
@@ -31,6 +32,16 @@ import { renderRobotsTxt, renderSitemapXml } from "./sitemap";
  */
 export const marketing = new Hono<{ Bindings: Env }>();
 
+// Pages differ for signed-in visitors (see looksSignedIn), so no shared
+// cache may ever store one visitor's copy for another.
+marketing.use("*", async (c, next) => {
+  await next();
+  if (c.res.headers.get("content-type")?.startsWith("text/html")) {
+    c.res.headers.set("Cache-Control", "private, no-cache");
+    c.res.headers.append("Vary", "Cookie");
+  }
+});
+
 /** `<link rel=canonical>` and sitemap/robots want an absolute origin+path, not a relative one. */
 function canonicalFor(requestUrl: string): string {
   const url = new URL(requestUrl);
@@ -41,15 +52,15 @@ function originFor(requestUrl: string): string {
   return new URL(requestUrl).origin;
 }
 
-marketing.get("/", (c) => c.html(renderLanding(canonicalFor(c.req.url), isCloudMode(c.env))));
+marketing.get("/", (c) => c.html(renderLanding(canonicalFor(c.req.url), isCloudMode(c.env), looksSignedIn(c.req.raw))));
 
-marketing.get("/pricing", (c) => c.html(renderPricing(canonicalFor(c.req.url), isCloudMode(c.env))));
+marketing.get("/pricing", (c) => c.html(renderPricing(canonicalFor(c.req.url), isCloudMode(c.env), looksSignedIn(c.req.raw))));
 
-marketing.get("/privacy", (c) => c.html(renderPrivacy(canonicalFor(c.req.url), isCloudMode(c.env))));
-marketing.get("/terms", (c) => c.html(renderTerms(canonicalFor(c.req.url), isCloudMode(c.env))));
+marketing.get("/privacy", (c) => c.html(renderPrivacy(canonicalFor(c.req.url), isCloudMode(c.env), looksSignedIn(c.req.raw))));
+marketing.get("/terms", (c) => c.html(renderTerms(canonicalFor(c.req.url), isCloudMode(c.env), looksSignedIn(c.req.raw))));
 
-marketing.get("/tools", (c) => c.html(renderToolsIndex(canonicalFor(c.req.url), isCloudMode(c.env))));
-marketing.get("/docs", (c) => c.html(renderToolsIndex(canonicalFor(c.req.url), isCloudMode(c.env))));
+marketing.get("/tools", (c) => c.html(renderToolsIndex(canonicalFor(c.req.url), isCloudMode(c.env), looksSignedIn(c.req.raw))));
+marketing.get("/docs", (c) => c.html(renderToolsIndex(canonicalFor(c.req.url), isCloudMode(c.env), looksSignedIn(c.req.raw))));
 marketing.get("/docs/tools", (c) => c.redirect("/tools", 301));
 marketing.get("/docs/tools/:slug", (c) => c.redirect(`/tools/${c.req.param("slug")}`, 301));
 marketing.get("/docs/:slug", (c) => c.redirect(`/tools/${c.req.param("slug")}`, 301));
@@ -57,19 +68,19 @@ marketing.get("/docs/:slug", (c) => c.redirect(`/tools/${c.req.param("slug")}`, 
 marketing.get("/tools/:slug", (c) => {
   const page = findToolPage(c.req.param("slug"));
   if (!page) return c.text("not found", 404);
-  return c.html(renderToolPage(page, canonicalFor(c.req.url), isCloudMode(c.env)));
+  return c.html(renderToolPage(page, canonicalFor(c.req.url), isCloudMode(c.env), looksSignedIn(c.req.raw)));
 });
 
 marketing.get("/vs/:slug", (c) => {
   const page = findComparisonPage(c.req.param("slug"));
   if (!page) return c.text("not found", 404);
-  return c.html(renderComparison(page, canonicalFor(c.req.url), isCloudMode(c.env)));
+  return c.html(renderComparison(page, canonicalFor(c.req.url), isCloudMode(c.env), looksSignedIn(c.req.raw)));
 });
 
 marketing.get("/for/:slug", (c) => {
   const page = findIndustryPage(c.req.param("slug"));
   if (!page) return c.text("not found", 404);
-  return c.html(renderIndustryPage(page, canonicalFor(c.req.url), isCloudMode(c.env)));
+  return c.html(renderIndustryPage(page, canonicalFor(c.req.url), isCloudMode(c.env), looksSignedIn(c.req.raw)));
 });
 
 marketing.get("/sitemap.xml", (c) => {

@@ -32,7 +32,7 @@ function confidenceLabel(sourceClass: string, score: number): { label: string; b
   return { label: "Core Metadata", badgeClass: "conf-perfect" };
 }
 
-function ToolPage({ page, cloudMode }: { page: ToolPageContent; cloudMode: boolean }) {
+function ToolPage({ page, cloudMode, signedIn }: { page: ToolPageContent; cloudMode: boolean; signedIn: boolean }) {
   const { entry, title } = page;
   const domainLabel = DOMAIN_LABELS[entry.domain] ?? entry.domain;
   const docs = getToolDocs(entry.name);
@@ -140,7 +140,7 @@ function ToolPage({ page, cloudMode }: { page: ToolPageContent; cloudMode: boole
                   <div class="param-meta">
                     {param.default ? <span class="param-default">default: <code>{param.default}</code></span> : null}
                     {param.constraints ? <span class="param-constraints">{param.constraints}</span> : null}
-                    {!param.default && !param.constraints ? <span class="muted">—</span> : null}
+                    {!param.default && !param.constraints ? <span class="muted">none</span> : null}
                   </div>
                 </td>
                 <td class="param-desc">{param.description}</td>
@@ -388,7 +388,7 @@ function ToolPage({ page, cloudMode }: { page: ToolPageContent; cloudMode: boole
         <Button href={GITHUB_URL} variant="primary">
           Self-host on GitHub (MIT)
         </Button>
-        {cloudMode ? <Button href="/dashboard">Try on Cloud plan</Button> : <Button href="/pricing">See all plans</Button>}
+        {cloudMode ? <Button href="/dashboard">{signedIn ? "Open dashboard" : "Try on Cloud plan"}</Button> : <Button href="/pricing">See all plans</Button>}
       </section>
 
       <footer class="tool-footer-nav">
@@ -398,12 +398,13 @@ function ToolPage({ page, cloudMode }: { page: ToolPageContent; cloudMode: boole
   );
 }
 
-export function renderToolPage(page: ToolPageContent, canonicalUrl: string, cloudMode: boolean): string {
+export function renderToolPage(page: ToolPageContent, canonicalUrl: string, cloudMode: boolean, signedIn = false): string {
   return renderPage({
     title: `${page.title} (${page.entry.name}) · Vouched Tool Documentation`,
     description: page.metaDescription,
     canonicalUrl,
     cloudMode,
-    children: <ToolPage page={page} cloudMode={cloudMode} />
+    signedIn,
+    children: <ToolPage page={page} cloudMode={cloudMode} signedIn={signedIn} />
   });
 }

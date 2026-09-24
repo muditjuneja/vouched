@@ -17,7 +17,7 @@ function Yes() {
   );
 }
 
-function PricingPage({ cloudMode }: { cloudMode: boolean }) {
+function PricingPage({ cloudMode, signedIn }: { cloudMode: boolean; signedIn: boolean }) {
   return (
     <>
       <Hero eyebrow="Pricing" heading="Community is free. Cloud is convenience, not a different product." lede="Every plan gets the same 18 tools. What changes is who runs the Worker and who holds the DataForSEO account." />
@@ -42,8 +42,8 @@ function PricingPage({ cloudMode }: { cloudMode: boolean }) {
           name="Pro (Cloud)"
           price={`$${PLAN_PRICES_USD.pro}`}
           priceNote="/mo, included usage"
-          ctaLabel="Start on Pro"
-          ctaHref={cloudMode ? cloudCtaHref(true) : "/pricing#cloud"}
+          ctaLabel={signedIn ? "Choose Pro in Billing" : "Start on Pro"}
+          ctaHref={cloudMode ? (signedIn ? "/dashboard/billing" : cloudCtaHref(true)) : "/pricing#cloud"}
           featured
           primaryCta
         >
@@ -65,8 +65,8 @@ function PricingPage({ cloudMode }: { cloudMode: boolean }) {
           name="Team (Cloud)"
           price={`$${PLAN_PRICES_USD.team}`}
           priceNote="/mo, included usage"
-          ctaLabel="Start on Team"
-          ctaHref={cloudMode ? cloudCtaHref(true) : "/pricing#cloud"}
+          ctaLabel={signedIn ? "Choose Team in Billing" : "Start on Team"}
+          ctaHref={cloudMode ? (signedIn ? "/dashboard/billing" : cloudCtaHref(true)) : "/pricing#cloud"}
         >
           <p>
             Pro for a team: one shared workspace for up to {TEAM_SEATS} people, and a larger bundled DataForSEO allowance of{" "}
@@ -218,13 +218,14 @@ function PricingPage({ cloudMode }: { cloudMode: boolean }) {
   );
 }
 
-export function renderPricing(canonicalUrl: string, cloudMode: boolean): string {
+export function renderPricing(canonicalUrl: string, cloudMode: boolean, signedIn = false): string {
   return renderPage({
     title: `Pricing · ${DISPLAY_NAME}`,
     description:
       "Free forever to self-host with your own DataForSEO key (zero markup), or hosted cloud plans with bundled DataForSEO access. Compare Free, Pro, and Team.",
     canonicalUrl,
     cloudMode,
-    children: <PricingPage cloudMode={cloudMode} />
+    signedIn,
+    children: <PricingPage cloudMode={cloudMode} signedIn={signedIn} />
   });
 }

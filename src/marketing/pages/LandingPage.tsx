@@ -1,7 +1,7 @@
 import type { Child } from "hono/jsx";
 import { MONTHLY_QUOTA_USD, PLAN_PRICES_USD, TEAM_SEATS } from "../../billing/quotas";
 import { Button, Card, CodeWindow } from "../../design";
-import { DISPLAY_NAME, MCP_SERVER_NAME, cloudCtaHref } from "../brand";
+import { DISPLAY_NAME, MCP_SERVER_NAME, cloudCta } from "../brand";
 import { AgentPreview } from "../components/AgentPreview";
 import { Hero } from "../components/Hero";
 import {
@@ -101,8 +101,8 @@ const HOW_IT_WORKS: Step[] = [
   }
 ];
 
-function LandingPage({ cloudMode }: { cloudMode: boolean }) {
-  const cloudHref = cloudCtaHref(cloudMode);
+function LandingPage({ cloudMode, signedIn }: { cloudMode: boolean; signedIn: boolean }) {
+  const cta = cloudCta(cloudMode, signedIn);
 
   return (
     <>
@@ -124,8 +124,8 @@ function LandingPage({ cloudMode }: { cloudMode: boolean }) {
         visual={<AgentPreview />}
       >
         <div class="cta-row">
-          <Button href={cloudHref} variant="primary">
-            Start on Cloud
+          <Button href={cta.href} variant="primary">
+            {cta.label}
           </Button>
           <a class="cta-text" href="#self-host">
             Self-host Community
@@ -226,8 +226,8 @@ function LandingPage({ cloudMode }: { cloudMode: boolean }) {
             <p>Hosted on Cloudflare Workers with bundled DataForSEO, key management, and a dashboard.</p>
             <p class="muted">Pick this if you don't want to operate a Worker or manage vendor keys.</p>
             <div class="cta-row">
-              <Button href={cloudHref} variant="primary">
-                Start on Cloud
+              <Button href={cta.href} variant="primary">
+                {cta.label}
               </Button>
             </div>
           </Card>
@@ -341,8 +341,8 @@ ${CONNECT_COMMAND}`}</CodeWindow>
       <section>
         <h2>Get started</h2>
         <div class="cta-row">
-          <Button href={cloudHref} variant="primary">
-            Start on Cloud
+          <Button href={cta.href} variant="primary">
+            {cta.label}
           </Button>
           <a class="cta-text" href="#self-host">
             Self-host Community
@@ -353,13 +353,14 @@ ${CONNECT_COMMAND}`}</CodeWindow>
   );
 }
 
-export function renderLanding(canonicalUrl: string, cloudMode: boolean): string {
+export function renderLanding(canonicalUrl: string, cloudMode: boolean, signedIn = false): string {
   return renderPage({
     title: `${DISPLAY_NAME}: SEO facts your agent can vouch for`,
     description:
       "Open-source MCP server for SEO and marketing data. Same 18 tools on Vouched Cloud or self-hosted Community: keyword research, backlinks, SERP, URL indexing, GSC/GA4, with provenance on every fact.",
     canonicalUrl,
     cloudMode,
-    children: <LandingPage cloudMode={cloudMode} />
+    signedIn,
+    children: <LandingPage cloudMode={cloudMode} signedIn={signedIn} />
   });
 }

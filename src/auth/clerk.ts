@@ -164,6 +164,17 @@ export async function revokeClerkSession(env: Env, sessionId: string, makeClient
   }
 }
 
+/**
+ * Whether this browser looks signed in, from Clerk's `__client_uat` cookie
+ * (a sign-in timestamp while signed in, "0" or absent once signed out). Only
+ * a hint for what public pages show: it isn't verified, so never gate
+ * anything on it. The dashboard does the real check.
+ */
+export function looksSignedIn(request: Request): boolean {
+  const values = [...(request.headers.get("cookie") ?? "").matchAll(/(?:^|;\s*)__client_uat(?:_[^=;]+)?=([^;]*)/g)].map((m) => Number(m[1]));
+  return values.length > 0 && values.every((v) => v > 0);
+}
+
 export type BillingAuthResult =
   | { ok: true; session: ClerkSession; withRefreshedCookies: (response: Response) => Response }
   | { ok: false; response: Response };

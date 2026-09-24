@@ -271,22 +271,24 @@ function TermsPage() {
   );
 }
 
-export function renderPrivacy(canonicalUrl: string, cloudMode: boolean): string {
+export function renderPrivacy(canonicalUrl: string, cloudMode: boolean, signedIn = false): string {
   return renderPage({
     title: `Privacy policy · ${DISPLAY_NAME}`,
     description: `How ${DISPLAY_NAME} Cloud handles your data, including Google Search Console and Analytics data.`,
     canonicalUrl,
     cloudMode,
+    signedIn,
     children: <PrivacyPage />
   });
 }
 
-export function renderTerms(canonicalUrl: string, cloudMode: boolean): string {
+export function renderTerms(canonicalUrl: string, cloudMode: boolean, signedIn = false): string {
   return renderPage({
     title: `Terms of service · ${DISPLAY_NAME}`,
     description: `The terms for using ${DISPLAY_NAME} Cloud.`,
     canonicalUrl,
     cloudMode,
+    signedIn,
     children: <TermsPage />
   });
 }

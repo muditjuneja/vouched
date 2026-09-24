@@ -1,11 +1,12 @@
 import { Button } from "../../design";
-import { cloudCtaHref } from "../brand";
+import { cloudCta } from "../brand";
 import { Hero } from "../components/Hero";
 import type { IndustryPage as IndustryPageContent } from "../content/industries";
 import { GITHUB_URL } from "../github-url";
 import { renderPage } from "../Layout";
 
-function IndustryPage({ page, cloudMode }: { page: IndustryPageContent; cloudMode: boolean }) {
+function IndustryPage({ page, cloudMode, signedIn }: { page: IndustryPageContent; cloudMode: boolean; signedIn: boolean }) {
+  const cta = cloudCta(cloudMode, signedIn);
   return (
     <>
       <Hero eyebrow="Use case" heading={page.heading} lede={page.lede} />
@@ -34,18 +35,19 @@ function IndustryPage({ page, cloudMode }: { page: IndustryPageContent; cloudMod
         <Button href={GITHUB_URL} variant="primary">
           Self-host it
         </Button>
-        <Button href={cloudCtaHref(cloudMode)}>Start on Cloud</Button>
+        <Button href={cta.href}>{cta.label}</Button>
       </section>
     </>
   );
 }
 
-export function renderIndustryPage(page: IndustryPageContent, canonicalUrl: string, cloudMode: boolean): string {
+export function renderIndustryPage(page: IndustryPageContent, canonicalUrl: string, cloudMode: boolean, signedIn = false): string {
   return renderPage({
     title: page.title,
     description: page.metaDescription,
     canonicalUrl,
     cloudMode,
-    children: <IndustryPage page={page} cloudMode={cloudMode} />
+    signedIn,
+    children: <IndustryPage page={page} cloudMode={cloudMode} signedIn={signedIn} />
   });
 }
