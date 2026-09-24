@@ -24,6 +24,8 @@ export interface Env {
   DATAFORSEO_LOGIN?: string;
   DATAFORSEO_PASSWORD?: string;
   DATAFORSEO_DAILY_BUDGET_USD?: string;
+  /** Optional: https://sandbox.dataforseo.com in development, for free calls returning dummy data. */
+  DATAFORSEO_BASE_URL?: string;
 
   // Secrets: unlock the gsc/analytics tools
   GOOGLE_OAUTH_CLIENT_ID?: string;

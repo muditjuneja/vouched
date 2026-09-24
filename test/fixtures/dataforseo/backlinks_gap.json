@@ -1,0 +1,269 @@
+{
+ "status_code": 20000,
+ "status_message": "Ok.",
+ "cost": 0,
+ "tasks": [
+  {
+   "status_code": 20000,
+   "status_message": "Ok.",
+   "cost": 0,
+   "result": [
+    {
+     "targets": {
+      "1": "dataforseo.com",
+      "2": "seopanel.org"
+     },
+     "total_count": 168,
+     "items_count": 10,
+     "items": [
+      {
+       "domain_intersection": {
+        "1": {
+         "type": "backlinks_domain_intersection",
+         "target": "seokicks.de",
+         "rank": 0,
+         "backlinks": 185,
+         "first_seen": "2025-05-30 18:41:57 +00:00",
+         "lost_date": null,
+         "backlinks_spam_score": 16,
+         "broken_backlinks": 0,
+         "broken_pages": 0,
+         "referring_domains": 1,
+         "referring_domains_nofollow": 1,
+         "referring_main_domains": 1,
+         "referring_main_domains_nofollow": 1,
+         "referring_ips": 1,
+         "referring_subnets": 1,
+         "referring_pages": 185,
+         "referring_pages_nofollow": 185,
+         "referring_links_tld": {
+          "de": 185
+         },
+         "referring_links_types": {
+          "anchor": 185
+         },
+         "referring_links_attributes": {
+          "nofollow": 185
+         },
+         "referring_links_platform_types": {
+          "unknown": 185
+         },
+         "referring_links_semantic_locations": {
+          "": 185
+         },
+         "referring_links_countries": null
+        },
+        "2": {
+         "type": "backlinks_domain_intersection",
+         "target": "seokicks.de",
+         "rank": 0,
+         "backlinks": 29,
+         "first_seen": "2023-01-14 05:47:06 +00:00",
+         "lost_date": null,
+         "backlinks_spam_score": 17,
+         "broken_backlinks": 0,
+         "broken_pages": 0,
+         "referring_domains": 1,
+         "referring_domains_nofollow": 1,
+         "referring_main_domains": 1,
+         "referring_main_domains_nofollow": 1,
+         "referring_ips": 1,
+         "referring_subnets": 1,
+         "referring_pages": 27,
+         "referring_pages_nofollow": 27,
+         "referring_links_tld": {
+          "de": 27
+         },
+         "referring_links_types": {
+          "anchor": 27
+         },
+         "referring_links_attributes": {
+          "nofollow": 27
+         },
+         "referring_links_platform_types": {
+          "unknown": 27
+         },
+         "referring_links_semantic_locations": {
+          "": 27
+         },
+         "referring_links_countries": null
+        }
+       },
+       "summary": {
+        "intersections_count": 2
+       }
+      },
+      {
+       "domain_intersection": {
+        "1": {
+         "type": "backlinks_domain_intersection",
+         "target": "github.com",
+         "rank": 0,
+         "backlinks": 118,
+         "first_seen": "2023-08-26 09:00:12 +00:00",
+         "lost_date": null,
+         "backlinks_spam_score": 6,
+         "broken_backlinks": 7,
+         "broken_pages": 4,
+         "referring_domains": 1,
+         "referring_domains_nofollow": 0,
+         "referring_main_domains": 1,
+         "referring_main_domains_nofollow": 0,
+         "referring_ips": 2,
+         "referring_subnets": 1,
+         "referring_pages": 107,
+         "referring_pages_nofollow": 106,
+         "referring_links_tld": {
+          "com": 107
+         },
+         "referring_links_types": {
+          "anchor": 106,
+          "image": 1
+         },
+         "referring_links_attributes": {
+          "nofollow": 106,
+          "noopener": 3,
+          "noreferrer": 3
+         },
+         "referring_links_platform_types": {
+          "unknown": 107
+         },
+         "referring_links_semantic_locations": {
+          "article": 102,
+          "main": 4,
+          "header": 1
+         },
+         "referring_links_countries": null
+        },
+        "2": {
+         "type": "backlinks_domain_intersection",
+         "target": "github.com",
+         "rank": 0,
+         "backlinks": 13,
+         "first_seen": "2024-04-26 16:26:51 +00:00",
+         "lost_date": null,
+         "backlinks_spam_score": 6,
+         "broken_backlinks": 0,
+         "broken_pages": 0,
+         "referring_domains": 2,
+         "referring_domains_nofollow": 2,
+         "referring_main_domains": 1,
+         "referring_main_domains_nofollow": 1,
+         "referring_ips": 2,
+         "referring_subnets": 1,
+         "referring_pages": 13,
+         "referring_pages_nofollow": 13,
+         "referring_links_tld": {
+          "com": 13
+         },
+         "referring_links_types": {
+          "anchor": 13
+         },
+         "referring_links_attributes": {
+          "nofollow": 13,
+          "noopener": 2,
+          "noreferrer": 2
+         },
+         "referring_links_platform_types": {
+          "unknown": 13
+         },
+         "referring_links_semantic_locations": {
+          "article": 11,
+          "main": 2
+         },
+         "referring_links_countries": null
+        }
+       },
+       "summary": {
+        "intersections_count": 2
+       }
+      },
+      {
+       "domain_intersection": {
+        "1": {
+         "type": "backlinks_domain_intersection",
+         "target": "saashub.com",
+         "rank": 3,
+         "backlinks": 55,
+         "first_seen": "2025-05-03 14:38:28 +00:00",
+         "lost_date": null,
+         "backlinks_spam_score": 0,
+         "broken_backlinks": 0,
+         "broken_pages": 0,
+         "referring_domains": 1,
+         "referring_domains_nofollow": 0,
+         "referring_main_domains": 1,
+         "referring_main_domains_nofollow": 0,
+         "referring_ips": 2,
+         "referring_subnets": 2,
+         "referring_pages": 54,
+         "referring_pages_nofollow": 52,
+         "referring_links_tld": {
+          "com": 54
+         },
+         "referring_links_types": {
+          "anchor": 52,
+          "image": 2
+         },
+         "referring_links_attributes": {
+          "nofollow": 52,
+          "noopener": 1,
+          "noreferrer": 1
+         },
+         "referring_links_platform_types": {
+          "unknown": 54
+         },
+         "referring_links_semantic_locations": {
+          "main": 41,
+          "section": 9,
+          "": 2,
+          "aside": 2
+         },
+         "referring_links_countries": null
+        },
+        "2": {
+         "type": "backlinks_domain_intersection",
+         "target": "saashub.com",
+         "rank": 0,
+         "backlinks": 7,
+         "first_seen": "2025-09-28 08:08:16 +00:00",
+         "lost_date": null,
+         "backlinks_spam_score": 0,
+         "broken_backlinks": 0,
+         "broken_pages": 0,
+         "referring_domains": 1,
+         "referring_domains_nofollow": 0,
+         "referring_main_domains": 1,
+         "referring_main_domains_nofollow": 0,
+         "referring_ips": 2,
+         "referring_subnets": 2,
+         "referring_pages": 7,
+         "referring_pages_nofollow": 6,
+         "referring_links_tld": {
+          "com": 7
+         },
+         "referring_links_types": {
+          "anchor": 7
+         },
+         "referring_links_attributes": {
+          "nofollow": 6
+         },
+         "referring_links_platform_types": {
+          "unknown": 7
+         },
+         "referring_links_semantic_locations": {
+          "section": 7
+         },
+         "referring_links_countries": null
+        }
+       },
+       "summary": {
+        "intersections_count": 2
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

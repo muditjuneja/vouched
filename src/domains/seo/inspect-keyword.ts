@@ -18,6 +18,7 @@ interface KeywordOverviewResult {
 }
 interface SerpItem {
   type?: string;
+  rank_group?: number;
   rank_absolute?: number;
   domain?: string;
   title?: string;
@@ -59,15 +60,15 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
         .addFact({
           type: "serp.result",
           subject: [keywordId, pageId],
-          data: { position: item.rank_absolute ?? null, domain: item.domain, url: item.url, title: item.title ?? null },
-          provenance: provenance("live_serp", "serp.google.organic.live.advanced", { observedAt })
+          data: { position: item.rank_group ?? null, domain: item.domain, url: item.url, title: item.title ?? null },
+          provenance: provenance("live_serp", "serp.google.organic", { observedAt })
         });
     } else if (item.type) {
       builder.addFact({
         type: "serp.feature",
         subject: [keywordId],
-        data: { feature_type: item.type, raw: item },
-        provenance: provenance("live_serp", "serp.google.organic.live.advanced", {
+        data: { feature_type: item.type, slot_on_page: item.rank_absolute ?? null },
+        provenance: provenance("live_serp", "serp.google.organic", {
           observedAt,
           confidence: 0.6
         })

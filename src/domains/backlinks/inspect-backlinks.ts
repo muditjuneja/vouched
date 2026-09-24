@@ -131,7 +131,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   }
 
   return builder
-    .setCoverage({ returned, total: null, as_of: observedAt.toISOString(), scope_note: `view=${view}, limit=${limit}` })
+    .setCoverage({ returned, total: null, as_of: observedAt.toISOString(), scope_note: view === "authority" ? "view=authority" : `view=${view}, limit=${limit}` })
     .build();
 }
 

@@ -13,16 +13,16 @@ const inputSchema = z.object({
   competitors: z.array(z.string()).min(1).max(5).describe("Competitor domains to find link gaps against")
 });
 
-interface DomainLinkInfo {
-  backlinks?: number;
-  dofollow?: number;
-}
-interface IntersectionResult {
-  domain?: string;
+/** One referring domain's links to the competitor (`domain_intersection["1"]`; `target` is the referring domain). */
+interface LinkingDomain {
+  target?: string;
   rank?: number;
-  spam_score?: number;
-  first_domain_backlinks_info?: DomainLinkInfo | null;
-  second_domain_backlinks_info?: DomainLinkInfo | null;
+  backlinks?: number;
+  backlinks_spam_score?: number;
+  first_seen?: string;
+}
+interface IntersectionItem {
+  domain_intersection?: Record<string, LinkingDomain | undefined>;
 }
 
 async function handler(args: z.infer<typeof inputSchema>, env: Env) {
@@ -37,46 +37,41 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   let returned = 0;
   let spamFiltered = 0;
 
-  // One domain_intersection call per competitor, same pairwise limitation
-  // as compare_keyword_coverage (see that tool's comment).
+  // One call per competitor: sites linking to that competitor, excluding
+  // any that already link to the domain.
   const perCompetitor = await Promise.all(
     args.competitors.map((competitor) =>
-      backlinksDomainIntersection(env, "compare_backlink_gap", args.domain, competitor, 100).then(
-        (results) => ({ competitor, results: results as IntersectionResult[] })
-      )
+      backlinksDomainIntersection(env, "compare_backlink_gap", competitor, args.domain, 100).then((items) => ({
+        competitor,
+        items: items as IntersectionItem[]
+      }))
     )
   );
 
-  for (const { competitor, results } of perCompetitor) {
+  for (const { competitor, items } of perCompetitor) {
     const competitorId = domainEntityId(competitor);
     builder.addEntity({ id: competitorId, kind: "domain", label: competitor });
 
-    for (const item of results) {
-      if (!item.domain) continue;
-      if (item.spam_score !== undefined && item.spam_score > SPAM_SCORE_THRESHOLD) {
+    for (const item of items) {
+      const link = item.domain_intersection?.["1"];
+      if (!link?.target) continue;
+      if (link.backlinks_spam_score !== undefined && link.backlinks_spam_score > SPAM_SCORE_THRESHOLD) {
         spamFiltered++;
         continue;
       }
-
-      const weHaveLink = item.first_domain_backlinks_info != null;
-      const theyHaveLink = item.second_domain_backlinks_info != null;
-      if (weHaveLink && theyHaveLink) continue; // not a gap either direction
-
-      const linkInfo = theyHaveLink ? item.second_domain_backlinks_info : item.first_domain_backlinks_info;
       returned++;
-
+      const referringId = domainEntityId(link.target);
+      builder.addEntity({ id: referringId, kind: "domain", label: link.target });
       builder.addFact({
         type: "backlinks.link_gap",
-        subject: [domainId, competitorId, domainEntityId(item.domain)],
+        subject: [domainId, competitorId, referringId],
         data: {
-          referring_domain: item.domain,
-          referring_domain_rank: item.rank ?? null,
-          spam_score: item.spam_score ?? null,
-          gap_direction: theyHaveLink ? "competitor_only" : "you_only",
-          competitor_domain: competitor,
-          // Heuristic, not a certified signal: any dofollow link counted
-          // suggests a naturally earned link rather than a paid/UGC one.
-          likely_earned: (linkInfo?.dofollow ?? 0) > 0
+          referring_domain: link.target,
+          referring_domain_rank: link.rank ?? null,
+          backlinks_to_competitor: link.backlinks ?? null,
+          spam_score: link.backlinks_spam_score ?? null,
+          first_seen: link.first_seen ?? null,
+          competitor_domain: competitor
         },
         provenance: provenance("backlink_index", "backlinks.domain_intersection", { observedAt })
       });
@@ -88,7 +83,9 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
       returned,
       total: null,
       as_of: observedAt.toISOString(),
-      scope_note: spamFiltered > 0 ? `${spamFiltered} referring domain(s) excluded above spam_score ${SPAM_SCORE_THRESHOLD}` : null
+      scope_note: `sites linking to each competitor but not to ${args.domain}, up to 100 per competitor${
+        spamFiltered > 0 ? `; ${spamFiltered} excluded above spam score ${SPAM_SCORE_THRESHOLD}` : ""
+      }`
     })
     .build();
 }

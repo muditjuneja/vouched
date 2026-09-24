@@ -1,0 +1,79 @@
+{
+ "status_code": 20000,
+ "status_message": "Ok.",
+ "cost": 0,
+ "tasks": [
+  {
+   "status_code": 20000,
+   "status_message": "Ok.",
+   "cost": 0,
+   "result": [
+    {
+     "se_type": "google",
+     "target": "dataforseo.com",
+     "location_code": 2840,
+     "language_code": "en",
+     "total_count": 1,
+     "items_count": 1,
+     "items": [
+      {
+       "se_type": "google",
+       "location_code": 2840,
+       "language_code": "en",
+       "metrics": {
+        "organic": {
+         "pos_1": 39,
+         "pos_2_3": 157,
+         "pos_4_10": 1532,
+         "pos_11_20": 2787,
+         "pos_21_30": 2405,
+         "pos_31_40": 1771,
+         "pos_41_50": 1302,
+         "pos_51_60": 919,
+         "pos_61_70": 569,
+         "pos_71_80": 274,
+         "pos_81_90": 129,
+         "pos_91_100": 41,
+         "etv": 32190.367695869878,
+         "count": 11925,
+         "estimated_paid_traffic_cost": 194100.28520551155,
+         "is_new": 9859,
+         "is_up": 1226,
+         "is_down": 656,
+         "is_lost": 1769,
+         "clickstream_etv": null,
+         "clickstream_gender_distribution": null,
+         "clickstream_age_distribution": null
+        },
+        "paid": {
+         "pos_1": 0,
+         "pos_2_3": 0,
+         "pos_4_10": 0,
+         "pos_11_20": 0,
+         "pos_21_30": 0,
+         "pos_31_40": 0,
+         "pos_41_50": 0,
+         "pos_51_60": 0,
+         "pos_61_70": 0,
+         "pos_71_80": 0,
+         "pos_81_90": 0,
+         "pos_91_100": 0,
+         "etv": 0,
+         "count": 0,
+         "estimated_paid_traffic_cost": 0,
+         "is_new": 0,
+         "is_up": 0,
+         "is_down": 0,
+         "is_lost": 0,
+         "clickstream_etv": null,
+         "clickstream_gender_distribution": null,
+         "clickstream_age_distribution": null
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

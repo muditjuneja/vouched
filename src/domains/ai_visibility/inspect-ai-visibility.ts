@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { searchMentions } from "../../clients/dataforseo/endpoints/llm-mentions";
+import { domainMentionMetrics } from "../../clients/dataforseo/endpoints/llm-mentions";
 import { envelope } from "../../envelope/builder";
 import { domainEntityId } from "../../envelope/entities";
 import { provenance } from "../../envelope/provenance";
@@ -12,52 +12,48 @@ const inputSchema = z.object({
   platform: z.enum(["google", "chat_gpt"]).optional()
 });
 
-interface MentionResult {
-  target?: string;
-  mentions?: number;
-  share_of_voice?: number;
-}
-
 async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   const platform = args.platform ?? "google";
-  const targets = [args.domain, ...(args.competitors ?? [])];
+  const domains = [...new Set([args.domain, ...(args.competitors ?? [])])];
 
-  // Multi-target in one call, per the confirmed API description, no
-  // client-side N-way aggregation needed here (unlike the pairwise
-  // seo/backlinks domain_intersection tools).
-  const results = (await searchMentions(
-    env,
-    "inspect_ai_visibility",
-    targets,
-    platform
-  )) as MentionResult[];
+  // One mention-metrics call per domain; share of voice is each domain's
+  // mentions over the total across the domains compared.
+  const metrics = await Promise.all(domains.map((domain) => domainMentionMetrics(env, "inspect_ai_visibility", domain, platform)));
   const observedAt = new Date();
+  const totals = metrics.map((m) => ({
+    mentions: (m?.platform ?? []).reduce((sum, row) => sum + (row.mentions ?? 0), 0),
+    aiSearchVolume: (m?.platform ?? []).reduce((sum, row) => sum + (row.ai_search_volume ?? 0), 0),
+    topSources: (m?.sources_domain ?? []).slice(0, 5).map((row) => ({ domain: String(row.key), mentions: row.mentions ?? null }))
+  }));
+  const allMentions = totals.reduce((sum, t) => sum + t.mentions, 0);
 
   const builder = envelope("ai_visibility", { domain: args.domain, competitors: args.competitors ?? [], platform });
-
-  for (const item of results) {
-    if (!item.target) continue;
-    const domainId = domainEntityId(item.target);
-    builder.addEntity({ id: domainId, kind: "domain", label: item.target });
+  domains.forEach((domain, i) => {
+    const domainId = domainEntityId(domain);
+    const t = totals[i]!;
+    builder.addEntity({ id: domainId, kind: "domain", label: domain });
     builder.addFact({
       type: "ai_visibility.brand_mentions",
       subject: [domainId],
       data: {
-        domain: item.target,
-        is_you: item.target === args.domain,
-        mentions: item.mentions ?? null,
-        share_of_voice: item.share_of_voice ?? null,
-        raw: item
+        domain,
+        is_you: domain === args.domain,
+        mentions: t.mentions,
+        ai_search_volume: t.aiSearchVolume,
+        share_of_voice: allMentions > 0 ? Math.round((t.mentions / allMentions) * 1000) / 1000 : null,
+        top_cited_sources: t.topSources
       },
-      provenance: provenance("ai_answer", "ai_optimization.llm_mentions.search_mentions", {
-        observedAt,
-        confidence: 0.5
-      })
+      provenance: provenance("ai_answer", "llm_mentions.target_metrics", { observedAt, confidence: 0.5 })
     });
-  }
+  });
 
   return builder
-    .setCoverage({ returned: results.length, total: targets.length, as_of: observedAt.toISOString(), scope_note: null })
+    .setCoverage({
+      returned: domains.length,
+      total: domains.length,
+      as_of: observedAt.toISOString(),
+      scope_note: `mentions in ${platform === "google" ? "Google AI Overviews" : "ChatGPT"} answers; share of voice is relative to the domains compared`
+    })
     .build();
 }
 

@@ -11,6 +11,9 @@ DATAFORSEO_LOGIN=
 DATAFORSEO_PASSWORD=
 # Optional soft cap; the cost tracker warns past this, it does not hard-stop.
 DATAFORSEO_DAILY_BUDGET_USD=
+# Development: https://sandbox.dataforseo.com makes every call free, with
+# dummy data in the real response shape. Leave unset in production.
+DATAFORSEO_BASE_URL=
 
 # Google OAuth (unlocks the gsc/analytics tools, and the dashboard's
 # Search Console/Analytics property picker when adding a website). Create

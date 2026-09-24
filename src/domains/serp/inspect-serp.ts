@@ -1,18 +1,19 @@
 import { z } from "zod";
 import { organicSerp } from "../../clients/dataforseo/endpoints/serp";
 import { envelope } from "../../envelope/builder";
-import { domainEntityId, pageEntityId } from "../../envelope/entities";
+import { domainEntityId, keywordEntityId, pageEntityId } from "../../envelope/entities";
 import { provenance } from "../../envelope/provenance";
 import type { Env } from "../../types/env";
 import type { ToolModule } from "../types";
 
 const inputSchema = z.object({
   keyword: z.string().describe("The search query to snapshot"),
-  depth: z.number().int().min(1).max(100).optional().describe("How many organic results deep (default 20)")
+  depth: z.number().int().min(1).max(100).optional().describe("How many results to fetch, counting SERP features as well as organic results (default 20)")
 });
 
 interface SerpItem {
   type?: string;
+  rank_group?: number;
   rank_absolute?: number;
   domain?: string;
   title?: string;
@@ -35,7 +36,12 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   const items = results[0]?.items ?? [];
   const observedAt = new Date();
 
-  const builder = envelope("serp", { keyword: args.keyword, items_count: items.length });
+  const keywordId = keywordEntityId(args.keyword);
+  const builder = envelope("serp", { keyword: args.keyword, items_count: items.length }).addEntity({
+    id: keywordId,
+    kind: "keyword",
+    label: args.keyword
+  });
 
   for (const item of items) {
     if (item.type === "organic" && item.url && item.domain) {
@@ -45,14 +51,14 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
         .addEntity({ id: pageId, kind: "page", label: item.url })
         .addFact({
           type: "serp.result",
-          subject: [pageId],
+          subject: [keywordId, pageId],
           data: {
-            position: item.rank_absolute ?? null,
+            position: item.rank_group ?? null,
             domain: item.domain,
             url: item.url,
             title: item.title ?? null
           },
-          provenance: provenance("live_serp", "serp.google.organic.live.advanced", { observedAt })
+          provenance: provenance("live_serp", "serp.google.organic", { observedAt })
         });
     } else if (item.type) {
       // Non-organic SERP furniture: featured snippet, People Also Ask, AI
@@ -60,9 +66,9 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
       // an organic ranking, hence the lower confidence.
       builder.addFact({
         type: "serp.feature",
-        subject: [],
-        data: { feature_type: item.type, raw: item },
-        provenance: provenance("live_serp", "serp.google.organic.live.advanced", {
+        subject: [keywordId],
+        data: { feature_type: item.type, slot_on_page: item.rank_absolute ?? null },
+        provenance: provenance("live_serp", "serp.google.organic", {
           observedAt,
           confidence: 0.6
         })
@@ -71,7 +77,12 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   }
 
   return builder
-    .setCoverage({ returned: items.length, total: items.length, as_of: observedAt.toISOString(), scope_note: null })
+    .setCoverage({
+      returned: items.length,
+      total: items.length,
+      as_of: observedAt.toISOString(),
+      scope_note: "depth counts every result on the page, SERP features included; organic positions exclude features"
+    })
     .build();
 }
 

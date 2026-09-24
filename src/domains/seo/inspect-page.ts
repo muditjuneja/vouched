@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { rankedKeywords } from "../../clients/dataforseo/endpoints/labs";
+import { rankedKeywordsPage } from "../../clients/dataforseo/endpoints/labs";
 import { envelope } from "../../envelope/builder";
 import { domainEntityId, keywordEntityId, pageEntityId } from "../../envelope/entities";
 import { provenance } from "../../envelope/provenance";
@@ -13,7 +13,7 @@ const inputSchema = z.object({
 interface RankedKeywordResult {
   keyword_data?: { keyword?: string; keyword_info?: { search_volume?: number } };
   ranked_serp_element?: {
-    serp_item?: { relative_url?: string; rank_absolute?: number; etv?: number };
+    serp_item?: { relative_url?: string; rank_group?: number; etv?: number };
   };
 }
 
@@ -21,16 +21,12 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   const url = new URL(args.url);
   const relativeUrl = url.pathname || "/";
 
-  // NOTE: this `filters` shape (targeting ranked_serp_element.serp_item's
-  // relative_url) follows DataForSEO's documented ranked_keywords filter
-  // fields but (per client.ts's caveat) hasn't been confirmed against a
-  // live call. If it's wrong, DataForSEO returns an empty/unfiltered
-  // result rather than an error, so treat a suspiciously large or zero
-  // result count here as a signal to re-check this filter at build time.
-  const results = (await rankedKeywords(env, "inspect_page", url.hostname, {
+  // Keywords the page ranks for: the host's ranked keywords, filtered to this
+  // page's path. total_count is how many rank in all; up to 100 are listed.
+  const { items: results, totalCount } = await rankedKeywordsPage(env, "inspect_page", url.hostname, {
     limit: 100,
-    filters: [["ranked_serp_element.serp_item.relative_url", "=", relativeUrl]]
-  })) as RankedKeywordResult[];
+    filters: ["ranked_serp_element.serp_item.relative_url", "=", relativeUrl]
+  });
 
   const observedAt = new Date();
   const pageId = pageEntityId(args.url);
@@ -38,7 +34,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
     .addEntity({ id: pageId, kind: "page", label: args.url })
     .addEntity({ id: domainEntityId(url.hostname), kind: "domain", label: url.hostname });
 
-  for (const item of results) {
+  for (const item of results as RankedKeywordResult[]) {
     const keyword = item.keyword_data?.keyword;
     if (!keyword) continue;
     const keywordId = keywordEntityId(keyword);
@@ -48,24 +44,23 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
       subject: [pageId, keywordId],
       data: {
         keyword,
-        position: item.ranked_serp_element?.serp_item?.rank_absolute ?? null,
+        position: item.ranked_serp_element?.serp_item?.rank_group ?? null,
         search_volume: item.keyword_data?.keyword_info?.search_volume ?? null,
-        estimated_traffic: item.ranked_serp_element?.serp_item?.etv ?? null,
-        raw: item
+        estimated_traffic: item.ranked_serp_element?.serp_item?.etv ?? null
       },
-      provenance: provenance("search_index", "dataforseo_labs.ranked_keywords", { observedAt })
+      provenance: provenance("search_index", "labs.ranked_keywords", { observedAt })
     });
   }
 
   builder.addFact({
     type: "seo.top_page",
     subject: [pageId],
-    data: { url: args.url, ranked_keyword_count: results.length },
-    provenance: provenance("search_index", "dataforseo_labs.ranked_keywords", { observedAt })
+    data: { url: args.url, ranked_keyword_count: totalCount ?? results.length },
+    provenance: provenance("search_index", "labs.ranked_keywords", { observedAt })
   });
 
   return builder
-    .setCoverage({ returned: results.length, total: null, as_of: observedAt.toISOString(), scope_note: null })
+    .setCoverage({ returned: results.length, total: totalCount, as_of: observedAt.toISOString(), scope_note: null })
     .build();
 }
 

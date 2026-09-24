@@ -1,0 +1,516 @@
+{
+ "status_code": 20000,
+ "status_message": "Ok.",
+ "cost": 0,
+ "tasks": [
+  {
+   "status_code": 20000,
+   "status_message": "Ok.",
+   "cost": 0,
+   "result": [
+    {
+     "se_type": "google",
+     "target1": "dataforseo.com",
+     "target2": "seopanel.org",
+     "location_code": 2840,
+     "language_code": "en",
+     "total_count": 2,
+     "items_count": 2,
+     "items": [
+      {
+       "se_type": "google",
+       "keyword_data": {
+        "se_type": "google",
+        "keyword": "seo open source",
+        "location_code": 2840,
+        "language_code": "en",
+        "keyword_info": {
+         "se_type": "google",
+         "last_updated_time": "2026-09-14 23:27:57 +00:00",
+         "competition": 0.28999999165534973,
+         "competition_level": "LOW",
+         "cpc": 30.8700008392334,
+         "search_volume": 110,
+         "low_top_of_page_bid": 3.8499999046325684,
+         "high_top_of_page_bid": 14.390000343322754,
+         "categories": [
+          10004,
+          10276,
+          11088
+         ],
+         "monthly_searches": [
+          {
+           "year": 2026,
+           "month": 8,
+           "search_volume": 70
+          },
+          {
+           "year": 2026,
+           "month": 7,
+           "search_volume": 40
+          },
+          {
+           "year": 2026,
+           "month": 6,
+           "search_volume": 20
+          }
+         ],
+         "search_volume_trend": {
+          "monthly": 75,
+          "quarterly": 250,
+          "yearly": 75
+         }
+        },
+        "keyword_info_normalized_with_bing": {
+         "last_updated_time": "2026-09-09 11:59:07 +00:00",
+         "search_volume": 10,
+         "is_normalized": true,
+         "monthly_searches": [
+          {
+           "year": 2026,
+           "month": 7,
+           "search_volume": 4
+          },
+          {
+           "year": 2026,
+           "month": 6,
+           "search_volume": 2
+          },
+          {
+           "year": 2026,
+           "month": 5,
+           "search_volume": 3
+          }
+         ]
+        },
+        "keyword_info_normalized_with_clickstream": {
+         "last_updated_time": "2026-09-09 11:59:07 +00:00",
+         "search_volume": 0,
+         "is_normalized": true,
+         "monthly_searches": [
+          {
+           "year": 2026,
+           "month": 7,
+           "search_volume": 0
+          },
+          {
+           "year": 2026,
+           "month": 6,
+           "search_volume": 0
+          },
+          {
+           "year": 2026,
+           "month": 5,
+           "search_volume": 0
+          }
+         ]
+        },
+        "clickstream_keyword_info": {
+         "search_volume": 0,
+         "last_updated_time": "2026-09-04 03:14:21 +00:00",
+         "gender_distribution": {
+          "female": null,
+          "male": null
+         },
+         "age_distribution": {
+          "18-24": null,
+          "25-34": null,
+          "35-44": null,
+          "45-54": null,
+          "55-64": null
+         },
+         "monthly_searches": [
+          {
+           "year": 2026,
+           "month": 8,
+           "search_volume": 0
+          },
+          {
+           "year": 2026,
+           "month": 7,
+           "search_volume": 0
+          },
+          {
+           "year": 2026,
+           "month": 6,
+           "search_volume": 0
+          }
+         ]
+        },
+        "keyword_properties": {
+         "se_type": "google",
+         "core_keyword": "open source seo",
+         "synonym_clustering_algorithm": "text_processing",
+         "keyword_difficulty": 17,
+         "detected_language": "en",
+         "is_another_language": false
+        },
+        "serp_info": {
+         "se_type": "google",
+         "check_url": "https://www.google.com/search?q=seo%20open%20source&hl=en&gl=US&ie=UTF-8&uule=w+CAIQIFISCQs2MuSEtepUEUK33kOSuTsc",
+         "serp_item_types": [
+          "ai_overview",
+          "organic",
+          "related_searches"
+         ],
+         "se_results_count": 120,
+         "last_updated_time": "2026-07-12 15:55:00 +00:00",
+         "previous_updated_time": "2026-05-28 04:28:36 +00:00"
+        },
+        "avg_backlinks_info": {
+         "se_type": "google",
+         "backlinks": 162.60000610351562,
+         "dofollow": 104.19999694824219,
+         "referring_pages": 141.8000030517578,
+         "referring_domains": 54,
+         "referring_main_domains": 49.099998474121094,
+         "rank": 123.5,
+         "main_domain_rank": 475.29998779296875,
+         "last_updated_time": "2026-07-12 15:55:01 +00:00"
+        },
+        "search_intent_info": {
+         "se_type": "google",
+         "main_intent": "commercial",
+         "foreign_intent": null,
+         "last_updated_time": "2026-04-29 21:17:30 +00:00"
+        }
+       },
+       "first_domain_serp_element": {
+        "se_type": "google",
+        "type": "organic",
+        "rank_group": 44,
+        "rank_absolute": 49,
+        "position": "left",
+        "xpath": "/html[1]/body[1]/div[3]/div[1]/div[12]/div[1]/div[2]/div[2]/div[1]/div[1]/div[5]/div[1]/div[1]",
+        "domain": "dataforseo.com",
+        "title": "DataForSEO: Powerful API Stack For Data-Driven SEO Tools",
+        "url": "https://dataforseo.com/",
+        "breadcrumb": "https://dataforseo.com",
+        "website_name": "DataForSEO",
+        "is_image": false,
+        "is_video": false,
+        "is_featured_snippet": false,
+        "is_malicious": false,
+        "description": "DataForSEO Databases. Get full access to the industry's biggest proprietary sources of current and historical SEO data. databases-icon. Read more",
+        "pre_snippet": null,
+        "extended_snippet": null,
+        "amp_version": false,
+        "rating": null,
+        "highlighted": [
+         "DataForSEO",
+         "sources",
+         "SEO"
+        ],
+        "links": null,
+        "about_this_result": null,
+        "main_domain": "dataforseo.com",
+        "relative_url": "/",
+        "etv": 0.23100000619888306,
+        "estimated_paid_traffic_cost": 7.130970001220703,
+        "clickstream_etv": 0,
+        "rank_changes": {
+         "previous_rank_absolute": null,
+         "is_new": true,
+         "is_up": false,
+         "is_down": false
+        },
+        "backlinks_info": {
+         "referring_domains": 1028,
+         "referring_main_domains": 978,
+         "referring_pages": 36176,
+         "dofollow": 35179,
+         "backlinks": 36659,
+         "time_update": "2026-09-12 12:50:15 +00:00"
+        },
+        "rank_info": {
+         "page_rank": 448,
+         "main_domain_rank": 324
+        }
+       },
+       "second_domain_serp_element": {
+        "se_type": "google",
+        "type": "organic",
+        "rank_group": 9,
+        "rank_absolute": 10,
+        "position": "left",
+        "xpath": "/html[1]/body[1]/div[3]/div[1]/div[12]/div[2]/div[1]/div[2]/div[1]/div[1]/div[18]/div[1]/div[1]",
+        "domain": "www.seopanel.org",
+        "title": "Free SEO Software | SMO Tools | SME Tools | SEO Panel",
+        "url": "https://www.seopanel.org/",
+        "breadcrumb": "https://www.seopanel.org",
+        "website_name": "Seo Panel",
+        "is_image": false,
+        "is_video": false,
+        "is_featured_snippet": false,
+        "is_malicious": false,
+        "description": "Take control of your search engine rankings with our award-winning, 100% free and open source SEO management platform. Monitor keywords, track rankings, analyze ... Read more",
+        "pre_snippet": null,
+        "extended_snippet": null,
+        "amp_version": false,
+        "rating": null,
+        "highlighted": [
+         "100% free and open source SEO management platform"
+        ],
+        "links": null,
+        "about_this_result": null,
+        "main_domain": "seopanel.org",
+        "relative_url": "/",
+        "etv": 1.649999976158142,
+        "estimated_paid_traffic_cost": 50.93550109863281,
+        "clickstream_etv": 0,
+        "rank_changes": {
+         "previous_rank_absolute": 6,
+         "is_new": false,
+         "is_up": false,
+         "is_down": true
+        },
+        "backlinks_info": {
+         "referring_domains": 405,
+         "referring_main_domains": 377,
+         "referring_pages": 1137,
+         "dofollow": 842,
+         "backlinks": 1257,
+         "time_update": "2026-09-12 12:04:41 +00:00"
+        },
+        "rank_info": {
+         "page_rank": 329,
+         "main_domain_rank": 297
+        }
+       }
+      },
+      {
+       "se_type": "google",
+       "keyword_data": {
+        "se_type": "google",
+        "keyword": "source seo",
+        "location_code": 2840,
+        "language_code": "en",
+        "keyword_info": {
+         "se_type": "google",
+         "last_updated_time": "2026-09-16 00:46:34 +00:00",
+         "competition": 0.3100000023841858,
+         "competition_level": "LOW",
+         "cpc": null,
+         "search_volume": 90,
+         "low_top_of_page_bid": null,
+         "high_top_of_page_bid": null,
+         "categories": [
+          10004,
+          10276,
+          11088
+         ],
+         "monthly_searches": [
+          {
+           "year": 2026,
+           "month": 8,
+           "search_volume": 10
+          },
+          {
+           "year": 2026,
+           "month": 7,
+           "search_volume": 10
+          },
+          {
+           "year": 2026,
+           "month": 6,
+           "search_volume": 10
+          }
+         ],
+         "search_volume_trend": {
+          "monthly": 0,
+          "quarterly": 0,
+          "yearly": -86
+         }
+        },
+        "keyword_info_normalized_with_bing": {
+         "last_updated_time": "2026-09-10 21:18:29 +00:00",
+         "search_volume": 45,
+         "is_normalized": true,
+         "monthly_searches": [
+          {
+           "year": 2026,
+           "month": 7,
+           "search_volume": 5
+          },
+          {
+           "year": 2026,
+           "month": 6,
+           "search_volume": 5
+          },
+          {
+           "year": 2026,
+           "month": 5,
+           "search_volume": 5
+          }
+         ]
+        },
+        "keyword_info_normalized_with_clickstream": {
+         "last_updated_time": "2026-09-10 21:18:29 +00:00",
+         "search_volume": 45,
+         "is_normalized": true,
+         "monthly_searches": [
+          {
+           "year": 2026,
+           "month": 7,
+           "search_volume": 5
+          },
+          {
+           "year": 2026,
+           "month": 6,
+           "search_volume": 5
+          },
+          {
+           "year": 2026,
+           "month": 5,
+           "search_volume": 5
+          }
+         ]
+        },
+        "clickstream_keyword_info": null,
+        "keyword_properties": {
+         "se_type": "google",
+         "core_keyword": null,
+         "synonym_clustering_algorithm": "text_processing",
+         "keyword_difficulty": 100,
+         "detected_language": "en",
+         "is_another_language": false
+        },
+        "serp_info": {
+         "se_type": "google",
+         "check_url": "https://www.google.com/search?q=source%20seo&hl=en&gl=US&ie=UTF-8&uule=w+CAIQIFISCQs2MuSEtepUEUK33kOSuTsc",
+         "serp_item_types": [
+          "ai_overview",
+          "organic",
+          "people_also_ask"
+         ],
+         "se_results_count": 120,
+         "last_updated_time": "2026-07-14 23:14:56 +00:00",
+         "previous_updated_time": "2026-05-02 22:09:40 +00:00"
+        },
+        "avg_backlinks_info": {
+         "se_type": "google",
+         "backlinks": 138659.40625,
+         "dofollow": 28765.69921875,
+         "referring_pages": 130915,
+         "referring_domains": 6131.89990234375,
+         "referring_main_domains": 5770.5,
+         "rank": 366.79998779296875,
+         "main_domain_rank": 515.5999755859375,
+         "last_updated_time": "2026-07-14 23:14:57 +00:00"
+        },
+        "search_intent_info": {
+         "se_type": "google",
+         "main_intent": "commercial",
+         "foreign_intent": [
+          "informational"
+         ],
+         "last_updated_time": "2026-04-29 21:33:05 +00:00"
+        }
+       },
+       "first_domain_serp_element": {
+        "se_type": "google",
+        "type": "organic",
+        "rank_group": 17,
+        "rank_absolute": 20,
+        "position": "left",
+        "xpath": "/html[1]/body[1]/div[3]/div[1]/div[12]/div[1]/div[2]/div[2]/div[1]/div[1]/div[8]/div[1]/div[1]",
+        "domain": "dataforseo.com",
+        "title": "DataForSEO: Powerful API Stack For Data-Driven SEO Tools",
+        "url": "https://dataforseo.com/",
+        "breadcrumb": "https://dataforseo.com",
+        "website_name": "DataForSEO",
+        "is_image": false,
+        "is_video": false,
+        "is_featured_snippet": false,
+        "is_malicious": false,
+        "description": "We provide comprehensive data solutions for SEO and SEM analytics via API. DataForSEO is a trusted partner for 750+ SEO software companies and agencies.",
+        "pre_snippet": null,
+        "extended_snippet": null,
+        "amp_version": false,
+        "rating": null,
+        "highlighted": [
+         "DataForSEO"
+        ],
+        "links": null,
+        "about_this_result": null,
+        "main_domain": "dataforseo.com",
+        "relative_url": "/",
+        "etv": 0.3869999945163727,
+        "estimated_paid_traffic_cost": null,
+        "clickstream_etv": 0,
+        "rank_changes": {
+         "previous_rank_absolute": 30,
+         "is_new": false,
+         "is_up": true,
+         "is_down": false
+        },
+        "backlinks_info": {
+         "referring_domains": 1028,
+         "referring_main_domains": 978,
+         "referring_pages": 36176,
+         "dofollow": 35179,
+         "backlinks": 36659,
+         "time_update": "2026-09-12 12:50:15 +00:00"
+        },
+        "rank_info": {
+         "page_rank": 448,
+         "main_domain_rank": 325
+        }
+       },
+       "second_domain_serp_element": {
+        "se_type": "google",
+        "type": "organic",
+        "rank_group": 14,
+        "rank_absolute": 17,
+        "position": "left",
+        "xpath": "/html[1]/body[1]/div[3]/div[1]/div[12]/div[1]/div[2]/div[2]/div[1]/div[1]/div[5]/div[1]/div[1]",
+        "domain": "www.seopanel.org",
+        "title": "Free SEO Software | SMO Tools | SME Tools | SEO Panel",
+        "url": "https://www.seopanel.org/",
+        "breadcrumb": "https://www.seopanel.org",
+        "website_name": "Seo Panel",
+        "is_image": false,
+        "is_video": false,
+        "is_featured_snippet": false,
+        "is_malicious": false,
+        "description": "Take control of your search engine rankings with our award-winning, 100% free and open source SEO management platform. Monitor keywords, track rankings, analyze ... Read more",
+        "pre_snippet": null,
+        "extended_snippet": null,
+        "amp_version": false,
+        "rating": null,
+        "highlighted": [
+         "100% free and open source SEO management platform"
+        ],
+        "links": null,
+        "about_this_result": null,
+        "main_domain": "seopanel.org",
+        "relative_url": "/",
+        "etv": 0.5040000081062317,
+        "estimated_paid_traffic_cost": null,
+        "clickstream_etv": 0,
+        "rank_changes": {
+         "previous_rank_absolute": 26,
+         "is_new": false,
+         "is_up": true,
+         "is_down": false
+        },
+        "backlinks_info": {
+         "referring_domains": 405,
+         "referring_main_domains": 377,
+         "referring_pages": 1137,
+         "dofollow": 842,
+         "backlinks": 1257,
+         "time_update": "2026-09-12 12:04:41 +00:00"
+        },
+        "rank_info": {
+         "page_rank": 330,
+         "main_domain_rank": 297
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

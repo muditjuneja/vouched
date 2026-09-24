@@ -1,0 +1,404 @@
+{
+ "status_code": 20000,
+ "status_message": "Ok.",
+ "cost": 0,
+ "tasks": [
+  {
+   "status_code": 20000,
+   "status_message": "Ok.",
+   "cost": 0,
+   "result": [
+    {
+     "total_count": 19380,
+     "offset": 0,
+     "items_count": 5,
+     "aggregated_metrics": {
+      "location": [
+       {
+        "key": 2840,
+        "mentions": 131821,
+        "ai_search_volume": 3157024
+       }
+      ],
+      "language": [
+       {
+        "key": "en",
+        "mentions": 131821,
+        "ai_search_volume": 3157024
+       }
+      ],
+      "platform": [
+       {
+        "key": "chat_gpt",
+        "mentions": 131821,
+        "ai_search_volume": 3157024
+       }
+      ],
+      "sources_domain": [
+       {
+        "key": "www.reddit.com",
+        "mentions": 19083,
+        "ai_search_volume": 565869
+       },
+       {
+        "key": "www.caranddriver.com",
+        "mentions": 15349,
+        "ai_search_volume": 437917
+       },
+       {
+        "key": "www.edmunds.com",
+        "mentions": 14607,
+        "ai_search_volume": 336153
+       }
+      ],
+      "search_results_domain": [
+       {
+        "key": "www.edmunds.com",
+        "mentions": 16779,
+        "ai_search_volume": 400062
+       },
+       {
+        "key": "www.kbb.com",
+        "mentions": 13539,
+        "ai_search_volume": 287164
+       },
+       {
+        "key": "www.caranddriver.com",
+        "mentions": 11788,
+        "ai_search_volume": 321096
+       }
+      ],
+      "brand_entities_title": [
+       {
+        "key": "BMW",
+        "mentions": 4087,
+        "ai_search_volume": 64639
+       },
+       {
+        "key": "Mercedes-Benz",
+        "mentions": 1022,
+        "ai_search_volume": 23915
+       },
+       {
+        "key": "Lexus",
+        "mentions": 812,
+        "ai_search_volume": 31196
+       }
+      ],
+      "brand_entities_category": [
+       {
+        "key": "vehicle",
+        "mentions": 14572,
+        "ai_search_volume": 208416
+       },
+       {
+        "key": "brand",
+        "mentions": 8042,
+        "ai_search_volume": 261520
+       },
+       {
+        "key": "company",
+        "mentions": 7648,
+        "ai_search_volume": 237373
+       }
+      ],
+      "total": {
+       "mentions": 131821,
+       "ai_search_volume": 3157024
+      }
+     },
+     "items": [
+      {
+       "domain": "www.reddit.com",
+       "location": [
+        {
+         "key": 2840,
+         "mentions": 5420,
+         "ai_search_volume": 189357
+        }
+       ],
+       "language": [
+        {
+         "key": "en",
+         "mentions": 5420,
+         "ai_search_volume": 189357
+        }
+       ],
+       "platform": [
+        {
+         "key": "chat_gpt",
+         "mentions": 5420,
+         "ai_search_volume": 189357
+        }
+       ],
+       "sources_domain": [
+        {
+         "key": "www.reddit.com",
+         "mentions": 5420,
+         "ai_search_volume": 189357
+        },
+        {
+         "key": "www.edmunds.com",
+         "mentions": 732,
+         "ai_search_volume": 18045
+        },
+        {
+         "key": "www.consumerreports.org",
+         "mentions": 642,
+         "ai_search_volume": 25436
+        }
+       ],
+       "search_results_domain": [
+        {
+         "key": "www.edmunds.com",
+         "mentions": 1257,
+         "ai_search_volume": 37734
+        },
+        {
+         "key": "www.kbb.com",
+         "mentions": 1006,
+         "ai_search_volume": 27485
+        },
+        {
+         "key": "www.consumerreports.org",
+         "mentions": 891,
+         "ai_search_volume": 38977
+        }
+       ],
+       "brand_entities_title": [
+        {
+         "key": "BMW",
+         "mentions": 173,
+         "ai_search_volume": 5435
+        },
+        {
+         "key": "German automaker",
+         "mentions": 49,
+         "ai_search_volume": 2452
+        },
+        {
+         "key": "compact luxury SUV",
+         "mentions": 43,
+         "ai_search_volume": 819
+        }
+       ],
+       "brand_entities_category": [
+        {
+         "key": "vehicle",
+         "mentions": 1102,
+         "ai_search_volume": 19477
+        },
+        {
+         "key": "brand",
+         "mentions": 396,
+         "ai_search_volume": 19411
+        },
+        {
+         "key": "car",
+         "mentions": 305,
+         "ai_search_volume": 3190
+        }
+       ],
+       "total": {
+        "mentions": 5420,
+        "ai_search_volume": 189357
+       }
+      },
+      {
+       "domain": "www.caranddriver.com",
+       "location": [
+        {
+         "key": 2840,
+         "mentions": 4762,
+         "ai_search_volume": 147319
+        }
+       ],
+       "language": [
+        {
+         "key": "en",
+         "mentions": 4762,
+         "ai_search_volume": 147319
+        }
+       ],
+       "platform": [
+        {
+         "key": "chat_gpt",
+         "mentions": 4762,
+         "ai_search_volume": 147319
+        }
+       ],
+       "sources_domain": [
+        {
+         "key": "www.caranddriver.com",
+         "mentions": 4762,
+         "ai_search_volume": 147319
+        },
+        {
+         "key": "www.edmunds.com",
+         "mentions": 1214,
+         "ai_search_volume": 41530
+        },
+        {
+         "key": "www.motortrend.com",
+         "mentions": 852,
+         "ai_search_volume": 23162
+        }
+       ],
+       "search_results_domain": [
+        {
+         "key": "www.caranddriver.com",
+         "mentions": 1801,
+         "ai_search_volume": 64740
+        },
+        {
+         "key": "www.edmunds.com",
+         "mentions": 1470,
+         "ai_search_volume": 52704
+        },
+        {
+         "key": "www.motortrend.com",
+         "mentions": 1427,
+         "ai_search_volume": 46591
+        }
+       ],
+       "brand_entities_title": [
+        {
+         "key": "BMW",
+         "mentions": 118,
+         "ai_search_volume": 4262
+        },
+        {
+         "key": "Mercedes-Benz",
+         "mentions": 81,
+         "ai_search_volume": 2407
+        },
+        {
+         "key": "Lexus",
+         "mentions": 58,
+         "ai_search_volume": 1532
+        }
+       ],
+       "brand_entities_category": [
+        {
+         "key": "vehicle",
+         "mentions": 717,
+         "ai_search_volume": 10856
+        },
+        {
+         "key": "car_model",
+         "mentions": 254,
+         "ai_search_volume": 9832
+        },
+        {
+         "key": "company",
+         "mentions": 247,
+         "ai_search_volume": 8204
+        }
+       ],
+       "total": {
+        "mentions": 4762,
+        "ai_search_volume": 147319
+       }
+      },
+      {
+       "domain": "www.edmunds.com",
+       "location": [
+        {
+         "key": 2840,
+         "mentions": 4539,
+         "ai_search_volume": 116047
+        }
+       ],
+       "language": [
+        {
+         "key": "en",
+         "mentions": 4539,
+         "ai_search_volume": 116047
+        }
+       ],
+       "platform": [
+        {
+         "key": "chat_gpt",
+         "mentions": 4539,
+         "ai_search_volume": 116047
+        }
+       ],
+       "sources_domain": [
+        {
+         "key": "www.edmunds.com",
+         "mentions": 4539,
+         "ai_search_volume": 116047
+        },
+        {
+         "key": "www.kbb.com",
+         "mentions": 1382,
+         "ai_search_volume": 19538
+        },
+        {
+         "key": "www.caranddriver.com",
+         "mentions": 1214,
+         "ai_search_volume": 41530
+        }
+       ],
+       "search_results_domain": [
+        {
+         "key": "www.edmunds.com",
+         "mentions": 2272,
+         "ai_search_volume": 58015
+        },
+        {
+         "key": "www.kbb.com",
+         "mentions": 1784,
+         "ai_search_volume": 39233
+        },
+        {
+         "key": "www.cars.com",
+         "mentions": 1317,
+         "ai_search_volume": 38182
+        }
+       ],
+       "brand_entities_title": [
+        {
+         "key": "BMW",
+         "mentions": 85,
+         "ai_search_volume": 1940
+        },
+        {
+         "key": "Kelley Blue Book",
+         "mentions": 51,
+         "ai_search_volume": 326
+        },
+        {
+         "key": "Edmunds",
+         "mentions": 47,
+         "ai_search_volume": 313
+        }
+       ],
+       "brand_entities_category": [
+        {
+         "key": "vehicle",
+         "mentions": 672,
+         "ai_search_volume": 8395
+        },
+        {
+         "key": "car",
+         "mentions": 255,
+         "ai_search_volume": 3497
+        },
+        {
+         "key": "brand",
+         "mentions": 165,
+         "ai_search_volume": 10787
+        }
+       ],
+       "total": {
+        "mentions": 4539,
+        "ai_search_volume": 116047
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

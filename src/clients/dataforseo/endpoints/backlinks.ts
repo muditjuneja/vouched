@@ -1,33 +1,33 @@
 import type { Env } from "../../../types/env";
-import { dfsLivePost } from "../client";
+import { dfsLiveItems, dfsLivePost } from "../client";
 
-/** Same field-shape caveat as endpoints/labs.ts — paths confirmed, field names not verified live. */
+/** Field names used by the tools are confirmed against the responses in test/fixtures/dataforseo/. */
 
 export function backlinksSummary(env: Env, toolName: string, target: string) {
   return dfsLivePost(env, toolName, "/v3/backlinks/summary/live", { target });
 }
 
 export function referringDomains(env: Env, toolName: string, target: string, limit = 50) {
-  return dfsLivePost(env, toolName, "/v3/backlinks/referring_domains/live", { target, limit });
+  return dfsLiveItems(env, toolName, "/v3/backlinks/referring_domains/live", { target, limit });
 }
 
 export function anchors(env: Env, toolName: string, target: string, limit = 50) {
-  return dfsLivePost(env, toolName, "/v3/backlinks/anchors/live", { target, limit });
+  return dfsLiveItems(env, toolName, "/v3/backlinks/anchors/live", { target, limit });
 }
 
 export function backlinksList(env: Env, toolName: string, target: string, limit = 50) {
-  return dfsLivePost(env, toolName, "/v3/backlinks/backlinks/live", { target, limit, mode: "as_is" });
+  return dfsLiveItems(env, toolName, "/v3/backlinks/backlinks/live", { target, limit, mode: "as_is" });
 }
 
-export function backlinksDomainIntersection(
-  env: Env,
-  toolName: string,
-  target1: string,
-  target2: string,
-  limit = 100
-) {
-  return dfsLivePost(env, toolName, "/v3/backlinks/domain_intersection/live", {
-    targets: { 1: target1, 2: target2 },
+/**
+ * Sites that link to `competitor` but not to `excludeDomain`: the link gap.
+ * Each row is a referring domain, keyed by target number in
+ * `domain_intersection["1"]` (`target` there is the referring domain).
+ */
+export function backlinksDomainIntersection(env: Env, toolName: string, competitor: string, excludeDomain: string, limit = 100) {
+  return dfsLiveItems(env, toolName, "/v3/backlinks/domain_intersection/live", {
+    targets: { 1: competitor },
+    exclude_targets: [excludeDomain],
     limit
   });
 }

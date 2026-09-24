@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { competitorsDomain, domainRankOverview, rankedKeywords } from "../../clients/dataforseo/endpoints/labs";
 import { envelope } from "../../envelope/builder";
-import { domainEntityId, keywordEntityId } from "../../envelope/entities";
+import { domainEntityId, keywordEntityId, normalizeDomain } from "../../envelope/entities";
 import { provenance } from "../../envelope/provenance";
 import type { Env } from "../../types/env";
 import type { ToolModule } from "../types";
@@ -15,7 +15,7 @@ interface RankOverviewResult {
 }
 interface RankedKeywordResult {
   keyword_data?: { keyword?: string; keyword_info?: { search_volume?: number } };
-  ranked_serp_element?: { serp_item?: { rank_absolute?: number; relative_url?: string } };
+  ranked_serp_element?: { serp_item?: { rank_group?: number; relative_url?: string } };
 }
 interface CompetitorResult {
   domain?: string;
@@ -28,7 +28,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   const [overview, topKeywords, competitors] = await Promise.all([
     domainRankOverview(env, "inspect_domain", args.domain) as Promise<RankOverviewResult[]>,
     rankedKeywords(env, "inspect_domain", args.domain, { limit: 10 }) as Promise<RankedKeywordResult[]>,
-    competitorsDomain(env, "inspect_domain", args.domain, 5) as Promise<CompetitorResult[]>
+    competitorsDomain(env, "inspect_domain", args.domain, 6) as Promise<CompetitorResult[]>
   ]);
 
   const observedAt = new Date();
@@ -44,10 +44,9 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
     subject: [domainId],
     data: {
       estimated_organic_traffic: overview[0]?.metrics?.organic?.etv ?? null,
-      ranked_keyword_count: overview[0]?.metrics?.organic?.count ?? null,
-      raw: overview[0] ?? null
+      ranked_keyword_count: overview[0]?.metrics?.organic?.count ?? null
     },
-    provenance: provenance("search_index", "dataforseo_labs.domain_rank_overview", { observedAt })
+    provenance: provenance("search_index", "labs.domain_rank_overview", { observedAt })
   });
 
   for (const item of topKeywords) {
@@ -60,14 +59,16 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
       subject: [domainId, keywordId],
       data: {
         keyword,
-        position: item.ranked_serp_element?.serp_item?.rank_absolute ?? null,
+        position: item.ranked_serp_element?.serp_item?.rank_group ?? null,
         search_volume: item.keyword_data?.keyword_info?.search_volume ?? null
       },
-      provenance: provenance("search_index", "dataforseo_labs.ranked_keywords", { observedAt })
+      provenance: provenance("search_index", "labs.ranked_keywords", { observedAt })
     });
   }
 
-  for (const item of competitors) {
+  // The endpoint lists the domain itself among its own competitors.
+  const rivals = competitors.filter((item) => item.domain && normalizeDomain(item.domain) !== normalizeDomain(args.domain)).slice(0, 5);
+  for (const item of rivals) {
     if (!item.domain) continue;
     const competitorId = domainEntityId(item.domain);
     builder.addEntity({ id: competitorId, kind: "domain", label: item.domain });
@@ -75,13 +76,13 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
       type: "seo.competitor",
       subject: [domainId, competitorId],
       data: { competitor_domain: item.domain, shared_keyword_count: item.intersections ?? null },
-      provenance: provenance("search_index", "dataforseo_labs.competitors_domain", { observedAt })
+      provenance: provenance("search_index", "labs.competitors_domain", { observedAt })
     });
   }
 
   return builder
     .setCoverage({
-      returned: 1 + topKeywords.length + competitors.length,
+      returned: 1 + topKeywords.length + rivals.length,
       total: null,
       as_of: observedAt.toISOString(),
       scope_note: "top 10 keywords and top 5 competitors only; use research_keywords/discover_competitors for more"

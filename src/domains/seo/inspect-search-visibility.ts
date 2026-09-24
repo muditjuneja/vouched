@@ -20,11 +20,11 @@ const inputSchema = z.object({
 
 interface RankedKeywordResult {
   keyword_data?: { keyword?: string };
-  ranked_serp_element?: { serp_item?: { rank_absolute?: number } };
+  ranked_serp_element?: { serp_item?: { rank_group?: number } };
 }
 interface SerpItem {
   type?: string;
-  rank_absolute?: number;
+  rank_group?: number;
   domain?: string;
 }
 interface SerpResult {
@@ -40,12 +40,10 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
     label: args.domain
   });
 
-  // NOTE: this `filters` shape (an "in" match on keyword_data.keyword)
-  // follows DataForSEO's documented filter conventions but isn't verified
-  // against a live call; see client.ts's caveat.
+  // Filter syntax confirmed against the sandbox (it rejects unknown fields).
   const results = (await rankedKeywords(env, "inspect_search_visibility", args.domain, {
     limit: 1000,
-    filters: [["keyword_data.keyword", "in", args.keywords]]
+    filters: ["keyword_data.keyword", "in", args.keywords]
   })) as RankedKeywordResult[];
 
   const foundKeywords = new Set<string>();
@@ -58,8 +56,8 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
     builder.addFact({
       type: "seo.keyword_ranking",
       subject: [domainId, keywordId],
-      data: { keyword, position: item.ranked_serp_element?.serp_item?.rank_absolute ?? null },
-      provenance: provenance("search_index", "dataforseo_labs.ranked_keywords", { observedAt })
+      data: { keyword, position: item.ranked_serp_element?.serp_item?.rank_group ?? null },
+      provenance: provenance("search_index", "labs.ranked_keywords", { observedAt })
     });
   }
 
@@ -69,7 +67,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
         type: "seo.keyword_ranking",
         subject: [domainId, keywordEntityId(keyword)],
         data: { keyword, position: null },
-        provenance: provenance("search_index", "dataforseo_labs.ranked_keywords", {
+        provenance: provenance("search_index", "labs.ranked_keywords", {
           observedAt,
           confidence: 0.6
         })
@@ -91,8 +89,8 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
       builder.addFact({
         type: "seo.keyword_ranking",
         subject: [domainId, keywordEntityId(keyword)],
-        data: { keyword, position: hit?.rank_absolute ?? null, live_recheck: true },
-        provenance: provenance("live_serp", "serp.google.organic.live.advanced", { observedAt })
+        data: { keyword, position: hit?.rank_group ?? null, live_recheck: true },
+        provenance: provenance("live_serp", "serp.google.organic", { observedAt })
       });
     }
   }

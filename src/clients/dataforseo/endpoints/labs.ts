@@ -1,17 +1,15 @@
 import type { Env } from "../../../types/env";
-import { dfsLivePost } from "../client";
+import { dfsLiveItems, dfsLivePage } from "../client";
 import { DEFAULT_LANGUAGE_CODE, DEFAULT_LOCATION_CODE } from "../locations";
 
 /**
- * Every function here returns the raw `result[]` array from DataForSEO —
- * see client.ts's doc comment on why field extraction downstream stays
- * defensive (optional chaining, `raw` passthrough) rather than strictly
- * typed: only the endpoint *paths* below are confirmed, not the full
- * request/response schemas.
+ * Every function here returns the endpoint's rows (`result[0].items`, see
+ * dfsLiveItems). Field names used by the tools are confirmed against the
+ * responses saved in test/fixtures/dataforseo/.
  */
 
 export function domainRankOverview(env: Env, toolName: string, target: string) {
-  return dfsLivePost(env, toolName, "/v3/dataforseo_labs/google/domain_rank_overview/live", {
+  return dfsLiveItems(env, toolName, "/v3/dataforseo_labs/google/domain_rank_overview/live", {
     target,
     location_code: DEFAULT_LOCATION_CODE,
     language_code: DEFAULT_LANGUAGE_CODE
@@ -24,7 +22,23 @@ export function rankedKeywords(
   target: string,
   opts: { limit?: number; filters?: unknown[] } = {}
 ) {
-  return dfsLivePost(env, toolName, "/v3/dataforseo_labs/google/ranked_keywords/live", {
+  return dfsLiveItems(env, toolName, "/v3/dataforseo_labs/google/ranked_keywords/live", {
+    target,
+    location_code: DEFAULT_LOCATION_CODE,
+    language_code: DEFAULT_LANGUAGE_CODE,
+    limit: opts.limit ?? 50,
+    ...(opts.filters ? { filters: opts.filters } : {})
+  });
+}
+
+/** ranked_keywords with its total: how many keywords rank in all (for a page count), not just the rows fetched. */
+export function rankedKeywordsPage(
+  env: Env,
+  toolName: string,
+  target: string,
+  opts: { limit?: number; filters?: unknown[] } = {}
+) {
+  return dfsLivePage(env, toolName, "/v3/dataforseo_labs/google/ranked_keywords/live", {
     target,
     location_code: DEFAULT_LOCATION_CODE,
     language_code: DEFAULT_LANGUAGE_CODE,
@@ -34,7 +48,7 @@ export function rankedKeywords(
 }
 
 export function competitorsDomain(env: Env, toolName: string, target: string, limit = 20) {
-  return dfsLivePost(env, toolName, "/v3/dataforseo_labs/google/competitors_domain/live", {
+  return dfsLiveItems(env, toolName, "/v3/dataforseo_labs/google/competitors_domain/live", {
     target,
     location_code: DEFAULT_LOCATION_CODE,
     language_code: DEFAULT_LANGUAGE_CODE,
@@ -43,7 +57,7 @@ export function competitorsDomain(env: Env, toolName: string, target: string, li
 }
 
 export function keywordIdeas(env: Env, toolName: string, seedKeywords: string[], limit = 50) {
-  return dfsLivePost(env, toolName, "/v3/dataforseo_labs/google/keyword_ideas/live", {
+  return dfsLiveItems(env, toolName, "/v3/dataforseo_labs/google/keyword_ideas/live", {
     keywords: seedKeywords,
     location_code: DEFAULT_LOCATION_CODE,
     language_code: DEFAULT_LANGUAGE_CODE,
@@ -52,7 +66,7 @@ export function keywordIdeas(env: Env, toolName: string, seedKeywords: string[],
 }
 
 export function keywordOverview(env: Env, toolName: string, keywords: string[]) {
-  return dfsLivePost(env, toolName, "/v3/dataforseo_labs/google/keyword_overview/live", {
+  return dfsLiveItems(env, toolName, "/v3/dataforseo_labs/google/keyword_overview/live", {
     keywords,
     location_code: DEFAULT_LOCATION_CODE,
     language_code: DEFAULT_LANGUAGE_CODE
@@ -66,9 +80,12 @@ export function domainIntersection(
   target2: string,
   limit = 100
 ) {
-  return dfsLivePost(env, toolName, "/v3/dataforseo_labs/google/domain_intersection/live", {
+  // intersections: false returns keywords target1 ranks for and target2
+  // doesn't: the gap. Without it the endpoint returns shared keywords.
+  return dfsLiveItems(env, toolName, "/v3/dataforseo_labs/google/domain_intersection/live", {
     target1,
     target2,
+    intersections: false,
     location_code: DEFAULT_LOCATION_CODE,
     language_code: DEFAULT_LANGUAGE_CODE,
     limit

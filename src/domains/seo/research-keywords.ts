@@ -41,10 +41,9 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
         search_volume: item.keyword_info?.search_volume ?? null,
         cpc: item.keyword_info?.cpc ?? null,
         competition: item.keyword_info?.competition ?? null,
-        keyword_difficulty: item.keyword_properties?.keyword_difficulty ?? null,
-        raw: item
+        keyword_difficulty: item.keyword_properties?.keyword_difficulty ?? null
       },
-      provenance: provenance("search_index", "dataforseo_labs.keyword_ideas", { observedAt })
+      provenance: provenance("search_index", "labs.keyword_ideas", { observedAt })
     });
   }
 

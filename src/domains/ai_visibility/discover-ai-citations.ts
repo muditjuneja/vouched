@@ -11,54 +11,40 @@ const inputSchema = z.object({
   platform: z.enum(["google", "chat_gpt"]).optional().describe("google = AI Overview, chat_gpt = ChatGPT (default google)")
 });
 
-interface CitationResult {
+interface TopDomainItem {
   domain?: string;
-  mentions?: number;
-  rank?: number;
+  total?: { mentions?: number; ai_search_volume?: number };
 }
 
 async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   const platform = args.platform ?? "google";
-  const results = (await topMentionedDomains(
-    env,
-    "discover_ai_citations",
-    args.topic,
-    platform
-  )) as CitationResult[];
+  const items = (await topMentionedDomains(env, "discover_ai_citations", args.topic, platform)) as TopDomainItem[];
   const observedAt = new Date();
 
   const builder = envelope("ai_visibility", { topic: args.topic, platform });
-
-  for (const item of results) {
-    if (!item.domain) continue;
+  let returned = 0;
+  items.forEach((item, index) => {
+    if (!item.domain) return;
+    returned++;
     const domainId = domainEntityId(item.domain);
     builder.addEntity({ id: domainId, kind: "domain", label: item.domain });
     builder.addFact({
       type: "ai_visibility.citation_source",
       subject: [domainId],
-      data: { domain: item.domain, mentions: item.mentions ?? null, rank: item.rank ?? null, raw: item },
-      // Confidence lower than a live SERP result: presence/ranking in an AI
-      // answer is less stable and this endpoint's shape is unverified, see
-      // clients/dataforseo/endpoints/llm-mentions.ts.
-      provenance: provenance("ai_answer", "ai_optimization.llm_mentions.top_mentioned_domains", {
-        observedAt,
-        confidence: 0.5
-      })
+      data: {
+        domain: item.domain,
+        rank: index + 1,
+        mentions: item.total?.mentions ?? null,
+        ai_search_volume: item.total?.ai_search_volume ?? null
+      },
+      // Lower than a live SERP result: which sources an AI answer mentions
+      // shifts more from day to day than an organic ranking does.
+      provenance: provenance("ai_answer", "llm_mentions.top_mentioned_domains", { observedAt, confidence: 0.5 })
     });
-  }
-
-  builder.addFact({
-    type: "core.data_freshness",
-    subject: [],
-    data: { platform, observed_at: observedAt.toISOString() },
-    provenance: provenance("ai_answer", "ai_optimization.llm_mentions.top_mentioned_domains", {
-      observedAt,
-      confidence: 0.5
-    })
   });
 
   return builder
-    .setCoverage({ returned: results.length, total: null, as_of: observedAt.toISOString(), scope_note: null })
+    .setCoverage({ returned, total: null, as_of: observedAt.toISOString(), scope_note: `most-mentioned domains in ${platform === "google" ? "Google AI Overviews" : "ChatGPT"} answers for this topic` })
     .build();
 }
 

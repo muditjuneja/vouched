@@ -25,6 +25,12 @@ Already done on production, so the run starts at section 3:
 - **Not yet:** Google Analytics isn't connected (3.9 waits for it), and the
   Free-plan limits need a second, free account (section 5b).
 
+**First run (24 September):** section 3 passed apart from GA4 (not yet
+connected). Section 4 found the market-data tools reading their responses
+one level too high, plus supplier-name leaks and wrong SERP positions; all
+fixed in the deploy that follows, with tests against real response shapes.
+Rerun sections 3 and 4 after that deploy.
+
 Run the tool calls from the connected Claude, or from a Claude Code session
 connected the same way (section 2). Either one exercises the real sign-in.
 
@@ -34,8 +40,9 @@ connected the same way (section 2). Either one exercises the real sign-in.
 |---|---|---|
 | `SITE` | A domain you own, verified in Search Console, with real traffic | `xmit.sh` |
 | `SITE_PAGE` | One real, indexed URL on it | `https://xmit.sh/` (swap for any page Search Console lists as indexed) |
-| `KNOWN_DOMAIN` | An established third-party site, for market data | `semrush.com` |
-| `KNOWN_RIVAL` | A competitor of `KNOWN_DOMAIN` | `ahrefs.com` |
+| `MARKET_DOMAIN` | The domain the market-data tools look at: the same site, so every result can be checked against what you know about it | `xmit.sh` |
+| `RIVAL` | A direct competitor of xmit.sh | `resend.com` |
+| `KEYWORD` | A keyword xmit.sh should compete for | `transactional email api` |
 
 - **Dates for Google:** Search Console lags about 2 to 3 days. Use a
   28-day range ending 3 days ago, e.g. `2026-08-26` to `2026-09-22`.
@@ -105,18 +112,24 @@ upgrade arrived exactly once (plus the BCC copy), billing emails are working.
 
 | # | Call | Expected `source_class` | Pass when |
 |---|---|---|---|
-| 4.1 | `inspect_domain {domain: KNOWN_DOMAIN}` | `search_index` | Overview, top keywords and competitors; confidence 0.75 |
-| 4.2 | `discover_competitors {domain: KNOWN_DOMAIN, limit: 5}` | `search_index` | Up to 5 competitor domains |
-| 4.3 | `research_keywords {seedKeywords: ["seo tools"], limit: 10}` | `search_index` | `seo.keyword_opportunity` facts with volume, KD, CPC |
-| 4.4 | `inspect_keyword {keyword: "seo tools"}` | `live_serp` | Volume, difficulty, intent for that one keyword |
-| 4.5 | `compare_keyword_coverage {domain: KNOWN_DOMAIN, competitors: [KNOWN_RIVAL]}` | `search_index` | Keywords the rival ranks for that the domain doesn't |
-| 4.6 | `inspect_search_visibility {domain: KNOWN_DOMAIN, keywords: ["seo tools", "keyword research"]}` | `live_serp` or `search_index` | A position (or "not ranking") per keyword |
-| 4.7 | `inspect_page {url: "https://" + KNOWN_DOMAIN}` | `search_index` | Page-level metrics |
-| 4.8 | `inspect_serp {keyword: "seo tools", depth: 10}` | `live_serp` | ~10 `serp.result` facts at 0.85, plus any `serp.feature` facts at 0.6 |
-| 4.9 | `inspect_backlinks {domain: KNOWN_DOMAIN, view: "authority"}` | `backlink_index` | Authority metrics. **May fail** if the DataForSEO account has no Backlinks subscription: record the exact error |
-| 4.10 | `compare_backlink_gap {domain: KNOWN_DOMAIN, competitors: [KNOWN_RIVAL]}` | `backlink_index` | Linking domains the rival has and the domain lacks. Same subscription caveat as 4.9 |
-| 4.11 | `discover_ai_citations {topic: "best seo tools", platform: "google"}` | `ai_answer` | Cited domains from AI Overviews (empty can be legitimate) |
-| 4.12 | `inspect_ai_visibility {domain: KNOWN_DOMAIN, competitors: [KNOWN_RIVAL], platform: "google"}` | `ai_answer` | Mention counts for each domain |
+| 4.1 | `inspect_domain {domain: MARKET_DOMAIN}` | `search_index` | Overview, top keywords and competitors; confidence 0.75 |
+| 4.2 | `discover_competitors {domain: MARKET_DOMAIN, limit: 5}` | `search_index` | Up to 5 competitor domains |
+| 4.3 | `research_keywords {seedKeywords: [KEYWORD], limit: 10}` | `search_index` | `seo.keyword_opportunity` facts with volume, KD, CPC |
+| 4.4 | `inspect_keyword {keyword: KEYWORD}` | `live_serp` | Volume, difficulty, intent for that one keyword |
+| 4.5 | `compare_keyword_coverage {domain: MARKET_DOMAIN, competitors: [RIVAL]}` | `search_index` | Keywords the rival ranks for that the domain doesn't |
+| 4.6 | `inspect_search_visibility {domain: MARKET_DOMAIN, keywords: [KEYWORD, "email api"]}` | `live_serp` or `search_index` | A position (or "not ranking") per keyword |
+| 4.7 | `inspect_page {url: "https://" + MARKET_DOMAIN}` | `search_index` | Page-level metrics |
+| 4.8 | `inspect_serp {keyword: KEYWORD, depth: 10}` | `live_serp` | ~10 `serp.result` facts at 0.85, plus any `serp.feature` facts at 0.6 |
+| 4.9 | `inspect_backlinks {domain: MARKET_DOMAIN, view: "authority"}` | `backlink_index` | Rank, backlinks and referring domains |
+| 4.10 | `compare_backlink_gap {domain: MARKET_DOMAIN, competitors: [RIVAL]}` | `backlink_index` | Linking domains the rival has and the domain lacks. |
+| 4.11 | `discover_ai_citations {topic: "best transactional email service", platform: "google"}` | `ai_answer` | Cited domains from AI Overviews (empty can be legitimate) |
+| 4.12 | `inspect_ai_visibility {domain: MARKET_DOMAIN, competitors: [RIVAL], platform: "google"}` | `ai_answer` | Mention counts for each domain |
+
+xmit.sh is a young site, so some market-data results can be legitimately
+thin (few ranked keywords, no AI mentions yet). A thin result is a pass if
+it's consistent with what Search Console shows in section 3; an empty
+result where section 3 shows real traffic is a fail. `RIVAL` (resend.com)
+should always return full data, so use it to tell "no data" from "broken".
 
 **Then check what was recorded** (the session, read-only):
 
@@ -147,7 +160,7 @@ lands on Free, and connect it the same way.
 
 | # | Check | Pass when |
 |---|---|---|
-| 5b.1 | `inspect_keyword {keyword: "seo tools"}` | Fails with `upgrade_required: ...` |
+| 5b.1 | `inspect_keyword {keyword: KEYWORD}` | Fails with `upgrade_required: ...` |
 | 5b.2 | `list_websites {}` | Works: Google tools are free |
 | 5b.3 | Its dashboard's Billing page | No wallet top-up offered |
 

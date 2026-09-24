@@ -77,7 +77,9 @@ export async function dfsLivePost<TResult>(
     }
   }
 
-  const res = await fetch(`${API_BASE}${path}`, {
+  // DATAFORSEO_BASE_URL=https://sandbox.dataforseo.com for development:
+  // free, same credentials, dummy data in the real response shape.
+  const res = await fetch(`${env.DATAFORSEO_BASE_URL ?? API_BASE}${path}`, {
     method: "POST",
     headers: {
       Authorization: usingBundled ? bundledDataForSeoAuthHeader(env) : dataForSeoAuthHeader(env),
@@ -86,18 +88,20 @@ export async function dfsLivePost<TResult>(
     body: JSON.stringify([task])
   });
 
+  // Errors name the step that failed, never echo the provider's own
+  // payload back to the agent (it names the provider and its internals).
   if (!res.ok) {
-    throw new UpstreamError("market_data", await res.text(), res.status);
+    console.warn(`[market data] ${path} HTTP ${res.status}: ${(await res.text()).slice(0, 500)}`);
+    throw new UpstreamError("market_data", `the market-data request failed (HTTP ${res.status}); try again shortly`, res.status);
   }
 
   const body = (await res.json()) as DfsResponse<TResult>;
   const task0 = body.tasks?.[0];
   if (!task0 || task0.status_code !== 20000) {
-    throw new UpstreamError(
-      "market_data",
-      task0?.status_message ?? body.status_message ?? "no task result returned",
-      task0?.status_code ?? body.status_code
-    );
+    const code = task0?.status_code ?? body.status_code;
+    const message = task0?.status_message ?? body.status_message ?? "no result returned";
+    console.warn(`[market data] ${path} status ${code}: ${message}`);
+    throw new UpstreamError("market_data", `the market-data provider couldn't answer this request (${code}: ${message})`, code);
   }
 
   await recordCost(env, toolName, path, task0.cost, tenantId);
@@ -110,6 +114,28 @@ export async function dfsLivePost<TResult>(
     }
   }
   return task0.result ?? [];
+}
+
+/**
+ * For endpoints that wrap their rows as `result[0].items[]` (every Labs,
+ * backlinks-list and AI Optimization endpoint, confirmed against the
+ * sandbox's responses): returns the rows themselves. Reading `result` as the
+ * rows instead was a real bug: each tool saw one wrapper object as its only
+ * "row", so every typed field came back null.
+ */
+export async function dfsLiveItems<TItem>(env: Env, toolName: string, path: string, task: Record<string, unknown>): Promise<TItem[]> {
+  return (await dfsLivePage<TItem>(env, toolName, path, task)).items;
+}
+
+/** Like dfsLiveItems, plus `total_count`: how many rows exist in all, not just how many this request returned. */
+export async function dfsLivePage<TItem>(
+  env: Env,
+  toolName: string,
+  path: string,
+  task: Record<string, unknown>
+): Promise<{ items: TItem[]; totalCount: number | null }> {
+  const result = await dfsLivePost<{ items?: TItem[] | null; total_count?: number | null }>(env, toolName, path, task);
+  return { items: result[0]?.items ?? [], totalCount: result[0]?.total_count ?? null };
 }
 
 /**

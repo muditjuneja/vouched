@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { competitorsDomain } from "../../clients/dataforseo/endpoints/labs";
 import { envelope } from "../../envelope/builder";
-import { domainEntityId } from "../../envelope/entities";
+import { domainEntityId, normalizeDomain } from "../../envelope/entities";
 import { provenance } from "../../envelope/provenance";
 import type { Env } from "../../types/env";
 import type { ToolModule } from "../types";
@@ -32,7 +32,9 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
     label: args.domain
   });
 
-  for (const item of results) {
+  // The endpoint lists the domain itself among its own competitors.
+  const rivals = results.filter((item) => item.domain && normalizeDomain(item.domain) !== normalizeDomain(args.domain));
+  for (const item of rivals) {
     if (!item.domain) continue;
     const competitorId = domainEntityId(item.domain);
     builder.addEntity({ id: competitorId, kind: "domain", label: item.domain });
@@ -42,15 +44,14 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
       data: {
         competitor_domain: item.domain,
         avg_position: item.avg_position ?? null,
-        shared_keyword_count: item.intersections ?? null,
-        raw: item
+        shared_keyword_count: item.intersections ?? null
       },
-      provenance: provenance("search_index", "dataforseo_labs.competitors_domain", { observedAt })
+      provenance: provenance("search_index", "labs.competitors_domain", { observedAt })
     });
   }
 
   return builder
-    .setCoverage({ returned: results.length, total: null, as_of: observedAt.toISOString(), scope_note: null })
+    .setCoverage({ returned: rivals.length, total: null, as_of: observedAt.toISOString(), scope_note: null })
     .build();
 }
 

@@ -198,7 +198,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     ],
     dataSummary: "High-level organic overview containing estimated traffic, ranked keyword count, top 10 keywords, and top 5 organic competitors.",
     emittedFacts: [
-      { type: "seo.domain_summary", description: "Estimated monthly organic visits and total ranked keyword count.", fields: ["estimated_organic_traffic", "ranked_keyword_count", "raw"] },
+      { type: "seo.domain_summary", description: "Estimated monthly organic visits and total ranked keyword count.", fields: ["estimated_organic_traffic", "ranked_keyword_count"] },
       { type: "seo.keyword_ranking", description: "Top ranked organic keywords with absolute rank and monthly volume.", fields: ["keyword", "position", "search_volume"] },
       { type: "seo.top_page", description: "Aggregated organic performance and traffic for top landing pages.", fields: ["url", "total_ranked_keywords", "total_estimated_traffic"] },
       { type: "seo.competitor", description: "Top organic competitor domains and shared keyword intersections.", fields: ["competitor_domain", "shared_keyword_count"] }
@@ -219,19 +219,19 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
           type: "seo.domain_summary",
           subject: ["urn:domain:stripe.com"],
           data: { estimated_organic_traffic: 12450000, ranked_keyword_count: 842000 },
-          provenance: { source_class: "search_index", method: "dataforseo_labs.domain_rank_overview", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
+          provenance: { source_class: "search_index", method: "labs.domain_rank_overview", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         },
         {
           type: "seo.keyword_ranking",
           subject: ["urn:domain:stripe.com", "urn:keyword:online+payments"],
           data: { keyword: "online payments", position: 1, search_volume: 74000 },
-          provenance: { source_class: "search_index", method: "dataforseo_labs.ranked_keywords", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
+          provenance: { source_class: "search_index", method: "labs.ranked_keywords", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         },
         {
           type: "seo.competitor",
           subject: ["urn:domain:stripe.com", "urn:domain:adyen.com"],
           data: { competitor_domain: "adyen.com", shared_keyword_count: 28400 },
-          provenance: { source_class: "search_index", method: "dataforseo_labs.competitors_domain", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
+          provenance: { source_class: "search_index", method: "labs.competitors_domain", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         }
       ],
       entities: [
@@ -254,7 +254,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     },
     provenance: {
       sourceClass: "search_index",
-      method: "dataforseo_labs.domain_rank_overview",
+      method: "labs.domain_rank_overview",
       confidence: 0.75,
       cacheTtl: "24 hours"
     },
@@ -280,7 +280,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     ],
     dataSummary: "Lists organic competitor domains ranked by search keyword overlap, average position, and shared keywords.",
     emittedFacts: [
-      { type: "seo.competitor", description: "Competitor domain with average position and count of shared ranking keywords.", fields: ["competitor_domain", "avg_position", "shared_keyword_count", "raw"] },
+      { type: "seo.competitor", description: "Competitor domain with average position and count of shared ranking keywords.", fields: ["competitor_domain", "avg_position", "shared_keyword_count"] },
       { type: "core.data_freshness", description: "Observation timestamp and search index crawl freshness.", fields: ["observed_at"] }
     ],
     entitiesEmitted: [
@@ -299,13 +299,13 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
           type: "seo.competitor",
           subject: ["urn:domain:postman.com", "urn:domain:insomnia.rest"],
           data: { competitor_domain: "insomnia.rest", avg_position: 8.4, shared_keyword_count: 4210 },
-          provenance: { source_class: "search_index", method: "dataforseo_labs.competitors_domain", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
+          provenance: { source_class: "search_index", method: "labs.competitors_domain", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         },
         {
           type: "seo.competitor",
           subject: ["urn:domain:postman.com", "urn:domain:hoppscotch.io"],
           data: { competitor_domain: "hoppscotch.io", avg_position: 12.1, shared_keyword_count: 1840 },
-          provenance: { source_class: "search_index", method: "dataforseo_labs.competitors_domain", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
+          provenance: { source_class: "search_index", method: "labs.competitors_domain", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         }
       ],
       entities: [
@@ -327,7 +327,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     },
     provenance: {
       sourceClass: "search_index",
-      method: "dataforseo_labs.competitors_domain",
+      method: "labs.competitors_domain",
       confidence: 0.75
     }
   },
@@ -352,7 +352,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     ],
     dataSummary: "Keyword ideas with monthly search volume, cost-per-click (CPC), paid competition index, and organic keyword difficulty.",
     emittedFacts: [
-      { type: "seo.keyword_opportunity", description: "Search demand metrics for an expanded keyword idea.", fields: ["keyword", "search_volume", "cpc", "competition", "keyword_difficulty", "raw"] }
+      { type: "seo.keyword_opportunity", description: "Search demand metrics for an expanded keyword idea.", fields: ["keyword", "search_volume", "cpc", "competition", "keyword_difficulty"] }
     ],
     entitiesEmitted: [
       { kind: "keyword", description: "Discovered search queries." }
@@ -370,13 +370,13 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
           type: "seo.keyword_opportunity",
           subject: ["urn:keyword:mcp+server+examples"],
           data: { keyword: "mcp server examples", search_volume: 4800, cpc: 2.15, competition: 0.34, keyword_difficulty: 28 },
-          provenance: { source_class: "search_index", method: "dataforseo_labs.keyword_ideas", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
+          provenance: { source_class: "search_index", method: "labs.keyword_ideas", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         },
         {
           type: "seo.keyword_opportunity",
           subject: ["urn:keyword:best+mcp+servers+for+claude"],
           data: { keyword: "best mcp servers for claude", search_volume: 3200, cpc: 3.40, competition: 0.41, keyword_difficulty: 35 },
-          provenance: { source_class: "search_index", method: "dataforseo_labs.keyword_ideas", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
+          provenance: { source_class: "search_index", method: "labs.keyword_ideas", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         }
       ],
       entities: [
@@ -397,7 +397,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     },
     provenance: {
       sourceClass: "search_index",
-      method: "dataforseo_labs.keyword_ideas",
+      method: "labs.keyword_ideas",
       confidence: 0.75
     }
   },
@@ -420,7 +420,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     ],
     dataSummary: "Pairwise keyword intersections identifying queries where competitors rank but you do not ('competitor_only') or where you rank and they do not ('you_only').",
     emittedFacts: [
-      { type: "seo.keyword_opportunity", description: "Keyword gap with relative ranking positions and gap direction.", fields: ["keyword", "gap_direction", "your_position", "competitor_position", "raw"] }
+      { type: "seo.keyword_opportunity", description: "A keyword a competitor ranks for that your domain doesn't, with its demand and the competitor's position.", fields: ["keyword", "search_volume", "keyword_difficulty", "competitor_domain", "competitor_position", "competitor_url"] }
     ],
     entitiesEmitted: [
       { kind: "domain", description: "Your domain and each competitor domain." },
@@ -438,8 +438,8 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
         {
           type: "seo.keyword_opportunity",
           subject: ["urn:domain:vouchedhq.com", "urn:domain:semrush.com", "urn:keyword:open+source+semrush"],
-          data: { keyword: "open source semrush", gap_direction: "competitor_only", your_position: null, competitor_position: 4 },
-          provenance: { source_class: "search_index", method: "dataforseo_labs.domain_intersection", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
+          data: { keyword: "open source semrush", search_volume: 880, keyword_difficulty: 22, competitor_domain: "semrush.com", competitor_position: 4, competitor_url: "https://www.semrush.com/" },
+          provenance: { source_class: "search_index", method: "labs.domain_intersection", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         }
       ],
       entities: [
@@ -459,7 +459,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     },
     provenance: {
       sourceClass: "search_index",
-      method: "dataforseo_labs.domain_intersection",
+      method: "labs.domain_intersection",
       confidence: 0.75
     }
   },
@@ -511,7 +511,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
           type: "seo.keyword_ranking",
           subject: ["urn:domain:resend.com", "urn:keyword:transactional+email+api"],
           data: { keyword: "transactional email api", position: 1, source: "live_serp" },
-          provenance: { source_class: "live_serp", method: "serp.google.organic.live.advanced", confidence: 0.85, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
+          provenance: { source_class: "live_serp", method: "serp.google.organic", confidence: 0.85, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         }
       ],
       entities: [
@@ -530,7 +530,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     },
     provenance: {
       sourceClass: "live_serp",
-      method: "serp.google.organic.live.advanced",
+      method: "serp.google.organic",
       confidence: 0.85
     }
   },
@@ -573,7 +573,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
           type: "serp.result",
           subject: ["urn:page:https%3A%2F%2Fgithub.com%2Fmodelcontextprotocol"],
           data: { position: 1, domain: "github.com", url: "https://github.com/modelcontextprotocol", title: "Model Context Protocol Specification and Servers" },
-          provenance: { source_class: "live_serp", method: "serp.google.organic.live.advanced", confidence: 0.85, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
+          provenance: { source_class: "live_serp", method: "serp.google.organic", confidence: 0.85, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         }
       ],
       entities: [
@@ -593,7 +593,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     },
     provenance: {
       sourceClass: "live_serp",
-      method: "serp.google.organic.live.advanced",
+      method: "serp.google.organic",
       confidence: 0.85
     }
   },
@@ -610,7 +610,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     ],
     dataSummary: "List of organic keywords that rank for this exact page URL, along with position, search volume, and estimated traffic.",
     emittedFacts: [
-      { type: "seo.keyword_ranking", description: "Keywords sending traffic to this specific URL.", fields: ["keyword", "position", "search_volume", "estimated_traffic", "raw"] },
+      { type: "seo.keyword_ranking", description: "Keywords sending traffic to this specific URL.", fields: ["keyword", "position", "search_volume", "estimated_traffic"] },
       { type: "seo.top_page", description: "Aggregated organic performance for the page.", fields: ["url", "total_ranked_keywords", "total_estimated_traffic"] }
     ],
     entitiesEmitted: [
@@ -630,13 +630,13 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
           type: "seo.keyword_ranking",
           subject: ["urn:page:https%3A%2F%2Fstripe.com%2Fpricing", "urn:keyword:stripe+fees"],
           data: { keyword: "stripe fees", position: 1, search_volume: 49500, estimated_traffic: 18200 },
-          provenance: { source_class: "search_index", method: "dataforseo_labs.ranked_keywords", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
+          provenance: { source_class: "search_index", method: "labs.ranked_keywords", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         },
         {
           type: "seo.top_page",
           subject: ["urn:page:https%3A%2F%2Fstripe.com%2Fpricing"],
           data: { url: "https://stripe.com/pricing", total_ranked_keywords: 310, total_estimated_traffic: 84000 },
-          provenance: { source_class: "search_index", method: "dataforseo_labs.ranked_keywords", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
+          provenance: { source_class: "search_index", method: "labs.ranked_keywords", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         }
       ],
       entities: [
@@ -656,7 +656,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     },
     provenance: {
       sourceClass: "search_index",
-      method: "dataforseo_labs.ranked_keywords",
+      method: "labs.ranked_keywords",
       confidence: 0.75
     }
   },
@@ -700,13 +700,13 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
           type: "serp.result",
           subject: ["urn:page:https%3A%2F%2Fdocs.anthropic.com%2Fclaude-code%2Fmcp"],
           data: { position: 1, domain: "docs.anthropic.com", url: "https://docs.anthropic.com/claude-code/mcp", title: "Model Context Protocol in Claude Code" },
-          provenance: { source_class: "live_serp", method: "serp.google.organic.live.advanced", confidence: 0.85, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
+          provenance: { source_class: "live_serp", method: "serp.google.organic", confidence: 0.85, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         },
         {
           type: "serp.feature",
           subject: ["urn:domain:docs.anthropic.com"],
           data: { feature_type: "featured_snippet", position: 1, domain: "docs.anthropic.com", title: "Quickstart Guide" },
-          provenance: { source_class: "live_serp", method: "serp.google.organic.live.advanced", confidence: 0.65, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
+          provenance: { source_class: "live_serp", method: "serp.google.organic", confidence: 0.65, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         }
       ],
       entities: [
@@ -725,7 +725,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     },
     provenance: {
       sourceClass: "live_serp",
-      method: "serp.google.organic.live.advanced",
+      method: "serp.google.organic",
       confidence: 0.85
     }
   },
@@ -887,7 +887,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     ],
     dataSummary: "Discovers referring domains linking to competitors but not to your domain. Automatically filters out spam domains (spam_score > 30) and flags earned links.",
     emittedFacts: [
-      { type: "backlinks.link_gap", description: "Referring domain gap with spam score, domain rank, and gap direction.", fields: ["referring_domain", "domain_rank", "spam_score", "gap_direction", "earned_link"] }
+      { type: "backlinks.link_gap", description: "A site linking to a competitor but not to your domain, with its rank and spam score.", fields: ["referring_domain", "referring_domain_rank", "backlinks_to_competitor", "spam_score", "first_seen", "competitor_domain"] }
     ],
     entitiesEmitted: [
       { kind: "domain", description: "Your domain, competitors, and discovered referring domains." }
@@ -904,7 +904,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
         {
           type: "backlinks.link_gap",
           subject: ["urn:domain:vouchedhq.com", "urn:domain:semrush.com", "urn:domain:techcrunch.com"],
-          data: { referring_domain: "techcrunch.com", domain_rank: 88, spam_score: 2, gap_direction: "competitor_only", earned_link: true },
+          data: { referring_domain: "techcrunch.com", referring_domain_rank: 88, backlinks_to_competitor: 12, spam_score: 2, first_seen: "2025-03-14 00:00:00 +00:00", competitor_domain: "semrush.com" },
           provenance: { source_class: "backlink_index", method: "dataforseo_backlinks.domain_intersection", confidence: 0.80, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         }
       ],
@@ -949,7 +949,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     ],
     dataSummary: "Lists the most frequently cited domains in generative AI answers (Google AI Overviews and ChatGPT) for a given market vertical.",
     emittedFacts: [
-      { type: "ai_visibility.citation_source", description: "Domain cited in AI answers with mention count and citation rank.", fields: ["domain", "mentions", "rank", "raw"] },
+      { type: "ai_visibility.citation_source", description: "Domain cited in AI answers with mention count and citation rank.", fields: ["domain", "rank", "mentions", "ai_search_volume"] },
       { type: "core.data_freshness", description: "Observation timestamp and platform identifier.", fields: ["platform", "observed_at"] }
     ],
     entitiesEmitted: [
@@ -968,7 +968,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
           type: "ai_visibility.citation_source",
           subject: ["urn:domain:linear.app"],
           data: { domain: "linear.app", mentions: 18, rank: 1 },
-          provenance: { source_class: "ai_answer", method: "ai_optimization.llm_mentions.top_mentioned_domains", confidence: 0.50, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
+          provenance: { source_class: "ai_answer", method: "llm_mentions.top_mentioned_domains", confidence: 0.50, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         }
       ],
       entities: [
@@ -988,7 +988,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     },
     provenance: {
       sourceClass: "ai_answer",
-      method: "ai_optimization.llm_mentions.top_mentioned_domains",
+      method: "llm_mentions.top_mentioned_domains",
       confidence: 0.50
     },
     notes: "Experimental endpoint. AI answer citation presence fluctuates more than deterministic search index ranks."
@@ -1020,7 +1020,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     ],
     dataSummary: "Compares how frequently your domain is mentioned in generative AI answers compared to named competitors, including share-of-voice calculations.",
     emittedFacts: [
-      { type: "ai_visibility.brand_mentions", description: "Brand mention frequency, is_you flag, and share of voice percentage.", fields: ["domain", "is_you", "mentions", "share_of_voice", "raw"] }
+      { type: "ai_visibility.brand_mentions", description: "How often a domain is mentioned in AI answers, its share of voice among the domains compared, and the sources cited most.", fields: ["domain", "is_you", "mentions", "ai_search_volume", "share_of_voice", "top_cited_sources"] }
     ],
     entitiesEmitted: [
       { kind: "domain", description: "Target domain and competitor domains." }
@@ -1039,13 +1039,13 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
           type: "ai_visibility.brand_mentions",
           subject: ["urn:domain:linear.app"],
           data: { domain: "linear.app", is_you: true, mentions: 42, share_of_voice: 0.38 },
-          provenance: { source_class: "ai_answer", method: "ai_optimization.llm_mentions.search_mentions", confidence: 0.50, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
+          provenance: { source_class: "ai_answer", method: "llm_mentions.search_mentions", confidence: 0.50, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         },
         {
           type: "ai_visibility.brand_mentions",
           subject: ["urn:domain:jira.com"],
           data: { domain: "jira.com", is_you: false, mentions: 51, share_of_voice: 0.46 },
-          provenance: { source_class: "ai_answer", method: "ai_optimization.llm_mentions.search_mentions", confidence: 0.50, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
+          provenance: { source_class: "ai_answer", method: "llm_mentions.search_mentions", confidence: 0.50, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         }
       ],
       entities: [
@@ -1064,7 +1064,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     },
     provenance: {
       sourceClass: "ai_answer",
-      method: "ai_optimization.llm_mentions.search_mentions",
+      method: "llm_mentions.search_mentions",
       confidence: 0.50
     }
   },

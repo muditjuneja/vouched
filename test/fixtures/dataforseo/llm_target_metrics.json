@@ -1,0 +1,115 @@
+{
+ "status_code": 20000,
+ "status_message": "Ok.",
+ "cost": 0,
+ "tasks": [
+  {
+   "status_code": 20000,
+   "status_message": "Ok.",
+   "cost": 0,
+   "result": [
+    {
+     "total_count": 0,
+     "offset": 0,
+     "items_count": 0,
+     "aggregated_metrics": {
+      "location": [
+       {
+        "key": 2840,
+        "mentions": 65637,
+        "ai_search_volume": 1443112
+       }
+      ],
+      "language": [
+       {
+        "key": "en",
+        "mentions": 65637,
+        "ai_search_volume": 1443112
+       }
+      ],
+      "platform": [
+       {
+        "key": "chat_gpt",
+        "mentions": 65637,
+        "ai_search_volume": 1443112
+       }
+      ],
+      "sources_domain": [
+       {
+        "key": "www.reddit.com",
+        "mentions": 5420,
+        "ai_search_volume": 189357
+       },
+       {
+        "key": "www.caranddriver.com",
+        "mentions": 4762,
+        "ai_search_volume": 147319
+       },
+       {
+        "key": "www.edmunds.com",
+        "mentions": 4539,
+        "ai_search_volume": 116047
+       }
+      ],
+      "search_results_domain": [
+       {
+        "key": "www.edmunds.com",
+        "mentions": 6734,
+        "ai_search_volume": 183065
+       },
+       {
+        "key": "www.kbb.com",
+        "mentions": 5846,
+        "ai_search_volume": 145338
+       },
+       {
+        "key": "www.caranddriver.com",
+        "mentions": 5472,
+        "ai_search_volume": 159796
+       }
+      ],
+      "brand_entities_title": [
+       {
+        "key": "BMW",
+        "mentions": 1356,
+        "ai_search_volume": 35696
+       },
+       {
+        "key": "Mercedes-Benz",
+        "mentions": 452,
+        "ai_search_volume": 10327
+       },
+       {
+        "key": "Audi",
+        "mentions": 330,
+        "ai_search_volume": 6006
+       }
+      ],
+      "brand_entities_category": [
+       {
+        "key": "vehicle",
+        "mentions": 5607,
+        "ai_search_volume": 77631
+       },
+       {
+        "key": "company",
+        "mentions": 2771,
+        "ai_search_volume": 83175
+       },
+       {
+        "key": "brand",
+        "mentions": 2334,
+        "ai_search_volume": 109727
+       }
+      ],
+      "total": {
+       "mentions": 65637,
+       "ai_search_volume": 1443112
+      }
+     },
+     "items": []
+    }
+   ]
+  }
+ ]
+}
