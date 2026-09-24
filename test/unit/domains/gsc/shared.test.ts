@@ -36,7 +36,7 @@ describe("cachedGscCall", () => {
     const env = fakeEnv();
     const compute = vi.fn().mockResolvedValue({ rows: [] });
     const result = await cachedGscCall(env, "tenant-1", "get_search_performance", "key-1", 3600, compute);
-    expect(result).toEqual({ value: { rows: [] }, cacheHit: false });
+    expect(result).toMatchObject({ value: { rows: [] }, cacheHit: false });
     expect(compute).toHaveBeenCalledOnce();
   });
 
@@ -61,6 +61,22 @@ describe("cachedGscCall", () => {
     const computeB = vi.fn().mockResolvedValue("b");
     await cachedGscCall(env, "tenant-1", "get_search_performance", "key-a", 3600, computeA);
     const result = await cachedGscCall(env, "tenant-1", "get_search_performance", "key-b", 3600, computeB);
-    expect(result).toEqual({ value: "b", cacheHit: false });
+    expect(result).toMatchObject({ value: "b", cacheHit: false });
+  });
+
+  it("reports when the data was really fetched: a cache hit keeps the original time instead of looking fresh", async () => {
+    vi.useFakeTimers();
+    try {
+      const env = fakeEnv();
+      vi.setSystemTime(new Date("2026-09-24T22:12:27Z"));
+      const first = await cachedGscCall(env, "tenant-1", "get_search_performance", "key-1", 3600, async () => ({ rows: [] }));
+      vi.setSystemTime(new Date("2026-09-24T22:40:00Z"));
+      const hit = await cachedGscCall(env, "tenant-1", "get_search_performance", "key-1", 3600, async () => ({ rows: [] }));
+      expect(hit.cacheHit).toBe(true);
+      expect(hit.fetchedAt.toISOString()).toBe("2026-09-24T22:12:27.000Z");
+      expect(first.fetchedAt.toISOString()).toBe(hit.fetchedAt.toISOString());
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

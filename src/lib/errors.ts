@@ -10,7 +10,7 @@ export class ConnectionRequiredError extends Error {
   constructor(connection: "webmaster_console" | "analytics_property", message?: string) {
     super(
       message ??
-        `This tool needs a connected ${connection} account. Run the Google OAuth connect flow first.`
+        `This tool needs your ${connection === "webmaster_console" ? "Search Console" : "Google Analytics"} account connected. Connect it in the Vouched dashboard under Settings → Google connections.`
     );
     this.name = "ConnectionRequiredError";
     this.connection = connection;
@@ -37,8 +37,8 @@ export class QuotaExceededError extends Error {
 
   constructor(plan: string, quotaUsd: number) {
     super(
-      `You've used your ${plan} plan's included $${quotaUsd.toFixed(2)}/month DataForSEO quota. ` +
-        "Upgrade your plan, or wait for it to reset next billing period."
+      `You've used the $${quotaUsd.toFixed(2)} of market data included in your ${plan} plan this month, and your overage wallet is empty. ` +
+        "Top up the wallet from Billing to keep going, or wait for your next billing period. Your Google tools keep working."
     );
     this.name = "QuotaExceededError";
     this.plan = plan;

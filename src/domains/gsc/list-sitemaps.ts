@@ -23,13 +23,13 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   if (!website?.gsc_site_url) {
     throw new ConnectionRequiredError(
       "webmaster_console",
-      `no Search Console site configured for ${args.domain}, add it to the websites table first`
+      `${args.domain} has no Search Console property linked yet. In the Vouched dashboard, open Websites, edit ${args.domain} and pick its Search Console property.`
     );
   }
   const siteUrl = website.gsc_site_url;
 
   const accessToken = await getValidAccessToken(env, "webmaster_console", tenantId);
-  const { value: sitemaps, cacheHit } = await cachedGscCall(
+  const { value: sitemaps, cacheHit, fetchedAt: observedAt } = await cachedGscCall(
     env,
     tenantId,
     "list_sitemaps",
@@ -38,7 +38,6 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
     () => listSitemaps(accessToken, siteUrl)
   );
 
-  const observedAt = new Date();
   const propertyId = propertyEntityId(website.website_id);
   const builder = envelope("gsc", {
     domain: args.domain,

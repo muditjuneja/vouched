@@ -87,14 +87,14 @@ export async function dfsLivePost<TResult>(
   });
 
   if (!res.ok) {
-    throw new UpstreamError("dataforseo", await res.text(), res.status);
+    throw new UpstreamError("market_data", await res.text(), res.status);
   }
 
   const body = (await res.json()) as DfsResponse<TResult>;
   const task0 = body.tasks?.[0];
   if (!task0 || task0.status_code !== 20000) {
     throw new UpstreamError(
-      "dataforseo",
+      "market_data",
       task0?.status_message ?? body.status_message ?? "no task result returned",
       task0?.status_code ?? body.status_code
     );

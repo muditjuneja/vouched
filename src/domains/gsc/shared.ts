@@ -10,6 +10,9 @@ import type { Env } from "../../types/env";
  * The KV entry expires after `ttlSeconds` and that's the only copy kept:
  * users' Search Console data is never archived. Google's Limited Use rules
  * only allow using it to serve the user who asked for it.
+ *
+ * `fetchedAt` is when Google actually returned the data, kept with the
+ * cached copy, so a cache hit reports its real age instead of looking fresh.
  */
 export async function cachedGscCall<T>(
   env: Env,
@@ -18,7 +21,12 @@ export async function cachedGscCall<T>(
   keyParts: string,
   ttlSeconds: number,
   compute: () => Promise<T>
-): Promise<{ value: T; cacheHit: boolean }> {
-  const key = `gsc:${tenantId ?? "self-host"}:${keyParts}`;
-  return getOrSetCache(env.CACHE, key, ttlSeconds, compute);
+): Promise<{ value: T; cacheHit: boolean; fetchedAt: Date }> {
+  // "gsc2": entries carry their fetch time; the older "gsc" ones didn't.
+  const key = `gsc2:${tenantId ?? "self-host"}:${keyParts}`;
+  const { value: entry, cacheHit } = await getOrSetCache(env.CACHE, key, ttlSeconds, async () => ({
+    value: await compute(),
+    fetchedAt: new Date().toISOString()
+  }));
+  return { value: entry.value, cacheHit, fetchedAt: new Date(entry.fetchedAt) };
 }

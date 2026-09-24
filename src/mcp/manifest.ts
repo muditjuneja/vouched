@@ -205,8 +205,8 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
     // Covers Search Console's urlInspection.index:inspect.
     name: "inspect_indexing",
     domain: "gsc",
-    summary: "Google's own indexing status for one URL: indexed?, canonical Google chose, mobile usability, rich results, last crawl.",
-    fact_types: ["gsc.index_status", "gsc.mobile_usability", "gsc.rich_results"],
+    summary: "Google's own indexing status for one URL: indexed?, canonical Google chose, rich results, last crawl.",
+    fact_types: ["gsc.index_status", "gsc.rich_results"],
     source_classes: ["webmaster_console"],
     requires_connection: "webmaster_console",
     billing: "free",

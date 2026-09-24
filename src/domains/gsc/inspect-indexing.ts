@@ -24,13 +24,13 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   if (!website?.gsc_site_url) {
     throw new ConnectionRequiredError(
       "webmaster_console",
-      `no Search Console site configured for ${args.domain}, add it to the websites table first`
+      `${args.domain} has no Search Console property linked yet. In the Vouched dashboard, open Websites, edit ${args.domain} and pick its Search Console property.`
     );
   }
   const siteUrl = website.gsc_site_url;
 
   const accessToken = await getValidAccessToken(env, "webmaster_console", tenantId);
-  const { value: result, cacheHit } = await cachedGscCall(
+  const { value: result, cacheHit, fetchedAt: observedAt } = await cachedGscCall(
     env,
     tenantId,
     "inspect_indexing",
@@ -39,7 +39,6 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
     () => inspectUrl(accessToken, siteUrl, args.url)
   );
 
-  const observedAt = new Date();
   const propertyId = propertyEntityId(website.website_id);
   const pageId = pageEntityId(args.url);
   const builder = envelope("gsc", { domain: args.domain, url: args.url, inspectionResultLink: result.inspectionResultLink })
@@ -68,14 +67,8 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
     });
   }
 
-  if (result.mobileUsabilityResult) {
-    builder.addFact({
-      type: "gsc.mobile_usability",
-      subject: [pageId],
-      data: { verdict: result.mobileUsabilityResult.verdict, issues: result.mobileUsabilityResult.issues },
-      provenance: provenance("webmaster_console", "urlInspection.index.inspect", { observedAt, cacheHit })
-    });
-  }
+  // No mobile-usability fact: Google retired that report, and the API now
+  // only ever returns VERDICT_UNSPECIFIED for it.
 
   if (result.richResultsResult) {
     builder.addFact({
@@ -94,7 +87,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const inspectIndexing: ToolModule<typeof inputSchema> = {
   name: "inspect_indexing",
   title: "Inspect indexing",
-  description: "Google's own indexing status for one URL: indexed?, canonical Google chose, mobile usability, rich results, last crawl time.",
+  description: "Google's own indexing status for one URL: indexed?, canonical Google chose, rich results, last crawl time.",
   inputSchema,
   handler
 };

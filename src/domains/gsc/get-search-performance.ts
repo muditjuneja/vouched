@@ -8,7 +8,7 @@ import { keywordEntityId, pageEntityId, propertyEntityId } from "../../envelope/
 import { provenance } from "../../envelope/provenance";
 import type { Entity } from "../../envelope/types";
 import { ConnectionRequiredError } from "../../lib/errors";
-import { storeDataset } from "../../resources/store";
+import { storeDataset, type FactDataset } from "../../resources/store";
 import type { Env } from "../../types/env";
 import type { ToolModule } from "../types";
 import { cachedGscCall } from "./shared";
@@ -126,10 +126,16 @@ function previousPeriod(startDate: string, endDate: string): { startDate: string
  * broken down only by date/country/device (no query or page) has no
  * natural entity of its own, so it's subjected to the property instead.
  */
+/**
+ * Search Console queries aren't tied to one language or market like the
+ * market-data tools' US English: keyword ids say "any" language and the
+ * country filter if one was applied, otherwise GLOBAL.
+ */
 function rowSubjectsAndEntities(
   dims: Dimension[],
   keys: string[],
-  propertyId: string
+  propertyId: string,
+  country: string | undefined
 ): { dimensionValues: Record<string, string>; subjects: string[]; entities: Entity[] } {
   const dimensionValues: Record<string, string> = {};
   const subjects: string[] = [];
@@ -139,7 +145,7 @@ function rowSubjectsAndEntities(
     const value = keys[i] ?? "";
     dimensionValues[dim] = value;
     if (dim === "query") {
-      const id = keywordEntityId(value);
+      const id = keywordEntityId(value, "any", country ? country.toUpperCase() : "GLOBAL");
       subjects.push(id);
       entities.push({ id, kind: "keyword", label: value });
     } else if (dim === "page") {
@@ -196,7 +202,7 @@ async function fetchTotals(
   filters: SearchAnalyticsFilter[],
   searchType: z.infer<typeof inputSchema>["searchType"],
   dataState: z.infer<typeof inputSchema>["dataState"]
-): Promise<{ totals: Totals; cacheHit: boolean }> {
+): Promise<{ totals: Totals; cacheHit: boolean; fetchedAt: Date }> {
   const query: SearchAnalyticsQuery = {
     startDate,
     endDate,
@@ -206,7 +212,7 @@ async function fetchTotals(
     ...(searchType ? { searchType } : {}),
     ...(dataState ? { dataState } : {})
   };
-  const { value: result, cacheHit } = await cachedGscCall(
+  const { value: result, cacheHit, fetchedAt } = await cachedGscCall(
     env,
     tenantId,
     "get_search_performance",
@@ -214,7 +220,7 @@ async function fetchTotals(
     CACHE_TTL_SECONDS,
     () => querySearchAnalytics(accessToken, siteUrl, query)
   );
-  return { totals: computeTotals(result.rows ?? []), cacheHit };
+  return { totals: computeTotals(result.rows ?? []), cacheHit, fetchedAt };
 }
 
 async function handler(args: z.infer<typeof inputSchema>, env: Env) {
@@ -223,7 +229,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   if (!website?.gsc_site_url) {
     throw new ConnectionRequiredError(
       "webmaster_console",
-      `no Search Console site configured for ${args.domain}, add it to the websites table first`
+      `${args.domain} has no Search Console property linked yet. In the Vouched dashboard, open Websites, edit ${args.domain} and pick its Search Console property.`
     );
   }
   const siteUrl = website.gsc_site_url;
@@ -235,7 +241,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   const accessToken = await getValidAccessToken(env, "webmaster_console", tenantId);
 
   const primaryQuery: SearchAnalyticsQuery = { startDate: args.startDate, endDate: args.endDate, rowLimit, ...shared };
-  const { value: result, cacheHit: detailCacheHit } = await cachedGscCall(
+  const { value: result, cacheHit: detailCacheHit, fetchedAt: detailFetchedAt } = await cachedGscCall(
     env,
     tenantId,
     "get_search_performance",
@@ -244,9 +250,8 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
     () => querySearchAnalytics(accessToken, siteUrl, primaryQuery)
   );
   const rows = result.rows ?? [];
-  const observedAt = new Date();
   const propertyId = propertyEntityId(website.website_id);
-  const { totals, cacheHit: summaryCacheHit } = await fetchTotals(
+  const { totals, cacheHit: summaryCacheHit, fetchedAt: summaryFetchedAt } = await fetchTotals(
     env,
     tenantId,
     accessToken,
@@ -296,7 +301,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   let exportUri: string | null = null;
   if (rows.length >= rowLimit && rowLimit < EXPORT_ROW_LIMIT) {
     const supersetQuery: SearchAnalyticsQuery = { startDate: args.startDate, endDate: args.endDate, rowLimit: EXPORT_ROW_LIMIT, ...shared };
-    const { value: supersetResult } = await cachedGscCall(
+    const { value: supersetResult, fetchedAt: supersetFetchedAt } = await cachedGscCall(
       env,
       tenantId,
       "get_search_performance",
@@ -306,7 +311,29 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
     );
     const supersetRows = supersetResult.rows ?? [];
     if (supersetRows.length > rows.length) {
-      exportUri = await storeDataset(env.DATASETS, "gsc", "get_search_performance", supersetRows);
+      // The same facts the inline rows produce, so export_dataset hands back
+      // an identical shape, just more of it.
+      const entities = new Map<string, Entity>();
+      const items = supersetRows.map((row) => {
+        const built = rowSubjectsAndEntities(dims, row.keys, propertyId, args.country);
+        for (const entity of built.entities) entities.set(entity.id, entity);
+        return {
+          subject: built.subjects,
+          data: { dimensions: built.dimensionValues, clicks: row.clicks, impressions: row.impressions, ctr: row.ctr, position: row.position }
+        };
+      });
+      const dataset: FactDataset = {
+        version: 2,
+        fact_type: "gsc.query_performance",
+        source_class: "webmaster_console",
+        method: "gsc.searchAnalytics.query",
+        observed_at: supersetFetchedAt.toISOString(),
+        capped: supersetRows.length >= EXPORT_ROW_LIMIT,
+        row_limit: EXPORT_ROW_LIMIT,
+        entities: [...entities.values()],
+        items
+      };
+      exportUri = await storeDataset(env.DATASETS, "gsc", "get_search_performance", dataset);
     }
   }
 
@@ -328,7 +355,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
       type: "gsc.performance_summary",
       subject: [propertyId],
       data: totals,
-      provenance: provenance("webmaster_console", "gsc.searchAnalytics.query", { observedAt, cacheHit: summaryCacheHit })
+      provenance: provenance("webmaster_console", "gsc.searchAnalytics.query", { observedAt: summaryFetchedAt, cacheHit: summaryCacheHit })
     });
 
   if (exportUri) {
@@ -343,20 +370,20 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
         field,
         previous: previousTotals[field],
         current: totals[field],
-        observed_at: observedAt.toISOString()
+        observed_at: summaryFetchedAt.toISOString()
       });
     }
   }
 
   for (const row of rows) {
-    const { dimensionValues, subjects, entities } = rowSubjectsAndEntities(dims, row.keys, propertyId);
+    const { dimensionValues, subjects, entities } = rowSubjectsAndEntities(dims, row.keys, propertyId, args.country);
     for (const entity of entities) builder.addEntity(entity);
 
     builder.addFact({
       type: "gsc.query_performance",
       subject: subjects,
       data: { dimensions: dimensionValues, clicks: row.clicks, impressions: row.impressions, ctr: row.ctr, position: row.position },
-      provenance: provenance("webmaster_console", "gsc.searchAnalytics.query", { observedAt, cacheHit: detailCacheHit })
+      provenance: provenance("webmaster_console", "gsc.searchAnalytics.query", { observedAt: detailFetchedAt, cacheHit: detailCacheHit })
     });
 
     const previousRow = previousRowsByKey?.get(row.keys.join("␟"));
@@ -374,7 +401,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
           field,
           previous,
           current,
-          observed_at: observedAt.toISOString()
+          observed_at: detailFetchedAt.toISOString()
         });
       }
     }
@@ -384,7 +411,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
     .setCoverage({
       returned: rows.length,
       total: null,
-      as_of: observedAt.toISOString(),
+      as_of: new Date(Math.min(summaryFetchedAt.getTime(), detailFetchedAt.getTime())).toISOString(),
       scope_note:
         rows.length >= rowLimit
           ? exportUri

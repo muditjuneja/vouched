@@ -27,7 +27,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   if (!website?.ga4_property_id) {
     throw new ConnectionRequiredError(
       "analytics_property",
-      `no GA4 property configured for ${args.domain}; add it to the websites table first`
+      `${args.domain} has no Google Analytics property linked yet. In the Vouched dashboard, connect Google Analytics (Settings), then open Websites, edit ${args.domain} and pick its GA4 property.`
     );
   }
 

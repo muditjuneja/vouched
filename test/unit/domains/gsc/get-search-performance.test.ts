@@ -389,6 +389,41 @@ describe("get_search_performance", () => {
     expect(result.coverage.scope_note).toContain("export_dataset");
   });
 
+  it("stores the export as the same facts the inline rows produce, with global query ids", async () => {
+    getWebsiteByDomain.mockResolvedValue(WEBSITE);
+    getValidAccessToken.mockResolvedValue("token-123");
+    const put = vi.fn(async (_key: string, _body: string) => undefined);
+    const row = (q: string) => ({ keys: [q], clicks: 1, impressions: 2, ctr: 0.5, position: 3 });
+    querySearchAnalytics
+      .mockResolvedValueOnce({ rows: [row("vouched")] })
+      .mockResolvedValueOnce({ rows: [row("vouched")] })
+      .mockResolvedValueOnce({ rows: [row("vouched"), row("mcp seo")] });
+
+    const result = await getSearchPerformance.handler(
+      { domain: "example.com", startDate: "2026-01-01", endDate: "2026-01-31", rowLimit: 1 },
+      fakeEnv({ DATASETS: { put } as unknown as R2Bucket })
+    );
+
+    expect(result.facts.find((f) => f.type === "gsc.query_performance")?.subject).toEqual(["keyword:any:GLOBAL:vouched"]);
+    const stored = JSON.parse(put.mock.calls[0]![1]);
+    expect(stored).toMatchObject({ version: 2, fact_type: "gsc.query_performance", source_class: "webmaster_console", capped: false });
+    expect(stored.items[1]).toEqual({
+      subject: ["keyword:any:GLOBAL:mcp seo"],
+      data: { dimensions: { query: "mcp seo" }, clicks: 1, impressions: 2, ctr: 0.5, position: 3 }
+    });
+  });
+
+  it("labels query ids with the country filter when one is applied", async () => {
+    getWebsiteByDomain.mockResolvedValue(WEBSITE);
+    getValidAccessToken.mockResolvedValue("token-123");
+    querySearchAnalytics.mockResolvedValue({ rows: [{ keys: ["vouched"], clicks: 1, impressions: 2, ctr: 0.5, position: 3 }] });
+    const result = await getSearchPerformance.handler(
+      { domain: "example.com", startDate: "2026-01-01", endDate: "2026-01-31", country: "ind" },
+      fakeEnv()
+    );
+    expect(result.facts.find((f) => f.type === "gsc.query_performance")?.subject).toEqual(["keyword:any:IND:vouched"]);
+  });
+
   it("never probes for more rows when rowLimit already covers everything returned", async () => {
     getWebsiteByDomain.mockResolvedValueOnce(WEBSITE);
     getValidAccessToken.mockResolvedValueOnce("token-123");

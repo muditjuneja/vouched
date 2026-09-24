@@ -228,7 +228,7 @@ interface RawUrlInspectionResponse {
 /**
  * Google's own per-URL indexing diagnosis (`urlInspection.index:inspect`,
  * same `webmasters.readonly` scope, no new consent needed): is it actually
- * indexed, what canonical did Google choose, mobile usability, rich
+ * indexed, what canonical did Google choose, rich
  * results, last crawl. A different API version/host from the rest of this
  * file (`/v1/` not `/webmasters/v3/`) but the same underlying product.
  */

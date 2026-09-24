@@ -12,14 +12,28 @@ Two roles:
   It never writes to the production database or changes secrets during
   this run.
 
+## Status (25 September 2026)
+
+Already done on production, so the run starts at section 3:
+
+- Signed in with Google through Clerk; the workspace is on **Pro** (active,
+  Dodo test mode).
+- **Claude connected by sign-in** (claude.ai custom connector, standard MCP
+  OAuth). One grant exists; it shows under Settings → Connected apps.
+- **Search Console connected** as `mudit.juneja1994@gmail.com`, and
+  **xmit.sh** is tracked (`sc-domain:xmit.sh`).
+- **Not yet:** Google Analytics isn't connected (3.9 waits for it), and the
+  Free-plan limits need a second, free account (section 5b).
+
+Run the tool calls from the connected Claude, or from a Claude Code session
+connected the same way (section 2). Either one exercises the real sign-in.
+
 ## 0. Before starting
 
-Fill these in; every step below uses them.
-
-| Placeholder | What | Example |
+| Placeholder | What | Value |
 |---|---|---|
-| `SITE` | A domain you own, verified in Search Console, with real traffic | `example.com` |
-| `SITE_PAGE` | One real, indexed URL on it | `https://example.com/pricing` |
+| `SITE` | A domain you own, verified in Search Console, with real traffic | `xmit.sh` |
+| `SITE_PAGE` | One real, indexed URL on it | `https://xmit.sh/` (swap for any page Search Console lists as indexed) |
 | `KNOWN_DOMAIN` | An established third-party site, for market data | `semrush.com` |
 | `KNOWN_RIVAL` | A competitor of `KNOWN_DOMAIN` | `ahrefs.com` |
 
@@ -32,7 +46,7 @@ Fill these in; every step below uses them.
   OAuth consent screen (Google Auth Platform → Audience), and the Search
   Console API, Analytics Data API and Analytics Admin API must be enabled.
 
-## 1. Account and connection (you, in a browser)
+## 1. Account and connection (you, in a browser): done except 1.6 and 1.7
 
 | # | Step | Pass when |
 |---|---|---|
@@ -70,9 +84,7 @@ Allow on the Vouched consent page. Confirm with `describe_capabilities`.
 - `coverage` is present and plausible (`returned` matches what you see).
 - Nothing in the response names the data vendor (no "DataForSEO").
 
-## 3. Free tools (work on any plan)
-
-Run these while the account is still on **Free**.
+## 3. Google tools (every plan)
 
 | # | Call | Pass when |
 |---|---|---|
@@ -85,12 +97,11 @@ Run these while the account is still on **Free**.
 | 3.7 | `inspect_indexing {domain: SITE, url: SITE_PAGE}` | `gsc.index_status` fact with a verdict and last-crawl info |
 | 3.8 | `list_sitemaps {domain: SITE}` | One fact per submitted sitemap (empty is fine if none are submitted) |
 | 3.9 | `get_website_analytics {domain: SITE, startDate, endDate}` | GA4 facts with `source_class: analytics_property` |
-| 3.10 | Any market-data tool, e.g. `inspect_keyword {keyword: "seo tools"}` | Fails with `upgrade_required: ...` (Free has no market data) |
 
 ## 4. Market-data tools (Pro)
 
-**You:** Billing → upgrade to **Pro** with Dodo's test card. Within a minute
-Billing shows Pro, and exactly one "Payment received" email arrives.
+The workspace is already on Pro. If the "Payment received" email for that
+upgrade arrived exactly once (plus the BCC copy), billing emails are working.
 
 | # | Call | Expected `source_class` | Pass when |
 |---|---|---|---|
@@ -128,6 +139,17 @@ Billing → usage in the dashboard shows the same total.
 | 5.5 | Call any tool with the `prod-test` key as a header, then revoke it and call again | Works, then fails as unauthorized (API keys still work next to sign-in) |
 | 5.5b | Settings → Connected apps → Disconnect the Claude Code app, then call a tool | Fails; `/mcp` offers sign-in again |
 | 5.6 | Settings → Sign out, then open `/dashboard` | Sign-in page, not straight back in |
+
+### 5b. Free plan (second account)
+
+Sign in with a different Google account (a Clerk test user is fine), so it
+lands on Free, and connect it the same way.
+
+| # | Check | Pass when |
+|---|---|---|
+| 5b.1 | `inspect_keyword {keyword: "seo tools"}` | Fails with `upgrade_required: ...` |
+| 5b.2 | `list_websites {}` | Works: Google tools are free |
+| 5b.3 | Its dashboard's Billing page | No wallet top-up offered |
 
 Optional, if time allows: invite a second email address to a Team plan and
 accept from that account (seats); on a Free account, 101 tool calls in a

@@ -18,21 +18,42 @@ describe("export_dataset", () => {
     readDataset.mockReset();
   });
 
-  it("reports coverage as the actual row count, not a flat 1, when the dataset is an array", async () => {
+  const factDataset = (capped: boolean) => ({
+    version: 2,
+    fact_type: "gsc.query_performance",
+    source_class: "webmaster_console",
+    method: "gsc.searchAnalytics.query",
+    observed_at: "2026-09-24T22:12:27.000Z",
+    capped,
+    row_limit: 1000,
+    entities: [{ id: "keyword:any:GLOBAL:vouched", kind: "keyword", label: "vouched" }],
+    items: [{ subject: ["keyword:any:GLOBAL:vouched"], data: { dimensions: { query: "vouched" }, clicks: 3, impressions: 40, ctr: 0.075, position: 2.1 } }]
+  });
+
+  it("returns an export as the same facts the inline response uses, with the original fetch time", async () => {
+    readDataset.mockResolvedValueOnce(factDataset(false));
+    const result = await exportDataset.handler({ uri: "mcpseo://gsc/get_search_performance/x.json" }, fakeEnv());
+    expect(result.facts).toHaveLength(1);
+    expect(result.facts[0]).toMatchObject({
+      type: "gsc.query_performance",
+      data: { dimensions: { query: "vouched" }, clicks: 3 },
+      provenance: { source_class: "webmaster_console", observed_at: "2026-09-24T22:12:27.000Z" }
+    });
+    expect(result.entities).toHaveLength(1);
+    expect(result.coverage).toMatchObject({ returned: 1, total: 1, as_of: "2026-09-24T22:12:27.000Z" });
+  });
+
+  it("never claims completeness at the row cap: total is unknown and the note says so", async () => {
+    readDataset.mockResolvedValueOnce(factDataset(true));
+    const result = await exportDataset.handler({ uri: "mcpseo://gsc/get_search_performance/x.json" }, fakeEnv());
+    expect(result.coverage.total).toBeNull();
+    expect(result.coverage.scope_note).toContain("1000-row export limit");
+  });
+
+  it("still reads an older raw-rows export, counting rows but not claiming it's complete", async () => {
     readDataset.mockResolvedValueOnce(new Array(1000).fill({ clicks: 1 }));
     const result = await exportDataset.handler({ uri: "mcpseo://gsc/get_search_performance/x.json" }, fakeEnv());
-    expect(result.coverage).toMatchObject({ returned: 1000, total: 1000 });
-  });
-
-  it("falls back to 1 for a non-array dataset", async () => {
-    readDataset.mockResolvedValueOnce({ some: "object" });
-    const result = await exportDataset.handler({ uri: "mcpseo://gsc/get_search_performance/x.json" }, fakeEnv());
-    expect(result.coverage).toMatchObject({ returned: 1, total: 1 });
-  });
-
-  it("reports 0 for an empty array, not 1", async () => {
-    readDataset.mockResolvedValueOnce([]);
-    const result = await exportDataset.handler({ uri: "mcpseo://gsc/get_search_performance/x.json" }, fakeEnv());
-    expect(result.coverage).toMatchObject({ returned: 0, total: 0 });
+    expect(result.coverage).toMatchObject({ returned: 1000, total: null });
+    expect(result.coverage.scope_note).not.toContain("untruncated");
   });
 });

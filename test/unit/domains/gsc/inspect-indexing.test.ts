@@ -98,7 +98,7 @@ describe("inspect_indexing", () => {
     expect(result.facts.some((f) => f.type === "gsc.rich_results")).toBe(false);
   });
 
-  it("emits mobile_usability and rich_results facts only when those sub-results are present", async () => {
+  it("emits rich_results when present, and never the retired mobile-usability report", async () => {
     getWebsiteByDomain.mockResolvedValueOnce(WEBSITE);
     getValidAccessToken.mockResolvedValueOnce("token-123");
     inspectUrl.mockResolvedValueOnce({
@@ -111,8 +111,7 @@ describe("inspect_indexing", () => {
     const result = await inspectIndexing.handler({ domain: "example.com", url: "https://example.com/page" }, fakeEnv());
 
     expect(result.facts.some((f) => f.type === "gsc.index_status")).toBe(false);
-    const mobile = result.facts.find((f) => f.type === "gsc.mobile_usability");
-    expect(mobile?.data).toEqual({ verdict: "FAIL", issues: [{ issueType: "CLICKABLE_ELEMENTS_TOO_CLOSE" }] });
+    expect(result.facts.some((f) => f.type === "gsc.mobile_usability")).toBe(false);
     const rich = result.facts.find((f) => f.type === "gsc.rich_results");
     expect(rich?.data).toEqual({ verdict: "NEUTRAL", detected_items: [] });
   });

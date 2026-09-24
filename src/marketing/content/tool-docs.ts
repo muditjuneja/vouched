@@ -1254,10 +1254,9 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
         description: "The exact URL to inspect."
       }
     ],
-    dataSummary: "Google's authoritative URL inspection result: index verdict, Google-selected canonical vs user-declared canonical, robots.txt status, crawl timestamp, mobile usability, and rich result validation.",
+    dataSummary: "Google's authoritative URL inspection result: index verdict, Google-selected canonical vs user-declared canonical, robots.txt status, crawl timestamp, and rich result validation.",
     emittedFacts: [
       { type: "gsc.index_status", description: "Google index status: verdict (PASS/FAIL), coverage state, Google canonical, user canonical, last crawl time, and crawler user-agent.", fields: ["verdict", "coverage_state", "robots_txt_state", "indexing_state", "page_fetch_state", "last_crawl_time", "crawled_as", "google_canonical", "user_canonical"] },
-      { type: "gsc.mobile_usability", description: "Mobile friendliness verdict and specific mobile layout issues.", fields: ["verdict", "issues"] },
       { type: "gsc.rich_results", description: "Rich snippets evaluation (Product, FAQ, Breadcrumbs, Article schema).", fields: ["verdict", "detected_items"] }
     ],
     entitiesEmitted: [
@@ -1291,12 +1290,6 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
             google_canonical: "https://example.com/blog/mcp-guide",
             user_canonical: "https://example.com/blog/mcp-guide"
           },
-          provenance: { source_class: "webmaster_console", method: "searchconsole.urlInspection.index.inspect", confidence: 1.0, observed_at: "2026-09-24T00:00:00Z", cache_hit: true }
-        },
-        {
-          type: "gsc.mobile_usability",
-          subject: ["urn:page:https%3A%2F%2Fexample.com%2Fblog%2Fmcp-guide"],
-          data: { verdict: "PASS", issues: [] },
           provenance: { source_class: "webmaster_console", method: "searchconsole.urlInspection.index.inspect", confidence: 1.0, observed_at: "2026-09-24T00:00:00Z", cache_hit: true }
         }
       ],

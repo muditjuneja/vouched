@@ -19,7 +19,8 @@ async function handler(_args: Record<string, never>, env: Env) {
     fact_types: entry.fact_types,
     source_classes: entry.source_classes,
     requires_connection: entry.requires_connection,
-    billing: entry.billing,
+    // "paid" rather than the internal "dataforseo": responses never name the data supplier.
+    billing: entry.billing === "dataforseo" ? "paid" : "free",
     implemented: entry.implemented,
     enabled: isEnabled(entry, env)
   }));

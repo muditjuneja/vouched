@@ -1,4 +1,24 @@
+import type { Entity, Provenance } from "../envelope/types";
 import { UpstreamError } from "../lib/errors";
+
+/**
+ * What an export holds: the same facts the inline response carried (same
+ * type, data shape and provenance), just more of them, so a row reads the
+ * same whether it came inline or through export_dataset.
+ */
+export interface FactDataset {
+  version: 2;
+  fact_type: string;
+  source_class: Provenance["source_class"];
+  method: string;
+  /** When the data was fetched from the source. */
+  observed_at: string;
+  /** True when the export stopped at `row_limit`, so more rows may exist. */
+  capped: boolean;
+  row_limit: number;
+  entities: Entity[];
+  items: Array<{ subject: string[]; data: Record<string, unknown> }>;
+}
 
 const URI_SCHEME = "mcpseo://";
 
