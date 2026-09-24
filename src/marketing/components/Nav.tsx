@@ -15,7 +15,6 @@ export function Nav({ cloudMode }: NavProps) {
       <div class="nav-links">
         <a href="/docs">Docs</a>
         <a href="/pricing">Pricing</a>
-        <a href="/vs/open-seo">vs OpenRush</a>
         <a href={GITHUB_URL}>GitHub</a>
         {cloudMode ? (
           <a class="btn" href="/dashboard">

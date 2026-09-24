@@ -26,6 +26,7 @@ Deploying:
 
 ```bash
 wrangler r2 bucket create vouched-seo-mcp-datasets
+wrangler r2 bucket lifecycle add vouched-seo-mcp-datasets expire-exports-7d --expire-days 7   # exports expire after 7 days
 wrangler kv namespace create vouched-seo-mcp-cache   # then paste the id into wrangler.jsonc
 wrangler secret put MCP_BEARER_TOKEN
 npm run db:migrate:remote
@@ -93,9 +94,7 @@ field names are a best-effort guess, not verified against docs or a live
 call. Spike this against the real API before trusting it, expect to revise
 the request body shape.
 
-**19 of this build's 20 tools are implemented and exposed** (OpenRush's
-own 18-tool manifest, plus `inspect_indexing`/`list_sitemaps` added here),
-see [`docs/TOOLS.md`](TOOLS.md) for the live per-tool breakdown.
+**19 of this build's 20 tools are implemented and exposed**, see [`docs/TOOLS.md`](TOOLS.md) for the live per-tool breakdown.
 `audit_site` is built but deliberately held back (`implemented: false`)
 until its crawl is reworked to fit this Workers architecture properly
 (currently a fully sequential, no-concurrency BFS, see

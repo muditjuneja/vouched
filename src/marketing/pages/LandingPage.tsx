@@ -1,6 +1,6 @@
 import type { Child } from "hono/jsx";
 import { MONTHLY_QUOTA_USD, PLAN_PRICES_USD, TEAM_SEATS } from "../../billing/quotas";
-import { Button, Card, CodeWindow, Table } from "../../design";
+import { Button, Card, CodeWindow } from "../../design";
 import { DISPLAY_NAME, MCP_SERVER_NAME, cloudCtaHref } from "../brand";
 import { AgentPreview } from "../components/AgentPreview";
 import { Hero } from "../components/Hero";
@@ -283,42 +283,8 @@ ${CONNECT_COMMAND}`}</CodeWindow>
         </p>
       </section>
 
-      <section>
-        <p class="chapter">05 · Open vs closed</p>
-        <h2>vs OpenRush</h2>
-        <Table class="compare" headers={["", DISPLAY_NAME, "OpenRush"]}>
-          <tr>
-            <td>Source</td>
-            <td>MIT, you can read every tool</td>
-            <td>Closed</td>
-          </tr>
-          <tr>
-            <td>Where it runs</td>
-            <td>Cloud or self-host</td>
-            <td>Hosted only</td>
-          </tr>
-          <tr>
-            <td>Pricing shape</td>
-            <td>Community $0 + BYOK, or flat Cloud quota</td>
-            <td>Credits ($10 / 1,000)</td>
-          </tr>
-          <tr>
-            <td>Search Console</td>
-            <td>First-party GSC integration (confidence 1.0, $0 vendor cost)</td>
-            <td>No direct GSC connection (credit-metered proxies)</td>
-          </tr>
-        </Table>
-        <p class="muted">
-          OpenRush credit price from their public site, 6 Sep 2026. Their docs and marketing disagree on some per-tool credit costs
-          (e.g. discover_competitors). We are not claiming feature-for-feature index parity.
-        </p>
-        <p>
-          <a href="/vs/open-seo">Full comparison →</a>
-        </p>
-      </section>
-
       <section class="faq">
-        <p class="chapter">06 · Questions</p>
+        <p class="chapter">05 · Questions</p>
         <h2>Frequently asked</h2>
         <div class="faq-list">
           <details open>
@@ -367,15 +333,6 @@ ${CONNECT_COMMAND}`}</CodeWindow>
             <summary>Which MCP clients work?</summary>
             <div class="faq-answer">
               <p>Claude Desktop, Claude Code, Cursor, and any client supporting MCP over HTTP with bearer authentication.</p>
-            </div>
-          </details>
-          <details>
-            <summary>How is this different from OpenRush?</summary>
-            <div class="faq-answer">
-              <p>
-                OpenRush is closed-source and charges per-call credits. Vouched is MIT licensed, self-hostable, and Cloud uses predictable
-                monthly quotas. Dataset URIs stay <code>mcpseo://</code> for compatibility.
-              </p>
             </div>
           </details>
         </div>

@@ -25,12 +25,20 @@ describe("readDataset", () => {
       }),
       get: vi.fn(async (key: string) => {
         const value = objects.get(key);
-        return value === undefined ? null : { json: async () => value };
+        return value === undefined ? null : { uploaded: new Date(), json: async () => value };
       })
     } as unknown as R2Bucket;
 
     const uri = await storeDataset(bucket, "gsc", "get_search_performance", { rows: [1, 2, 3] });
     expect(await readDataset(bucket, uri)).toEqual({ rows: [1, 2, 3] });
+  });
+
+  it("refuses an export older than 7 days, even if the lifecycle rule hasn't deleted it yet", async () => {
+    const uploaded = new Date("2026-09-01T00:00:00Z");
+    const bucket = { get: vi.fn().mockResolvedValue({ uploaded, json: async () => ({ rows: [] }) }) } as unknown as R2Bucket;
+    const uri = "mcpseo://gsc/get_search_performance/old.json";
+    expect(await readDataset(bucket, uri, new Date("2026-09-07T23:00:00Z"))).toEqual({ rows: [] });
+    await expect(readDataset(bucket, uri, new Date("2026-09-08T01:00:00Z"))).rejects.toThrow("dataset not found or expired");
   });
 
   it("throws when the uri isn't a mcpseo:// uri", async () => {

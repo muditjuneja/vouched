@@ -1,8 +1,6 @@
 # The OFE envelope
 
-Every tool in this server returns the same shape, confirmed against
-OpenRush's own live `describe_capabilities`/`list_websites` responses, so
-this is a drop-in-compatible response contract, not an invented one.
+Every tool in this server returns the same shape.
 
 ```ts
 {

@@ -97,11 +97,23 @@ describe("marketing routes", () => {
     expect(body).toContain("Self-hostable");
   });
 
-  it("GET /vs/semrush and /vs/open-seo also render", async () => {
-    for (const slug of ["semrush", "open-seo"]) {
-      const res = await marketing.request(`/vs/${slug}`, {}, fakeEnv());
-      expect(res.status).toBe(200);
-    }
+  it("GET /vs/semrush also renders", async () => {
+    const res = await marketing.request("/vs/semrush", {}, fakeEnv());
+    expect(res.status).toBe(200);
+  });
+
+  it("GET /vs/open-seo is gone (the comparison was removed)", async () => {
+    const res = await marketing.request("/vs/open-seo", {}, fakeEnv());
+    expect(res.status).toBe(404);
+  });
+
+  it("GET /privacy and /terms render, with the Limited Use statement Google's review looks for", async () => {
+    const privacy = await marketing.request("/privacy", {}, fakeEnv());
+    expect(privacy.status).toBe(200);
+    const body = await privacy.text();
+    expect(body).toContain("Limited Use");
+    expect(body).toContain("api-services-user-data-policy");
+    expect((await marketing.request("/terms", {}, fakeEnv())).status).toBe(200);
   });
 
   it("GET /vs/unknown-competitor 404s", async () => {

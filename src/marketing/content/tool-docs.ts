@@ -428,23 +428,23 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     ],
     exampleCall: {
       domain: "vouchedhq.com",
-      competitors: ["openrush.org"]
+      competitors: ["semrush.com"]
     },
     exampleResponse: {
       schema_version: "ofe/1.0",
       domain: "seo",
-      data: { domain: "vouchedhq.com", competitors: ["openrush.org"] },
+      data: { domain: "vouchedhq.com", competitors: ["semrush.com"] },
       facts: [
         {
           type: "seo.keyword_opportunity",
-          subject: ["urn:domain:vouchedhq.com", "urn:domain:openrush.org", "urn:keyword:open+source+semrush"],
+          subject: ["urn:domain:vouchedhq.com", "urn:domain:semrush.com", "urn:keyword:open+source+semrush"],
           data: { keyword: "open source semrush", gap_direction: "competitor_only", your_position: null, competitor_position: 4 },
           provenance: { source_class: "search_index", method: "dataforseo_labs.domain_intersection", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         }
       ],
       entities: [
         { id: "urn:domain:vouchedhq.com", kind: "domain", label: "vouchedhq.com" },
-        { id: "urn:domain:openrush.org", kind: "domain", label: "openrush.org" },
+        { id: "urn:domain:semrush.com", kind: "domain", label: "semrush.com" },
         { id: "urn:keyword:open+source+semrush", kind: "keyword", label: "open source semrush" }
       ],
       coverage: { returned: 1, total: null, as_of: "2026-09-24T00:00:00Z", scope_note: null },
@@ -453,7 +453,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
       next_actions: []
     },
     agentWorkflow: {
-      triggerPrompt: "Which keywords does openrush.org rank for that vouchedhq.com is missing?",
+      triggerPrompt: "Which keywords does semrush.com rank for that vouchedhq.com is missing?",
       agentReasoning: "The agent uses compare_keyword_coverage to find immediate content and landing page expansion opportunities by analyzing competitor ranking gaps.",
       followUpTools: ["inspect_keyword", "inspect_serp"]
     },
@@ -894,23 +894,23 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     ],
     exampleCall: {
       domain: "vouchedhq.com",
-      competitors: ["openrush.org"]
+      competitors: ["semrush.com"]
     },
     exampleResponse: {
       schema_version: "ofe/1.0",
       domain: "backlinks",
-      data: { domain: "vouchedhq.com", competitors: ["openrush.org"] },
+      data: { domain: "vouchedhq.com", competitors: ["semrush.com"] },
       facts: [
         {
           type: "backlinks.link_gap",
-          subject: ["urn:domain:vouchedhq.com", "urn:domain:openrush.org", "urn:domain:techcrunch.com"],
+          subject: ["urn:domain:vouchedhq.com", "urn:domain:semrush.com", "urn:domain:techcrunch.com"],
           data: { referring_domain: "techcrunch.com", domain_rank: 88, spam_score: 2, gap_direction: "competitor_only", earned_link: true },
           provenance: { source_class: "backlink_index", method: "dataforseo_backlinks.domain_intersection", confidence: 0.80, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         }
       ],
       entities: [
         { id: "urn:domain:vouchedhq.com", kind: "domain", label: "vouchedhq.com" },
-        { id: "urn:domain:openrush.org", kind: "domain", label: "openrush.org" },
+        { id: "urn:domain:semrush.com", kind: "domain", label: "semrush.com" },
         { id: "urn:domain:techcrunch.com", kind: "domain", label: "techcrunch.com" }
       ],
       coverage: { returned: 1, total: null, as_of: "2026-09-24T00:00:00Z", scope_note: "Filtered out domains with spam score > 30." },
@@ -919,7 +919,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
       next_actions: []
     },
     agentWorkflow: {
-      triggerPrompt: "Find high-authority websites that link to openrush.org but not to vouchedhq.com.",
+      triggerPrompt: "Find high-authority websites that link to semrush.com but not to vouchedhq.com.",
       agentReasoning: "The agent runs compare_backlink_gap to identify reputable outreach and PR opportunities, trusting Vouched's built-in spam filter to purge low-quality directories.",
       followUpTools: ["inspect_backlinks"]
     },

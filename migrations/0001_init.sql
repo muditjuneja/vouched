@@ -24,8 +24,8 @@ CREATE TABLE google_tokens (
   PRIMARY KEY (account_email, scope_group)
 );
 
--- Per-call DataForSEO cost log — backs the transparent pass-through-cost
--- promise (vs. OpenRush's opaque "credits") and the daily budget warning.
+-- Per-call DataForSEO cost log: backs the transparent pass-through-cost
+-- promise and the daily budget warning.
 CREATE TABLE cost_log (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   tool_name     TEXT NOT NULL,

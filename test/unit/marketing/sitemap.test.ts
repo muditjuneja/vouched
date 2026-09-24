@@ -8,7 +8,7 @@ describe("sitemap route generation", () => {
   it("includes every static route, tool page, comparison page, and industry page exactly once", () => {
     const routes = getAllRoutes();
     const expectedCount =
-      4 /* /, /pricing, /docs, /tools */ + TOOL_PAGES.length + COMPARISON_PAGES.length + INDUSTRY_PAGES.length;
+      6 /* /, /pricing, /docs, /tools, /privacy, /terms */ + TOOL_PAGES.length + COMPARISON_PAGES.length + INDUSTRY_PAGES.length;
     expect(routes).toHaveLength(expectedCount);
     expect(new Set(routes).size).toBe(routes.length); // no duplicates
 
@@ -16,6 +16,8 @@ describe("sitemap route generation", () => {
     expect(routes).toContain("/pricing");
     expect(routes).toContain("/docs");
     expect(routes).toContain("/tools");
+    expect(routes).toContain("/privacy");
+    expect(routes).toContain("/terms");
     for (const page of TOOL_PAGES) {
       expect(routes).toContain(page.path);
     }

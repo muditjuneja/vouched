@@ -101,43 +101,6 @@ export const COMPARISON_PAGES: ComparisonPage[] = [
       "Semrush covers far more than SEO data (ads, content, social). This comparison is " +
       "scoped to the SEO/marketing-data overlap, not a claim that Vouched replaces " +
       "the whole suite."
-  },
-  {
-    slug: "open-seo",
-    competitor: "OpenRush",
-    title: "Vouched vs OpenRush: actually open source",
-    metaDescription:
-      "Vouched was built as a genuinely open alternative to OpenRush: MIT licensed and self-hostable vs. closed-source and credit-metered.",
-    intro:
-      "Vouched started as a direct response to OpenRush: despite the name, OpenRush " +
-      "is closed-source and sold on a credit-metered plan. Vouched implements the " +
-      "same 18-tool manifest (confirmed against OpenRush's own live describe_capabilities " +
-      "response) but is MIT licensed, self-hostable, and on self-host bills you " +
-      "directly for the DataForSEO usage you consume with zero markup on top.",
-    rows: [
-      OSS_ROW,
-      { label: "Self-hostable", us: "Yes, deploy your own copy to Cloudflare Workers.", them: "No, hosted only." },
-      {
-        label: "Pricing model",
-        us: "Self-host: free forever, bring your own DataForSEO key, zero markup. Cloud: flat monthly plans with bundled usage.",
-        them: "Credits at $10 / 1,000 (public pricing fetched 6 Sep 2026). Per-tool credit costs in their docs vs marketing do not always match."
-      },
-      {
-        label: "Search Console (GSC)",
-        us: "First-party Google Search Console connection: inspect URL indexing, query 28-day CTR and impressions, and list sitemaps. Confidence 1.0, $0 vendor cost.",
-        them: "No direct first-party Google Search Console connection. Third-party scraping/proxy credits only."
-      },
-      {
-        label: "Tool manifest",
-        us: "All 18 tools implemented, matching OpenRush's own tool set and naming.",
-        them: "The original 18-tool manifest this project's own manifest was checked against."
-      }
-    ],
-    caveat:
-      "\"OpenRush\" here refers to the commercial product this project was built as an " +
-      "open alternative to (see this project's own README). Credit list price ($10 / 1,000) " +
-      "is from OpenRush's public site on 6 Sep 2026; some per-tool credit costs (for example " +
-      "discover_competitors) differ between their docs and marketing pages."
   }
 ];
 

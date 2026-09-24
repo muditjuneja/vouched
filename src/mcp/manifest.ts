@@ -1,13 +1,9 @@
 import type { Provenance } from "../envelope/types";
 
 /**
- * OpenRush's own 18-tool manifest, confirmed against its live
- * `describe_capabilities` response, plus 2 more (`inspect_indexing`,
- * `list_sitemaps`) added here beyond that parity baseline once real gaps
- * in this build's own GSC coverage turned up (`urlInspection.index:inspect`
- * and `sitemaps.list` were both entirely untouched). `implemented` tracks
- * build progress honestly: `core.describe_capabilities` reports this as-is
- * rather than pretending unbuilt tools already exist.
+ * Every tool this server offers. `implemented` tracks build progress
+ * honestly: `core.describe_capabilities` reports this as-is rather than
+ * pretending unbuilt tools already exist.
  */
 export interface ToolManifestEntry {
   name: string;
@@ -206,10 +202,7 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
     implemented: true
   },
   {
-    // Beyond OpenRush's own 18-tool manifest this file was originally
-    // confirmed against: a real gap found in this build's GSC coverage
-    // (urlInspection.index:inspect was entirely untouched), not part of
-    // parity with OpenRush's live surface.
+    // Covers Search Console's urlInspection.index:inspect.
     name: "inspect_indexing",
     domain: "gsc",
     summary: "Google's own indexing status for one URL: indexed?, canonical Google chose, mobile usability, rich results, last crawl.",
@@ -220,8 +213,7 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
     implemented: true
   },
   {
-    // Same as inspect_indexing above: a real gap in GSC coverage
-    // (sitemaps.list was entirely untouched), added beyond OpenRush parity.
+    // Covers Search Console's sitemaps.list.
     name: "list_sitemaps",
     domain: "gsc",
     summary: "Submitted sitemaps for a tracked website: last-read status, warnings/errors, submitted counts (Google's indexed count here is deprecated, always 0).",

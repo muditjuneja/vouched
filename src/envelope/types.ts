@@ -1,7 +1,6 @@
-// The "OFE" (open fact envelope) shape every tool in this server returns —
-// confirmed against OpenRush's own live `describe_capabilities`/
-// `list_websites` responses. Every domain handler builds one of these via
-// `envelope/builder.ts`; nothing constructs it by hand.
+// The "OFE" (open fact envelope) shape every tool in this server returns.
+// Every domain handler builds one of these via `envelope/builder.ts`;
+// nothing constructs it by hand.
 
 export const OFE_SCHEMA_VERSION = "ofe/1.0";
 
@@ -26,7 +25,7 @@ export interface Provenance {
 /** A typed, namespaced claim, e.g. "seo.keyword_ranking". */
 export interface Fact<T = Record<string, unknown>> {
   type: string;
-  /** Canonical entity id(s) this fact is about — links back to `entities`. */
+  /** Canonical entity id(s) this fact is about; links back to `entities`. */
   subject: string[];
   data: T;
   provenance: Provenance;
@@ -57,7 +56,7 @@ export interface Delta {
   observed_at: string;
 }
 
-/** A pointer to a full dataset too large to inline — fetch via export_dataset. */
+/** A pointer to a full dataset too large to inline; fetch via export_dataset. */
 export interface ResourceRef {
   uri: string;
   description: string;

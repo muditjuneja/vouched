@@ -25,10 +25,7 @@ this doc is the quick-reference version.
   `keyword:`, `page:`, `property:`, `backlink:`); `provenance.ts` gives each
   fact a source_class + default confidence; `schema.ts` is the zod schema
   used as every tool's `outputSchema`.
-- **`src/mcp/manifest.ts`**: OpenRush's own 18-tool manifest (confirmed
-  against its live `describe_capabilities`) plus 2 more (`inspect_indexing`,
-  `list_sitemaps`) added once real gaps in this build's own GSC coverage
-  turned up, 20 total. Each entry flagged `implemented` so
+- **`src/mcp/manifest.ts`**: every tool, 20 total. Each entry flagged `implemented` so
   `describe_capabilities` never claims more than what's actually
   registered, 19 of 20 today; `audit_site` is built but deliberately held
   back (`implemented: false`) until its crawl is reworked to fit this

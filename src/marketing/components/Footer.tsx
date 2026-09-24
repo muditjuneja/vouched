@@ -24,7 +24,6 @@ export function Footer({ cloudMode }: FooterProps) {
         </div>
         <div>
           <p class="footer-heading">Compare</p>
-          <a href="/vs/open-seo">vs OpenRush</a>
           <a href="/vs/ahrefs">vs Ahrefs</a>
           <a href="/vs/semrush">vs Semrush</a>
         </div>
@@ -35,7 +34,8 @@ export function Footer({ cloudMode }: FooterProps) {
         </div>
       </div>
       <p class="muted footnote">
-        MIT licensed. Self-host Community for free, or run Vouched Cloud. <a href="/sitemap.xml">Sitemap</a>
+        MIT licensed. Self-host Community for free, or run Vouched Cloud. <a href="/privacy">Privacy</a> ·{" "}
+        <a href="/terms">Terms</a> · <a href="/sitemap.xml">Sitemap</a>
       </p>
     </footer>
   );

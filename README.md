@@ -5,9 +5,7 @@ Workers. Spoken name: **Vouched**. Site: vouchedhq.com. Machine id:
 `vouched-seo-mcp`. Dataset URIs stay `mcpseo://` (OFE-compatible).
 
 SEO facts your agent can cite, same 20-tool manifest whether you run
-**Vouched Cloud** or **self-hosted Community**: OpenRush's own 18-tool
-manifest, plus 2 more (`inspect_indexing`, `list_sitemaps`) added once
-this build found real gaps in its own Google Search Console coverage.
+**Vouched Cloud** or **self-hosted Community**.
 
 - **Community / self-host**: your Worker, optional BYOK DataForSEO, zero
   markup. See [`docs/SELF_HOST.md`](docs/SELF_HOST.md).

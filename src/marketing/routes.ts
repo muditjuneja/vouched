@@ -6,6 +6,7 @@ import { findToolPage } from "./content/tool-pages";
 import { renderComparison } from "./pages/ComparisonPage";
 import { renderIndustryPage } from "./pages/IndustryPage";
 import { renderLanding } from "./pages/LandingPage";
+import { renderPrivacy, renderTerms } from "./pages/LegalPages";
 import { renderPricing } from "./pages/PricingPage";
 import { renderToolPage } from "./pages/ToolPage";
 import { renderToolsIndex } from "./pages/ToolsIndexPage";
@@ -43,6 +44,9 @@ function originFor(requestUrl: string): string {
 marketing.get("/", (c) => c.html(renderLanding(canonicalFor(c.req.url), isCloudMode(c.env))));
 
 marketing.get("/pricing", (c) => c.html(renderPricing(canonicalFor(c.req.url), isCloudMode(c.env))));
+
+marketing.get("/privacy", (c) => c.html(renderPrivacy(canonicalFor(c.req.url), isCloudMode(c.env))));
+marketing.get("/terms", (c) => c.html(renderTerms(canonicalFor(c.req.url), isCloudMode(c.env))));
 
 marketing.get("/tools", (c) => c.html(renderToolsIndex(canonicalFor(c.req.url), isCloudMode(c.env))));
 marketing.get("/docs", (c) => c.html(renderToolsIndex(canonicalFor(c.req.url), isCloudMode(c.env))));

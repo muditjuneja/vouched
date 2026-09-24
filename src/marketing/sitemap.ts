@@ -10,7 +10,7 @@ import { TOOL_PAGES } from "./content/tool-pages";
  * (via `TOOL_PAGES`) grows and shrinks with the manifest automatically.
  */
 export function getAllRoutes(): string[] {
-  const staticRoutes = ["/", "/pricing", "/docs", "/tools"];
+  const staticRoutes = ["/", "/pricing", "/docs", "/tools", "/privacy", "/terms"];
   const toolRoutes = TOOL_PAGES.map((page) => page.path);
   const comparisonRoutes = COMPARISON_PAGES.map((page) => `/vs/${page.slug}`);
   const industryRoutes = INDUSTRY_PAGES.map((page) => `/for/${page.slug}`);

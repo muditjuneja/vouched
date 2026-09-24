@@ -274,6 +274,11 @@ export const MARKETING_CSS = `
     font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em;
     color: var(--accent); font-weight: 700; margin-bottom: 0.35rem;
   }
+  /* Privacy policy and terms: readable line length, clear section breaks. */
+  body.marketing .legal { max-width: 46rem; }
+  body.marketing .legal h2 { margin: 2.25rem 0 0.6rem; }
+  body.marketing .legal ul { padding-left: 1.25rem; }
+  body.marketing .legal li { margin-bottom: 0.45rem; }
   .footer-grid { max-width: none; margin: 0; padding: 0; display: grid; gap: 1.75rem; grid-template-columns: 2fr 1fr 1fr 1fr; }
   .footer-grid .brand { font-family: var(--font-display); font-style: italic; font-size: 1.25rem; font-weight: 500; letter-spacing: -0.03em; margin: 0 0 0.6rem; }
   .footer-grid a { display: block; text-decoration: none; color: var(--muted); font-size: 0.9rem; margin-bottom: 0.45rem; }

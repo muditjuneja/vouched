@@ -23,8 +23,8 @@ interface CompetitorResult {
 }
 
 async function handler(args: z.infer<typeof inputSchema>, env: Env) {
-  // Fans out to 3 DataForSEO calls, folded into one envelope — see the plan's
-  // tool-mapping table for why (matches OpenRush's own inspect_domain shape).
+  // Fans out to 3 DataForSEO calls (overview, top keywords, competitors),
+  // folded into one envelope.
   const [overview, topKeywords, competitors] = await Promise.all([
     domainRankOverview(env, "inspect_domain", args.domain) as Promise<RankOverviewResult[]>,
     rankedKeywords(env, "inspect_domain", args.domain, { limit: 10 }) as Promise<RankedKeywordResult[]>,
@@ -84,7 +84,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
       returned: 1 + topKeywords.length + competitors.length,
       total: null,
       as_of: observedAt.toISOString(),
-      scope_note: "top 10 keywords and top 5 competitors only — use research_keywords/discover_competitors for more"
+      scope_note: "top 10 keywords and top 5 competitors only; use research_keywords/discover_competitors for more"
     })
     .build();
 }

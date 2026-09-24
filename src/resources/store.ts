@@ -3,6 +3,13 @@ import { UpstreamError } from "../lib/errors";
 const URI_SCHEME = "mcpseo://";
 
 /**
+ * Exports are deleted after this many days. The bucket's lifecycle rule
+ * does the deleting (see docs/DEPLOY.md), but it runs lazily, so reads
+ * also refuse anything older: the privacy policy promises 7 days.
+ */
+export const DATASET_TTL_DAYS = 7;
+
+/**
  * Stores a full (non-truncated) dataset in R2 and mints the `mcpseo://`
  * resource URI a summary response can point to instead of inlining
  * everything. `export_dataset` resolves the same URI back via `readDataset`.
@@ -21,13 +28,13 @@ export async function storeDataset(
   return `${URI_SCHEME}${key}`;
 }
 
-export async function readDataset(bucket: R2Bucket, uri: string): Promise<unknown> {
+export async function readDataset(bucket: R2Bucket, uri: string, now: Date = new Date()): Promise<unknown> {
   if (!uri.startsWith(URI_SCHEME)) {
     throw new UpstreamError("resources", `not a mcpseo:// resource uri: ${uri}`);
   }
   const key = uri.slice(URI_SCHEME.length);
   const object = await bucket.get(key);
-  if (!object) {
+  if (!object || now.getTime() - object.uploaded.getTime() > DATASET_TTL_DAYS * 86_400_000) {
     throw new UpstreamError("resources", `dataset not found or expired: ${uri}`, 404);
   }
   return object.json();

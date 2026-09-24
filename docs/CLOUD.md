@@ -184,7 +184,7 @@ end-to-end.
 
 Done. `src/marketing/` (self-contained Hono sub-app, mounted at `/` in
 `src/index.ts`): the landing page, `/pricing`, comparison pages
-(`/vs/ahrefs`, `/vs/semrush`, `/vs/open-seo`), a tool index + one page per
+(`/vs/ahrefs`, `/vs/semrush`), a tool index + one page per
 tool in `TOOL_MANIFEST` (`/tools`, `/tools/:slug`, 18 pages, content
 derived from the manifest itself, nothing invented), two use-case pages
 (`/for/agencies`, `/for/indie-hackers`), and generated `/sitemap.xml` +

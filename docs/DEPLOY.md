@@ -14,6 +14,11 @@ is simpler and lives in `docs/SELF_HOST.md`.
 | KV namespace (binding `CACHE`) | `vouched-seo-mcp-cache` | `wrangler.jsonc` `kv_namespaces` (by id) |
 | Rate limiters | `MCP_RATE_LIMIT_FREE`, `MCP_RATE_LIMIT_PAID` | `wrangler.jsonc` `ratelimits` (created on deploy, nothing to set up) |
 
+The R2 bucket only holds `export_dataset` files, which the privacy policy
+promises are deleted after 7 days: the lifecycle rule above does the
+deleting, and `readDataset` refuses anything older in the meantime
+(`DATASET_TTL_DAYS` in `src/resources/store.ts`). Don't skip the rule.
+
 The Worker is called `vouched-hq`, but the MCP server name clients see and the
 D1, R2 and KV resources all use `vouched-seo-mcp`. That's deliberate:
 renaming the database or the bucket would mean moving data.
@@ -24,6 +29,7 @@ For a brand-new account, create the resources first and paste the new ids into
 ```sh
 npx wrangler d1 create vouched-seo-mcp
 npx wrangler r2 bucket create vouched-seo-mcp-datasets
+npx wrangler r2 bucket lifecycle add vouched-seo-mcp-datasets expire-exports-7d --expire-days 7
 npx wrangler kv namespace create vouched-seo-mcp-cache
 ```
 

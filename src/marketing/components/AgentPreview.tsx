@@ -52,7 +52,7 @@ const SCENARIOS: Scenario[] = [
     factType: "serp.result",
     rows: [
       { label: "#3 vouchedhq.com/docs/tools", meta: "serp.result · 0.85" },
-      { label: "#7 vouchedhq.com/vs/open-seo", meta: "serp.result · 0.85" },
+      { label: "#7 vouchedhq.com/pricing", meta: "serp.result · 0.85" },
       { label: "AI Overview", meta: "serp.feature · 0.6" }
     ],
     agentNote:
@@ -71,7 +71,7 @@ const SCENARIOS: Scenario[] = [
     rows: [
       { label: "/docs/tools", meta: "CTR 2.3% (was 4.1%) · Pos 5.8 (was 4.9)" },
       { label: "/pricing", meta: "CTR 3.0% (was 3.9%) · Pos 6.2 (was 6.0)" },
-      { label: "/vs/open-seo", meta: "CTR 5.1% (was 5.6%) · Pos 3.4 (was 3.3)" }
+      { label: "/vs/semrush", meta: "CTR 5.1% (was 5.6%) · Pos 3.4 (was 3.3)" }
     ],
     agentNote:
       "Your own Search Console data (confidence 1.0). /docs/tools dropped the most: CTR fell from 4.1% to 2.3% as its average position slipped from 4.9 to 5.8."

@@ -14,12 +14,11 @@ import { CheckIcon, LockIcon, SearchIcon } from "../../../src/marketing/componen
  * break a card link, or regress the decorative-icon accessibility fix.
  */
 describe("Nav", () => {
-  it("links Docs, Pricing, vs OpenRush, and Cloud when cloudMode is on", () => {
+  it("links Docs, Pricing, and Cloud when cloudMode is on", () => {
     const html = renderToString(<Nav cloudMode />);
     expect(html).toContain('href="/"');
     expect(html).toContain('href="/docs"');
     expect(html).toContain('href="/pricing"');
-    expect(html).toContain('href="/vs/open-seo"');
     expect(html).toContain('class="btn" href="/dashboard"');
     expect(html).toContain("Cloud");
     expect(html).toContain("Vouched");
@@ -29,7 +28,7 @@ describe("Nav", () => {
 describe("Footer", () => {
   it("links every product/compare/use-case route it advertises", () => {
     const html = renderToString(<Footer cloudMode />);
-    for (const href of ["/pricing", "/docs", "/dashboard", "/vs/ahrefs", "/vs/semrush", "/vs/open-seo", "/for/agencies", "/for/indie-hackers", "/sitemap.xml"]) {
+    for (const href of ["/pricing", "/docs", "/dashboard", "/vs/ahrefs", "/vs/semrush", "/for/agencies", "/for/indie-hackers", "/privacy", "/terms", "/sitemap.xml"]) {
       expect(html).toContain(`href="${href}"`);
     }
   });
