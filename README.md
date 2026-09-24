@@ -27,6 +27,7 @@ reworked to fit this Workers architecture properly.
 
 - [`docs/SELF_HOST.md`](docs/SELF_HOST.md), self-host setup.
 - [`docs/CLOUD.md`](docs/CLOUD.md), cloud architecture.
+- [`docs/DEPLOY.md`](docs/DEPLOY.md), deploying the hosted product on Cloudflare.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), overall system design.
 - [`docs/TOOLS.md`](docs/TOOLS.md), generated tool-by-tool reference.
 - [`docs/OFE_ENVELOPE.md`](docs/OFE_ENVELOPE.md), the shared response

@@ -26,7 +26,7 @@ Deploying:
 
 ```bash
 wrangler r2 bucket create vouched-seo-mcp-datasets
-wrangler kv namespace create CACHE        # then paste the id into wrangler.jsonc
+wrangler kv namespace create vouched-seo-mcp-cache   # then paste the id into wrangler.jsonc
 wrangler secret put MCP_BEARER_TOKEN
 npm run db:migrate:remote
 npm run deploy
