@@ -1,6 +1,6 @@
 import type { createClerkClient } from "@clerk/backend";
 import { describe, expect, it, vi } from "vitest";
-import { authenticateBillingRequest, authenticateDashboardRequest, getTenantEmail } from "../../../src/auth/clerk";
+import { authenticateBillingRequest, authenticateDashboardRequest, getTenantEmail, revokeClerkSession } from "../../../src/auth/clerk";
 import { ConfigError } from "../../../src/lib/errors";
 import type { Env } from "../../../src/types/env";
 
@@ -263,5 +263,19 @@ describe("authenticateBillingRequest", () => {
       expect(wrapped.headers.get("Set-Cookie")).toBe("__session=fresh-token; Path=/");
       expect(wrapped.headers.get("Location")).toBe("https://checkout.example");
     }
+  });
+});
+
+describe("revokeClerkSession", () => {
+  it("asks Clerk to revoke the session", async () => {
+    const revokeSession = vi.fn(async () => ({}));
+    const makeClient = (() => ({ sessions: { revokeSession } })) as unknown as typeof createClerkClient;
+    expect(await revokeClerkSession(fakeEnv(), "sess_1", makeClient)).toBe(true);
+    expect(revokeSession).toHaveBeenCalledWith("sess_1");
+  });
+
+  it("never throws when Clerk refuses, so sign-out still clears cookies", async () => {
+    const makeClient = (() => ({ sessions: { revokeSession: async () => { throw new Error("gone"); } } })) as unknown as typeof createClerkClient;
+    expect(await revokeClerkSession(fakeEnv(), "sess_1", makeClient)).toBe(false);
   });
 });

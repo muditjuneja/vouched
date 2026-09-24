@@ -12,13 +12,16 @@ import type { Env } from "../../../src/types/env";
 // unit-tested directly in test/unit/auth/clerk.test.ts; here it's mocked
 // so this file can drive the gate through each of its three outcomes
 // (signed-in, signed-out, handshake-redirect) without a real Clerk client.
-const { authenticateDashboardRequest } = vi.hoisted(() => ({ authenticateDashboardRequest: vi.fn() }));
+const { authenticateDashboardRequest, revokeClerkSession } = vi.hoisted(() => ({
+  authenticateDashboardRequest: vi.fn(),
+  revokeClerkSession: vi.fn(async () => true)
+}));
 // Spreads the real module (email/notifications.ts, also pulled in by this
 // router, needs the real getTenantEmail) and only overrides the one
 // function this file actually drives scenarios through.
 vi.mock("../../../src/auth/clerk", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../../src/auth/clerk")>();
-  return { ...actual, authenticateDashboardRequest };
+  return { ...actual, authenticateDashboardRequest, revokeClerkSession };
 });
 
 // The gate resolves the signed-in user to a workspace via D1 (src/db/team.ts,
@@ -150,6 +153,34 @@ describe("dashboard logout", () => {
     const res = await dashboard.request("/logout", { method: "GET" }, env);
     expect(res.status).toBe(303);
     expect(res.headers.get("Location")).toBe("/?logged_out=1");
+  });
+
+  const clerkEnv = () => fakeEnv({ CLOUD_MODE: "1", CLERK_SECRET_KEY: "sk_test", CLERK_PUBLISHABLE_KEY: "pk_test_x" });
+
+  it("ends the Clerk session itself, so the next visit can't quietly sign back in", async () => {
+    revokeClerkSession.mockClear();
+    authenticateDashboardRequest.mockResolvedValueOnce({ session: { userId: "user_1", sessionId: "sess_1" }, handshakeRedirect: null, refreshedSetCookies: [] });
+    const res = await dashboard.request("https://vouchedhq.com/logout", { method: "POST" }, clerkEnv());
+    expect(revokeClerkSession).toHaveBeenCalledWith(expect.anything(), "sess_1");
+    expect(res.status).toBe(303);
+    expect(res.headers.getSetCookie()).toContain("__client_uat=; Domain=vouchedhq.com; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure; SameSite=Lax");
+  });
+
+  it("does the handshake first when the session needs refreshing, and signs out when it comes back", async () => {
+    revokeClerkSession.mockClear();
+    const handshake = new Response(null, { status: 303, headers: { Location: "https://clerk.example.com/handshake" } });
+    authenticateDashboardRequest.mockResolvedValueOnce({ session: null, handshakeRedirect: handshake, refreshedSetCookies: [] });
+    const res = await dashboard.request("/logout", { method: "POST" }, clerkEnv());
+    expect(res.headers.get("Location")).toBe("https://clerk.example.com/handshake");
+    expect(revokeClerkSession).not.toHaveBeenCalled();
+  });
+
+  it("still clears cookies and redirects when already signed out", async () => {
+    revokeClerkSession.mockClear();
+    authenticateDashboardRequest.mockResolvedValueOnce({ session: null, handshakeRedirect: null, refreshedSetCookies: [] });
+    const res = await dashboard.request("/logout", { method: "GET" }, clerkEnv());
+    expect(res.headers.get("Location")).toBe("/?logged_out=1");
+    expect(revokeClerkSession).not.toHaveBeenCalled();
   });
 });
 

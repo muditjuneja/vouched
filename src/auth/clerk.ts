@@ -5,6 +5,8 @@ import type { Env } from "../types/env";
 export interface ClerkSession {
   /** The signed-in Clerk user id. Not necessarily the tenant: a team member acts in the owner's workspace, see src/db/team.ts's resolveTenant. */
   userId: string;
+  /** The Clerk session id, needed to end the session on sign-out. Always set for a real session; optional so tests can omit it. */
+  sessionId?: string;
 }
 
 export interface DashboardAuthResult {
@@ -104,7 +106,7 @@ export async function authenticateDashboardRequest(
     // silently broke the fix above: the browser's cookie jar never
     // picked up the resolved handshake's fresh session, so it kept
     // presenting the same dead one on every request after.
-    return { session: { userId: auth.userId }, handshakeRedirect: null, refreshedSetCookies: requestState.headers.getSetCookie() };
+    return { session: { userId: auth.userId, sessionId: auth.sessionId }, handshakeRedirect: null, refreshedSetCookies: requestState.headers.getSetCookie() };
   }
 
   if (request.method !== "GET") {
@@ -112,7 +114,7 @@ export async function authenticateDashboardRequest(
     const probeState = await client.authenticateRequest(probe);
     if (probeState.status === "signed-in") {
       const auth = probeState.toAuth();
-      return { session: { userId: auth.userId }, handshakeRedirect: null, refreshedSetCookies: probeState.headers.getSetCookie() };
+      return { session: { userId: auth.userId, sessionId: auth.sessionId }, handshakeRedirect: null, refreshedSetCookies: probeState.headers.getSetCookie() };
     }
     // A silent, same-request refresh isn't always enough (some stale-token
     // reasons need a real round trip through Clerk's Frontend API, not
@@ -144,6 +146,22 @@ export async function authenticateDashboardRequest(
     refreshedSetCookies: requestState.headers.getSetCookie(),
     devBrowserToken: devBrowserTokenFrom(request, env.CLERK_PUBLISHABLE_KEY)
   };
+}
+
+/**
+ * Ends a Clerk session on Clerk's side. Clearing our own cookies isn't
+ * enough: Clerk would still hold an active session, and the next page's
+ * handshake would quietly sign the user back in. Never throws; returns
+ * whether Clerk confirmed it.
+ */
+export async function revokeClerkSession(env: Env, sessionId: string, makeClient: typeof createClerkClient = createClerkClient): Promise<boolean> {
+  try {
+    await makeClient({ secretKey: env.CLERK_SECRET_KEY }).sessions.revokeSession(sessionId);
+    return true;
+  } catch (error) {
+    console.warn(`[auth] couldn't revoke Clerk session ${sessionId}: ${String(error)}`);
+    return false;
+  }
 }
 
 export type BillingAuthResult =

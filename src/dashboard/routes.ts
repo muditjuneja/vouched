@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { authenticateDashboardRequest, getTenantEmail } from "../auth/clerk";
+import { authenticateDashboardRequest, getTenantEmail, revokeClerkSession } from "../auth/clerk";
 import { checkConnectionState, getValidAccessToken, type ConnectionState } from "../auth/google-oauth";
 import { isScopeGroup, SCOPE_GROUPS } from "../auth/oauth-routes";
 import { listCostLog } from "../clients/dataforseo/cost-tracker";
@@ -234,12 +234,25 @@ dashboard.use("*", async (c, next) => {
   }
 });
 
-// Clears session cookies and redirects out to the marketing home page
-dashboard.all("/logout", (_c) => {
-  const headers = new Headers();
+// Signs out for real: ends the Clerk session itself, then clears our
+// cookies and goes to the home page. The gate above lets this path through
+// unauthenticated, so it identifies the session here. If that needs a
+// handshake first, the handshake comes back to this same URL as a GET.
+dashboard.all("/logout", async (c) => {
+  if (isCloudMode(c.env) && c.env.CLERK_PUBLISHABLE_KEY) {
+    const auth = await authenticateDashboardRequest(c.req.raw, c.env);
+    if (auth.handshakeRedirect) return auth.handshakeRedirect;
+    if (auth.session?.sessionId) await revokeClerkSession(c.env, auth.session.sessionId);
+  }
 
-  headers.append("Set-Cookie", "__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax");
-  headers.append("Set-Cookie", "__client_uat=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax");
+  const expired = "Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure; SameSite=Lax";
+  // Clerk also sets __client_uat on the whole domain, which a host-only
+  // cookie clear doesn't touch.
+  const domain = new URL(c.req.url).hostname;
+  const headers = new Headers();
+  headers.append("Set-Cookie", `__session=; ${expired}; HttpOnly`);
+  headers.append("Set-Cookie", `__client_uat=; ${expired}`);
+  headers.append("Set-Cookie", `__client_uat=; Domain=${domain}; ${expired}`);
   headers.append("Location", "/?logged_out=1");
   return new Response(null, { status: 303, headers });
 });

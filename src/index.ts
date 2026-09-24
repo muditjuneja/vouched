@@ -57,14 +57,9 @@ const app = new Hono<{ Bindings: Env }>();
 app.get("/health", (c) => c.text(HEALTH_BODY));
 
 // Clears session cookies and redirects to landing page
-app.all("/logout", (_c) => {
-  const headers = new Headers();
-
-  headers.append("Set-Cookie", "__session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax");
-  headers.append("Set-Cookie", "__client_uat=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax");
-  headers.append("Location", "/?logged_out=1");
-  return new Response(null, { status: 303, headers });
-});
+// One sign-out implementation, in the dashboard (it ends the Clerk session,
+// not just our cookies). 307 keeps a POST a POST.
+app.all("/logout", (c) => c.redirect("/dashboard/logout", 307));
 
 // Landing/pricing/comparison/pSEO pages, see src/marketing/routes.ts. Mounted
 // at the root ahead of everything else so it owns "/"; none of its other
