@@ -162,7 +162,7 @@ export const DASHBOARD_CSS = `
     display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
     margin-bottom: 1rem;
   }
-  .page-header-row h1 { margin-bottom: 0; }
+  .page-header-row h1, .page-header-row h2 { margin-bottom: 0; }
 
   /* Compact button styling */
   body.dash .btn {

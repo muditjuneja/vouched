@@ -34,6 +34,7 @@ import { notifyApiKeyIssued, notifyReconnectRequired, notifyTeamInvite, notifyWe
 import { ConfigError } from "../lib/errors";
 import { hasDodo, hasGoogleOAuth, isCloudMode, type Env } from "../types/env";
 import { renderApiKeyCreated } from "./pages/ApiKeyCreatedPage";
+import { renderApiKeys } from "./pages/ApiKeysPage";
 import { renderBilling } from "./pages/BillingPage";
 import { renderCloudDisabled } from "./pages/CloudDisabledPage";
 import { renderInvite } from "./pages/InvitePage";
@@ -474,8 +475,7 @@ dashboard.get("/billing", async (c) => {
  */
 async function settingsHtml(env: Env, ctx: TenantContext, notice: ActionNotice | null, justConnected: string | undefined): Promise<string> {
   const tenantId = ctx.tenantId;
-  const [apiKeys, user, gsc, ga4] = await Promise.all([
-    listApiKeys(env.DB, tenantId, ctx.userId),
+  const [user, gsc, ga4] = await Promise.all([
     getDashboardUser(env, ctx),
     checkConnectionState(env, "webmaster_console", tenantId),
     checkConnectionState(env, "analytics_property", tenantId)
@@ -486,7 +486,6 @@ async function settingsHtml(env: Env, ctx: TenantContext, notice: ActionNotice |
     email: user.email,
     tenantId,
     plan: user.plan,
-    apiKeys,
     gsc,
     ga4,
     googleOAuthConfigured: hasGoogleOAuth(env),
@@ -498,6 +497,14 @@ async function settingsHtml(env: Env, ctx: TenantContext, notice: ActionNotice |
 
 dashboard.get("/settings", async (c) => {
   return c.html(await settingsHtml(c.env, c.get("ctx"), parseActionNotice(c.req.query("action")), c.req.query("connected")));
+});
+
+dashboard.get("/api-keys", async (c) => {
+  const ctx = c.get("ctx");
+  const [apiKeys, user] = await Promise.all([listApiKeys(c.env.DB, ctx.tenantId, ctx.userId), getDashboardUser(c.env, ctx)]);
+  return c.html(
+    renderApiKeys({ user, apiKeys, openCreate: c.req.query("new") === "1", notice: parseActionNotice(c.req.query("action")) })
+  );
 });
 
 dashboard.post("/api-keys", async (c) => {
@@ -517,7 +524,7 @@ dashboard.post("/api-keys", async (c) => {
 dashboard.post("/api-keys/:keyId/revoke", async (c) => {
   const tenantId = c.get("tenantId");
   await revokeApiKey(c.env.DB, tenantId, c.req.param("keyId"), c.get("ctx").userId);
-  return c.redirect("/dashboard/settings?action=revoked", 303);
+  return c.redirect("/dashboard/api-keys?action=revoked", 303);
 });
 
 dashboard.post("/google/:scopeGroup/disconnect", async (c) => {

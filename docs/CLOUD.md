@@ -406,8 +406,10 @@ passes in, no client JS needed for that) and five real pages under
   (`listWalletLedger`, `wallet_ledger` already existed with no reader
   until now), a "Manage billing" link to a new `/billing/portal` route,
   and a payment-status warning banner (see below).
-- **Settings** (`/dashboard/settings`): account email (`getTenantEmail`),
-  API keys (relocated unchanged), and a new Google-connections section
+- **API keys** (`/dashboard/api-keys`): its own page (originally part of
+  Settings), with key creation in a slide-over drawer like Add website.
+- **Settings** (`/dashboard/settings`): account email (`getTenantEmail`)
+  and a new Google-connections section
   with a disconnect action (`deleteToken`, new in
   `src/db/google-tokens.ts`); connect links stay on both Websites and
   Settings by deliberate choice (redundant, but connecting is idempotent

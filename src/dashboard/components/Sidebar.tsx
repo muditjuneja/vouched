@@ -12,6 +12,7 @@ interface NavEntry {
 const NAV_ENTRIES: NavEntry[] = [
   { href: "/dashboard", label: "Overview", match: (path) => path === "/dashboard" },
   { href: "/dashboard/websites", label: "Websites", match: (path) => path.startsWith("/dashboard/websites") },
+  { href: "/dashboard/api-keys", label: "API keys", match: (path) => path.startsWith("/dashboard/api-keys") },
   { href: "/dashboard/usage", label: "Usage", match: (path) => path.startsWith("/dashboard/usage") },
   { href: "/dashboard/billing", label: "Billing", match: (path) => path.startsWith("/dashboard/billing") },
   { href: "/dashboard/settings", label: "Settings", match: (path) => path.startsWith("/dashboard/settings") }

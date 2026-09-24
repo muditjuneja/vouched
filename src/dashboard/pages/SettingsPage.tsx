@@ -1,6 +1,5 @@
 import { Callout } from "../../design";
 import { renderPage } from "../Layout";
-import { ApiKeysSection } from "../components/ApiKeysSection";
 import { ConnectionsSection } from "../components/ConnectionsSection";
 import { TeamSection } from "../components/TeamSection";
 import type { SettingsData } from "../types";
@@ -41,7 +40,6 @@ function SettingsPage({ data }: { data: SettingsData }) {
       </section>
       {data.team ? <TeamSection team={data.team} /> : null}
       <ConnectionsSection data={data} />
-      <ApiKeysSection data={data} />
     </>
   );
 }

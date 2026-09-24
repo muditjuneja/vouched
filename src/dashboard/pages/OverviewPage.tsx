@@ -24,7 +24,7 @@ function OverviewPage({ data }: { data: OverviewData }) {
               {data.hasApiKeys ? (
                 <span class="badge badge-good">API key active</span>
               ) : (
-                <a href="/dashboard/settings" class="btn btn-sm btn-primary">
+                <a href="/dashboard/api-keys?new=1" class="btn btn-sm btn-primary">
                   + Create API key
                 </a>
               )}

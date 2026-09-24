@@ -132,7 +132,6 @@ export interface SettingsData {
   email: string | null;
   tenantId?: string;
   plan?: Plan;
-  apiKeys: McpApiKeyRow[];
   /** Tenant-wide connection state, unlike WebsitesData's per-website "not_configured" concept: Settings manages the one underlying Google connection itself, not any specific website's use of it. */
   gsc: ConnectionState;
   ga4: ConnectionState;
@@ -141,6 +140,14 @@ export interface SettingsData {
   justConnected: "webmaster_console" | "analytics_property" | null;
   notice?: ActionNotice | null;
   team?: TeamSettings | null;
+}
+
+export interface ApiKeysData {
+  user?: DashboardUser;
+  /** Only the signed-in person's own keys: on a team, each person manages just theirs. */
+  apiKeys: McpApiKeyRow[];
+  openCreate: boolean;
+  notice?: ActionNotice | null;
 }
 
 export interface ApiKeyCreatedData {

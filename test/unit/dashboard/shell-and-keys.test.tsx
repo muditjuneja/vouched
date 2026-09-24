@@ -47,7 +47,28 @@ describe("renderApiKeyCreated", () => {
     expect(html).toContain("Cursor (.cursor/mcp.json)");
     expect(html).toContain("Claude Desktop (claude_desktop_config.json)");
     expect(html).toContain("https://seo-mcp.workers.dev/mcp");
-    expect(html).toContain('href="/dashboard/settings"');
+    expect(html).toContain('href="/dashboard/api-keys"');
+  });
+});
+
+describe("renderApiKeys", () => {
+  const row = { key_id: "k1", tenant_id: "t_1", label: "<b>laptop</b>", created_at: "2026-09-23", last_used_at: null };
+
+  it("lists keys with revoke actions, escaping labels, with the create drawer closed by default", async () => {
+    const { renderApiKeys } = await import("../../../src/dashboard/pages/ApiKeysPage");
+    const html = renderApiKeys({ apiKeys: [row], openCreate: false });
+    expect(html.match(/<h1/g)).toHaveLength(1);
+    expect(html).toContain("/dashboard/api-keys/k1/revoke");
+    expect(html).not.toContain("<b>laptop</b>");
+    expect(html).toContain('action="/dashboard/api-keys"');
+    expect(html).not.toMatch(/id="create-api-key-toggle"[^>]*checked/);
+  });
+
+  it("starts with the drawer open when linked with ?new=1, and shows an empty state with no keys", async () => {
+    const { renderApiKeys } = await import("../../../src/dashboard/pages/ApiKeysPage");
+    const html = renderApiKeys({ apiKeys: [], openCreate: true });
+    expect(html).toMatch(/id="create-api-key-toggle"[^>]*checked/);
+    expect(html).toContain("No keys yet");
   });
 });
 

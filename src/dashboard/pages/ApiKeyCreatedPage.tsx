@@ -95,8 +95,8 @@ function ApiKeyCreatedPage({ plaintext, workerOrigin }: { plaintext: string; wor
       </section>
 
       <p style="margin-top: 1.5rem;">
-        <a href="/dashboard/settings" class="btn btn-primary">
-          Done → Back to settings
+        <a href="/dashboard/api-keys" class="btn btn-primary">
+          Done, back to API keys
         </a>
       </p>
     </div>
@@ -106,7 +106,7 @@ function ApiKeyCreatedPage({ plaintext, workerOrigin }: { plaintext: string; wor
 export function renderApiKeyCreated(plaintext: string, workerOrigin?: string, user?: DashboardUser): string {
   return renderPage({
     title: "New API key",
-    activePath: "/dashboard/settings",
+    activePath: "/dashboard/api-keys",
     user,
     children: <ApiKeyCreatedPage plaintext={plaintext} workerOrigin={workerOrigin} />
   });
