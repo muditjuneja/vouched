@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { sendEmail } from "../../../src/email/client";
+import { htmlToText, sendEmail } from "../../../src/email/client";
 import type { Env } from "../../../src/types/env";
 
 function fakeEnv(overrides: Partial<Env> = {}): Env {
@@ -40,8 +40,16 @@ describe("sendEmail", () => {
       from: "noreply@example.com",
       to: "user@example.com",
       subject: "Hi",
-      html: "<p>hi</p>"
+      html: "<p>hi</p>",
+      text: "hi"
     });
+  });
+
+  it("derives the plain-text copy from the HTML, keeping link targets and unescaping entities", () => {
+    expect(htmlToText('<h1>Title</h1><p>Tom &amp; Jerry&#39;s</p><p><a href="https://x.test/d">Open Vouched</a></p>')).toBe(
+      "Title\n\nTom & Jerry's\n\nOpen Vouched: https://x.test/d"
+    );
+    expect(htmlToText('<p><a href="https://x.test/i">https://x.test/i</a></p>')).toBe("https://x.test/i");
   });
 
   it("honors XMIT_API_BASE_URL when set", async () => {

@@ -210,7 +210,7 @@ describe("dfsLivePost quota enforcement (cloud mode, bundled access)", () => {
 
     await dfsLivePost(env, "research_keywords", "/v3/whatever/live", {});
     expect(notifyQuotaWarning).toHaveBeenCalledTimes(1);
-    expect(notifyQuotaWarning).toHaveBeenCalledWith(env, "tenant-pro", 80);
+    expect(notifyQuotaWarning).toHaveBeenCalledWith(env, "tenant-pro", 80, "pro");
 
     // A second call, still under 100% (usage now 3.9/4): no repeat warning.
     await dfsLivePost(env, "research_keywords", "/v3/whatever/live", {});
@@ -219,7 +219,7 @@ describe("dfsLivePost quota enforcement (cloud mode, bundled access)", () => {
     // A third call pushes usage to 4.4/4 (over 100%): fires the 100% warning once.
     await dfsLivePost(env, "research_keywords", "/v3/whatever/live", {});
     expect(notifyQuotaWarning).toHaveBeenCalledTimes(2);
-    expect(notifyQuotaWarning).toHaveBeenLastCalledWith(env, "tenant-pro", 100);
+    expect(notifyQuotaWarning).toHaveBeenLastCalledWith(env, "tenant-pro", 100, "pro");
   });
 
   it("never warns for the free plan (no bundled quota to warn about)", async () => {

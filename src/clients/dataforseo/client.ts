@@ -154,7 +154,7 @@ async function warnOnQuotaThreshold(env: Env, tenantId: string): Promise<void> {
   for (const threshold of thresholds) {
     if (pctUsed < threshold) continue;
     if (await markNotifiedOnce(env.DB, tenantId, `quota_warning_${threshold}:${period}`)) {
-      await notifyQuotaWarning(env, tenantId, threshold);
+      await notifyQuotaWarning(env, tenantId, threshold, plan);
     }
     break;
   }

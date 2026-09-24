@@ -4,7 +4,8 @@ import type { Plan } from "../db/subscriptions";
 import type { Env } from "../types/env";
 import { sendEmail } from "./client";
 import { DISPLAY_NAME, SITE_URL } from "../lib/product";
-import { TEAM_INVITE_TTL_DAYS } from "../billing/quotas";
+import { FREE_DAILY_TOOL_CALLS, OVERAGE_MARKUP_MULTIPLIER, TEAM_INVITE_TTL_DAYS } from "../billing/quotas";
+import { PAYMENT_FAILURE_GRACE_DAYS } from "../db/subscriptions";
 
 /**
  * Every function here resolves the tenant's email itself (via Clerk, see
@@ -26,6 +27,9 @@ function escapeHtml(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
+const PLAN_NAME: Record<Plan, string> = { free: "Free", pro: "Pro", team: "Team" };
+const OVERAGE_MARKUP_PCT = Math.round((OVERAGE_MARKUP_MULTIPLIER - 1) * 100);
+
 /** `dashboardPath` is where the email's "from the dashboard" points, as a real link; null for emails that carry their own link. */
 function wrap(title: string, bodyHtml: string, dashboardPath: string | null = "/dashboard"): string {
   const link = dashboardPath ? `<p><a href="${SITE_URL}${dashboardPath}">Open ${DISPLAY_NAME}</a></p>` : "";
@@ -40,7 +44,9 @@ export async function notifyWelcome(env: Env, tenantId: string): Promise<boolean
     `Welcome to ${DISPLAY_NAME}`,
     wrap(
       "Welcome aboard",
-      "<p>Your account is ready. Connect a website's Search Console/Analytics from the dashboard, or start calling the SEO tools straight from your MCP client with the API key you create there.</p>"
+      `<p>Your account is ready, on the Free plan: your own Search Console and GA4 data, up to ${FREE_DAILY_TOOL_CALLS} tool calls a day.</p>` +
+        "<p>To get going, add a website and connect Google, then create an API key and add it to Claude or any other MCP client.</p>" +
+        "<p>Keyword, backlink, SERP and AI-visibility data come with Pro and Team.</p>"
     )
   );
 }
@@ -54,7 +60,7 @@ export async function notifyApiKeyIssued(env: Env, tenantId: string, label: stri
     "A new API key was created on your account",
     wrap(
       "New API key created",
-      `<p>A new MCP API key${labelText} was just created for your account. If this wasn't you, revoke it immediately from the dashboard and rotate any others.</p>`,
+      `<p>A new MCP API key${labelText} was just created for your account. If this wasn't you, revoke it right away on the API keys page and replace your other keys too.</p>`,
       "/dashboard/api-keys"
     )
   );
@@ -73,7 +79,7 @@ export async function notifyReconnectRequired(env: Env, tenantId: string, scope:
     `Reconnect your ${SCOPE_LABEL[scope]} account`,
     wrap(
       "Reconnection needed",
-      `<p>Your ${SCOPE_LABEL[scope]} connection has stopped working, likely because access was revoked or expired. Reconnect it from the dashboard to keep that data flowing.</p>`,
+      `<p>Your ${SCOPE_LABEL[scope]} connection has stopped working, likely because access was revoked or expired. Reconnect it from Settings to keep that data flowing.</p>`,
       "/dashboard/settings"
     )
   );
@@ -84,7 +90,7 @@ export async function notifyPaymentReceipt(env: Env, tenantId: string, plan: Pla
     env,
     tenantId,
     "Payment received",
-    wrap("Payment received", `<p>Thanks, your ${plan} plan is active. Manage billing anytime from the dashboard.</p>`, "/dashboard/billing")
+    wrap("Payment received", `<p>Thanks, your ${PLAN_NAME[plan]} plan is active. Invoices, payment method and cancellation are under Billing.</p>`, "/dashboard/billing")
   );
 }
 
@@ -95,7 +101,8 @@ export async function notifyPaymentFailed(env: Env, tenantId: string): Promise<b
     "Action needed: payment failed",
     wrap(
       "Payment failed",
-      "<p>Your last payment didn't go through. Update your payment method from the dashboard to avoid losing access to paid features.</p>",
+      `<p>Your last payment didn't go through. Paid features keep working for ${PAYMENT_FAILURE_GRACE_DAYS} days after your billing period ends; after that your workspace moves to the Free plan.</p>` +
+        "<p>To fix it, open Billing and choose Manage billing to update your payment method.</p>",
       "/dashboard/billing"
     )
   );
@@ -108,19 +115,23 @@ export async function notifySubscriptionCancelled(env: Env, tenantId: string): P
     "Your subscription has been cancelled",
     wrap(
       "Subscription cancelled",
-      "<p>Your paid plan has been cancelled. You're still welcome to use the free tier, or self-host anytime, see the README.</p>",
+      `<p>Your paid plan has been cancelled, and your workspace is now on Free: your own Search Console and GA4 data, up to ${FREE_DAILY_TOOL_CALLS} tool calls a day.</p>` +
+        "<p>Market-data tools stop working. Any wallet balance is kept in case you resubscribe, and anyone on your team goes back to their own workspace until then.</p>",
       "/dashboard/billing"
     )
   );
 }
 
-/** threshold is 80 or 100 (percent of the plan's monthly quota). */
-export async function notifyQuotaWarning(env: Env, tenantId: string, threshold: 80 | 100): Promise<boolean> {
-  const subject = threshold === 100 ? "You've used 100% of your monthly quota" : "You're at 80% of your monthly quota";
+/** threshold is 80 or 100 (percent of the plan's monthly included market data). */
+export async function notifyQuotaWarning(env: Env, tenantId: string, threshold: 80 | 100, plan: Plan): Promise<boolean> {
+  const subject = threshold === 100 ? "You've used this month's included market data" : "You're at 80% of this month's included market data";
+  const upgrade = plan === "pro" ? " Or move to Team for a larger monthly allowance." : "";
   const bodyHtml =
     threshold === 100
-      ? "<p>You've used your full monthly DataForSEO quota. Further seo/serp/backlinks/ai_visibility calls will be blocked until your next billing period, or you can upgrade from the dashboard.</p>"
-      : "<p>You've used 80% of this month's DataForSEO quota. Consider upgrading from the dashboard if you expect to need more before your next billing period.</p>";
+      ? `<p>You've used all the keyword, backlink, SERP and AI-visibility data included in your ${PLAN_NAME[plan]} plan this month.</p>` +
+        `<p>Those calls keep working while your overage wallet has credit, charged at cost plus ${OVERAGE_MARKUP_PCT}%. With an empty wallet they're blocked until your next billing period. Top up from Billing.${upgrade}</p>`
+      : `<p>You've used 80% of the market data included in your ${PLAN_NAME[plan]} plan this month.</p>` +
+        `<p>Past 100%, calls draw from your overage wallet at cost plus ${OVERAGE_MARKUP_PCT}%, so top it up now if it's low.${upgrade}</p>`;
   return sendToTenant(env, tenantId, subject, wrap(subject, bodyHtml, "/dashboard/billing"));
 }
 
@@ -130,7 +141,7 @@ export async function notifyWalletTopup(env: Env, tenantId: string, amountUsd: n
     env,
     tenantId,
     "Wallet credited",
-    wrap("Wallet credited", `<p>$${amountUsd.toFixed(2)} was added to your prepaid overage wallet. It's used automatically for DataForSEO-backed calls once your plan's bundled quota runs out for the month.</p>`, "/dashboard/billing")
+    wrap("Wallet credited", `<p>$${amountUsd.toFixed(2)} was added to your overage wallet. It's used automatically for market-data calls once your plan's included amount runs out for the month.</p>`, "/dashboard/billing")
   );
 }
 
@@ -142,17 +153,11 @@ export async function notifyLowWalletBalance(env: Env, tenantId: string, remaini
     "Your overage wallet is running low",
     wrap(
       "Wallet running low",
-      `<p>Your prepaid overage wallet has about $${remainingUsd.toFixed(2)} left. Once it hits $0, DataForSEO-backed calls beyond your plan's bundled quota will be blocked until you add more credit from the dashboard.</p>`,
+      `<p>Your overage wallet has about $${remainingUsd.toFixed(2)} left. Once it reaches $0, market-data calls beyond your plan's included amount are blocked until you top up from Billing.</p>`,
       "/dashboard/billing"
     )
   );
 }
-
-// Not built: a team-invite email. No multi-seat/invite mechanism exists
-// anywhere in this codebase yet: Team is currently just a pricing tier
-// name, single Clerk user per tenant like every other plan. Add a sender
-// here once real multi-seat support exists, rather than inventing invite
-// infrastructure just to justify this hook point.
 
 // Not applicable: a pSEO lead-capture confirmation. Verified against
 // src/marketing/pages.ts/routes.ts (M16's own output): no marketing page

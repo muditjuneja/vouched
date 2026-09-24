@@ -11,32 +11,43 @@ export interface SendEmailInput {
 }
 
 /**
- * Sends one transactional email via xmit.sh (Transmit).
+ * A plain-text copy of an email's HTML, sent alongside it: mail clients that
+ * don't render HTML show it, and spam filters score HTML-only mail worse.
+ * Our emails are just headings, paragraphs and links, so this stays simple.
+ */
+export function htmlToText(html: string): string {
+  return html
+    .replace(/<a [^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/g, (_m, href: string, label: string) => (label === href ? href : `${label}: ${href}`))
+    .replace(/<\/(h1|p)>/g, "\n\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .trim();
+}
+
+/**
+ * Sends one transactional email via xmit.sh (Transmit): `POST /email/send`,
+ * Bearer auth, `{from, to, subject, html, text}`, checked against
+ * https://xmit.sh/docs/send-email. `XMIT_API_BASE_URL` overrides the base
+ * URL if it ever moves.
  *
- * NOTE: xmit.sh's own docs site (xmit.sh/docs) was directly egress-blocked
- * from this sandbox — the endpoint path and body shape below (`POST
- * /email/send`, Bearer auth, `{from, to, subject, html}`) were assembled
- * from indirect web-search snippets of xmit.sh's own marketing/docs pages,
- * not a fetched doc or a live call. Same caveat treatment as DataForSEO's
- * `ai_visibility` endpoints elsewhere in this build: confirm against a real
- * xmit.sh API key before trusting this, and expect to revise the endpoint
- * path or body shape. `XMIT_API_BASE_URL` exists as a safety valve in case
- * the base URL itself needs correcting without a code change.
- *
- * Never throws — a delivery failure must never break the signup/checkout/
+ * Never throws: a delivery failure must never break the signup/checkout/
  * key-rotation flow that triggered it (same resilience contract as
  * src/lib/alerts.ts's sendAdminAlert). Returns whether the send succeeded,
  * for callers/tests that want to know.
  */
 export async function sendEmail(env: Env, input: SendEmailInput): Promise<boolean> {
   if (!hasEmail(env)) {
-    console.warn(`[email] XMIT_API_KEY not set — skipping email to ${input.to}: ${input.subject}`);
+    console.warn(`[email] XMIT_API_KEY not set, skipping email to ${input.to}: ${input.subject}`);
     return false;
   }
 
   const from = input.from ?? env.XMIT_FROM_EMAIL;
   if (!from) {
-    console.warn(`[email] no from address (set XMIT_FROM_EMAIL) — skipping email to ${input.to}`);
+    console.warn(`[email] no from address (set XMIT_FROM_EMAIL), skipping email to ${input.to}`);
     return false;
   }
 
@@ -48,7 +59,7 @@ export async function sendEmail(env: Env, input: SendEmailInput): Promise<boolea
         Authorization: `Bearer ${env.XMIT_API_KEY}`,
         "content-type": "application/json"
       },
-      body: JSON.stringify({ from, to: input.to, subject: input.subject, html: input.html })
+      body: JSON.stringify({ from, to: input.to, subject: input.subject, html: input.html, text: htmlToText(input.html) })
     });
     if (!res.ok) {
       console.warn(`[email] xmit.sh send failed (${res.status}): ${await res.text()}`);
