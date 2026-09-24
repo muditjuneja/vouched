@@ -32,25 +32,25 @@ const SCENARIOS: Scenario[] = [
   {
     id: "serp",
     tabLabel: "Live SERP & Citations",
-    userPrompt: "Snapshot Google SERP for 'best developer seo tool' — check organic ranks and AI Overview citations.",
+    userPrompt: "Snapshot Google SERP for 'best developer seo tool', then check organic ranks and AI Overview citations.",
     toolCall: 'inspect_serp({ keyword: "best developer seo tool" })',
     sourceClass: "live_serp",
     confidence: "0.85",
     freshness: "3m ago",
     factType: "serp.snapshot",
     rows: [
-      { label: "1. vouched.dev", meta: "Title: Open-source SEO MCP · Snippet: Verified facts..." },
+      { label: "1. vouchedhq.com", meta: "Title: Open-source SEO MCP · Snippet: Verified facts..." },
       { label: "2. github.com/open-seo", meta: "Stars: 1.2k · Lang: TypeScript" },
-      { label: "AI Overview Citation", meta: "Source: vouched.dev/docs" }
+      { label: "AI Overview Citation", meta: "Source: vouchedhq.com/docs" }
     ],
     agentNote:
-      "Live SERP (confidence 0.85). Position #1 confirmed. Google AI Overview cites vouched.dev/docs as a source."
+      "Live SERP (confidence 0.85). Position #1 confirmed. Google AI Overview cites vouchedhq.com/docs as a source."
   },
   {
     id: "gsc",
     tabLabel: "First-Party GSC",
     userPrompt: "Which pages had the largest CTR drops over the past 28 days? Pull Search Console data.",
-    toolCall: 'get_search_performance({ domain: "vouched.dev", startDate: "2026-08-25", endDate: "2026-09-22", dimensions: ["page"] })',
+    toolCall: 'get_search_performance({ domain: "vouchedhq.com", startDate: "2026-08-25", endDate: "2026-09-22", dimensions: ["page"] })',
     sourceClass: "webmaster_console",
     confidence: "1.0",
     freshness: "15m ago",

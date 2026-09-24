@@ -1,5 +1,6 @@
 import { CodeWindow } from "../../design";
 import { MCP_SERVER_NAME } from "../brand";
+import { SITE_URL } from "../../lib/product";
 import { Hero } from "../components/Hero";
 import { ToolCard } from "../components/ToolCard";
 import { DOMAIN_LABELS, TOOL_PAGES, type ToolPageContent } from "../content/tool-pages";
@@ -43,7 +44,7 @@ function groupByDomain(pages: ToolPageContent[]): Map<string, ToolPageContent[]>
 }
 
 const MCP_CONNECT_SNIPPET = `claude mcp add --transport http ${MCP_SERVER_NAME} \\
-  https://vouched.dev/mcp \\
+  ${SITE_URL}/mcp \\
   --header "Authorization: Bearer <your-mcp-key>"`;
 
 function ToolsIndexPage({ byDomain }: { byDomain: Map<string, ToolPageContent[]> }) {

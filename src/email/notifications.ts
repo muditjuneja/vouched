@@ -3,7 +3,7 @@ import type { ScopeGroup } from "../db/google-tokens";
 import type { Plan } from "../db/subscriptions";
 import type { Env } from "../types/env";
 import { sendEmail } from "./client";
-import { DISPLAY_NAME } from "../lib/product";
+import { DISPLAY_NAME, SITE_URL } from "../lib/product";
 import { TEAM_INVITE_TTL_DAYS } from "../billing/quotas";
 
 /**
@@ -26,8 +26,10 @@ function escapeHtml(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
-function wrap(title: string, bodyHtml: string): string {
-  return `<h1>${title}</h1>${bodyHtml}<p>${DISPLAY_NAME}</p>`;
+/** `dashboardPath` is where the email's "from the dashboard" points, as a real link; null for emails that carry their own link. */
+function wrap(title: string, bodyHtml: string, dashboardPath: string | null = "/dashboard"): string {
+  const link = dashboardPath ? `<p><a href="${SITE_URL}${dashboardPath}">Open ${DISPLAY_NAME}</a></p>` : "";
+  return `<h1>${title}</h1>${bodyHtml}${link}<p>${DISPLAY_NAME}</p>`;
 }
 
 /** Sent on a tenant's first dashboard visit, see the dashboard route's markNotifiedOnce("welcome") gate. */
@@ -52,7 +54,8 @@ export async function notifyApiKeyIssued(env: Env, tenantId: string, label: stri
     "A new API key was created on your account",
     wrap(
       "New API key created",
-      `<p>A new MCP API key${labelText} was just created for your account. If this wasn't you, revoke it immediately from the dashboard and rotate any others.</p>`
+      `<p>A new MCP API key${labelText} was just created for your account. If this wasn't you, revoke it immediately from the dashboard and rotate any others.</p>`,
+      "/dashboard/api-keys"
     )
   );
 }
@@ -70,7 +73,8 @@ export async function notifyReconnectRequired(env: Env, tenantId: string, scope:
     `Reconnect your ${SCOPE_LABEL[scope]} account`,
     wrap(
       "Reconnection needed",
-      `<p>Your ${SCOPE_LABEL[scope]} connection has stopped working, likely because access was revoked or expired. Reconnect it from the dashboard to keep that data flowing.</p>`
+      `<p>Your ${SCOPE_LABEL[scope]} connection has stopped working, likely because access was revoked or expired. Reconnect it from the dashboard to keep that data flowing.</p>`,
+      "/dashboard/settings"
     )
   );
 }
@@ -80,7 +84,7 @@ export async function notifyPaymentReceipt(env: Env, tenantId: string, plan: Pla
     env,
     tenantId,
     "Payment received",
-    wrap("Payment received", `<p>Thanks, your ${plan} plan is active. Manage billing anytime from the dashboard.</p>`)
+    wrap("Payment received", `<p>Thanks, your ${plan} plan is active. Manage billing anytime from the dashboard.</p>`, "/dashboard/billing")
   );
 }
 
@@ -91,7 +95,8 @@ export async function notifyPaymentFailed(env: Env, tenantId: string): Promise<b
     "Action needed: payment failed",
     wrap(
       "Payment failed",
-      "<p>Your last payment didn't go through. Update your payment method from the dashboard to avoid losing access to paid features.</p>"
+      "<p>Your last payment didn't go through. Update your payment method from the dashboard to avoid losing access to paid features.</p>",
+      "/dashboard/billing"
     )
   );
 }
@@ -103,7 +108,8 @@ export async function notifySubscriptionCancelled(env: Env, tenantId: string): P
     "Your subscription has been cancelled",
     wrap(
       "Subscription cancelled",
-      "<p>Your paid plan has been cancelled. You're still welcome to use the free tier, or self-host anytime, see the README.</p>"
+      "<p>Your paid plan has been cancelled. You're still welcome to use the free tier, or self-host anytime, see the README.</p>",
+      "/dashboard/billing"
     )
   );
 }
@@ -115,7 +121,7 @@ export async function notifyQuotaWarning(env: Env, tenantId: string, threshold: 
     threshold === 100
       ? "<p>You've used your full monthly DataForSEO quota. Further seo/serp/backlinks/ai_visibility calls will be blocked until your next billing period, or you can upgrade from the dashboard.</p>"
       : "<p>You've used 80% of this month's DataForSEO quota. Consider upgrading from the dashboard if you expect to need more before your next billing period.</p>";
-  return sendToTenant(env, tenantId, subject, wrap(subject, bodyHtml));
+  return sendToTenant(env, tenantId, subject, wrap(subject, bodyHtml, "/dashboard/billing"));
 }
 
 /** Sent whenever a Dodo wallet top-up payment is credited (src/billing/webhook-handlers.ts's handlePaymentSucceeded). */
@@ -124,7 +130,7 @@ export async function notifyWalletTopup(env: Env, tenantId: string, amountUsd: n
     env,
     tenantId,
     "Wallet credited",
-    wrap("Wallet credited", `<p>$${amountUsd.toFixed(2)} was added to your prepaid overage wallet. It's used automatically for DataForSEO-backed calls once your plan's bundled quota runs out for the month.</p>`)
+    wrap("Wallet credited", `<p>$${amountUsd.toFixed(2)} was added to your prepaid overage wallet. It's used automatically for DataForSEO-backed calls once your plan's bundled quota runs out for the month.</p>`, "/dashboard/billing")
   );
 }
 
@@ -136,7 +142,8 @@ export async function notifyLowWalletBalance(env: Env, tenantId: string, remaini
     "Your overage wallet is running low",
     wrap(
       "Wallet running low",
-      `<p>Your prepaid overage wallet has about $${remainingUsd.toFixed(2)} left. Once it hits $0, DataForSEO-backed calls beyond your plan's bundled quota will be blocked until you add more credit from the dashboard.</p>`
+      `<p>Your prepaid overage wallet has about $${remainingUsd.toFixed(2)} left. Once it hits $0, DataForSEO-backed calls beyond your plan's bundled quota will be blocked until you add more credit from the dashboard.</p>`,
+      "/dashboard/billing"
     )
   );
 }
@@ -166,7 +173,8 @@ export async function notifyTeamInvite(env: Env, toEmail: string, inviterEmail: 
       "You've been invited to a team",
       `<p>${who} invited you to join their ${DISPLAY_NAME} Team workspace. Sign in (or create an account) with this email address, then accept here:</p>` +
         `<p><a href="${escapeHtml(acceptUrl)}">${escapeHtml(acceptUrl)}</a></p>` +
-        `<p>The link expires in ${TEAM_INVITE_TTL_DAYS} days.</p>`
+        `<p>The link expires in ${TEAM_INVITE_TTL_DAYS} days.</p>`,
+      null
     )
   });
 }

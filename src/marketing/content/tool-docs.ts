@@ -161,7 +161,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
           kind: "property",
           label: "Vouched Production",
           attrs: {
-            primary_domain: "vouched.dev",
+            primary_domain: "vouchedhq.com",
             connections: {
               search_console: "connected",
               website_analytics: "connected"
@@ -239,7 +239,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
         { id: "urn:keyword:online+payments", kind: "keyword", label: "online payments" },
         { id: "urn:domain:adyen.com", kind: "domain", label: "adyen.com" }
       ],
-      coverage: { returned: 16, total: null, as_of: "2026-09-24T00:00:00Z", scope_note: "top 10 keywords and top 5 competitors only — use research_keywords/discover_competitors for more" },
+      coverage: { returned: 16, total: null, as_of: "2026-09-24T00:00:00Z", scope_note: "top 10 keywords and top 5 competitors only; use research_keywords/discover_competitors for more" },
       deltas: [],
       resources: [],
       next_actions: [
@@ -427,23 +427,23 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
       { kind: "keyword", description: "Discovered gap keywords." }
     ],
     exampleCall: {
-      domain: "vouched.dev",
+      domain: "vouchedhq.com",
       competitors: ["openrush.org"]
     },
     exampleResponse: {
       schema_version: "ofe/1.0",
       domain: "seo",
-      data: { domain: "vouched.dev", competitors: ["openrush.org"] },
+      data: { domain: "vouchedhq.com", competitors: ["openrush.org"] },
       facts: [
         {
           type: "seo.keyword_opportunity",
-          subject: ["urn:domain:vouched.dev", "urn:domain:openrush.org", "urn:keyword:open+source+semrush"],
+          subject: ["urn:domain:vouchedhq.com", "urn:domain:openrush.org", "urn:keyword:open+source+semrush"],
           data: { keyword: "open source semrush", gap_direction: "competitor_only", your_position: null, competitor_position: 4 },
           provenance: { source_class: "search_index", method: "dataforseo_labs.domain_intersection", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         }
       ],
       entities: [
-        { id: "urn:domain:vouched.dev", kind: "domain", label: "vouched.dev" },
+        { id: "urn:domain:vouchedhq.com", kind: "domain", label: "vouchedhq.com" },
         { id: "urn:domain:openrush.org", kind: "domain", label: "openrush.org" },
         { id: "urn:keyword:open+source+semrush", kind: "keyword", label: "open source semrush" }
       ],
@@ -453,7 +453,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
       next_actions: []
     },
     agentWorkflow: {
-      triggerPrompt: "Which keywords does openrush.org rank for that vouched.dev is missing?",
+      triggerPrompt: "Which keywords does openrush.org rank for that vouchedhq.com is missing?",
       agentReasoning: "The agent uses compare_keyword_coverage to find immediate content and landing page expansion opportunities by analyzing competitor ranking gaps.",
       followUpTools: ["inspect_keyword", "inspect_serp"]
     },
@@ -587,7 +587,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
       next_actions: []
     },
     agentWorkflow: {
-      triggerPrompt: "Analyze the keyword 'open source mcp server' — who ranks #1 and what is search intent?",
+      triggerPrompt: "Analyze the keyword 'open source mcp server': who ranks #1 and what is search intent?",
       agentReasoning: "The agent inspects commercial intent, volume, and ranking URLs before writing or recommending content optimization changes.",
       followUpTools: ["inspect_page", "inspect_serp"]
     },
@@ -893,23 +893,23 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
       { kind: "domain", description: "Your domain, competitors, and discovered referring domains." }
     ],
     exampleCall: {
-      domain: "vouched.dev",
+      domain: "vouchedhq.com",
       competitors: ["openrush.org"]
     },
     exampleResponse: {
       schema_version: "ofe/1.0",
       domain: "backlinks",
-      data: { domain: "vouched.dev", competitors: ["openrush.org"] },
+      data: { domain: "vouchedhq.com", competitors: ["openrush.org"] },
       facts: [
         {
           type: "backlinks.link_gap",
-          subject: ["urn:domain:vouched.dev", "urn:domain:openrush.org", "urn:domain:techcrunch.com"],
+          subject: ["urn:domain:vouchedhq.com", "urn:domain:openrush.org", "urn:domain:techcrunch.com"],
           data: { referring_domain: "techcrunch.com", domain_rank: 88, spam_score: 2, gap_direction: "competitor_only", earned_link: true },
           provenance: { source_class: "backlink_index", method: "dataforseo_backlinks.domain_intersection", confidence: 0.80, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         }
       ],
       entities: [
-        { id: "urn:domain:vouched.dev", kind: "domain", label: "vouched.dev" },
+        { id: "urn:domain:vouchedhq.com", kind: "domain", label: "vouchedhq.com" },
         { id: "urn:domain:openrush.org", kind: "domain", label: "openrush.org" },
         { id: "urn:domain:techcrunch.com", kind: "domain", label: "techcrunch.com" }
       ],
@@ -919,7 +919,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
       next_actions: []
     },
     agentWorkflow: {
-      triggerPrompt: "Find high-authority websites that link to openrush.org but not to vouched.dev.",
+      triggerPrompt: "Find high-authority websites that link to openrush.org but not to vouchedhq.com.",
       agentReasoning: "The agent runs compare_backlink_gap to identify reputable outreach and PR opportunities, trusting Vouched's built-in spam filter to purge low-quality directories.",
       followUpTools: ["inspect_backlinks"]
     },
