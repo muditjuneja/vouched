@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { markNotifiedOnce, markNotifiedWithCooldown } from "../../../src/email/dedup";
+import { describe, expect, it, vi } from "vitest";
+import { markNotifiedOnce, markNotifiedWithCooldown, sendOnce } from "../../../src/email/dedup";
 
 /** A tiny in-memory fake of the one table this touches. */
 function fakeNotificationsDb() {
@@ -11,6 +11,11 @@ function fakeNotificationsDb() {
         bind(...args: unknown[]) {
           return {
             async run() {
+              if (sql.startsWith("DELETE")) {
+                const [tenantId, noticeKey] = args as [string, string];
+                const existed = rows.delete(`${tenantId}:${noticeKey}`);
+                return { success: true, meta: { changes: existed ? 1 : 0 } };
+              }
               if (sql.startsWith("INSERT OR IGNORE")) {
                 const [tenantId, noticeKey] = args as [string, string];
                 const key = `${tenantId}:${noticeKey}`;
@@ -80,5 +85,24 @@ describe("markNotifiedWithCooldown", () => {
 
     const later = new Date("2026-09-04T00:00:00Z"); // 36h later, past the 24h cooldown
     expect(await markNotifiedWithCooldown(db, "tenant-1", "reconnect:webmaster_console", 24, later)).toBe(true);
+  });
+});
+
+describe("sendOnce", () => {
+  it("sends the first time and never again once it went out", async () => {
+    const db = fakeNotificationsDb();
+    const send = vi.fn(async () => true);
+    expect(await sendOnce(db, "t1", "welcome", send)).toBe(true);
+    expect(await sendOnce(db, "t1", "welcome", send)).toBe(false);
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it("releases the key when the send fails, so the next trigger retries", async () => {
+    const db = fakeNotificationsDb();
+    const send = vi.fn().mockResolvedValueOnce(false).mockResolvedValue(true);
+    expect(await sendOnce(db, "t1", "welcome", send)).toBe(false);
+    expect(await sendOnce(db, "t1", "welcome", send)).toBe(true);
+    expect(await sendOnce(db, "t1", "welcome", send)).toBe(false);
+    expect(send).toHaveBeenCalledTimes(2);
   });
 });

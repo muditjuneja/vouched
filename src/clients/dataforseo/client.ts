@@ -1,6 +1,6 @@
 import { debitWallet, getEffectivePlan, getWalletBalance } from "../../db/subscriptions";
 import { currentPeriod, getUsage, recordUsage } from "../../db/usage-counters";
-import { markNotifiedOnce, markNotifiedWithCooldown } from "../../email/dedup";
+import { markNotifiedWithCooldown, sendOnce } from "../../email/dedup";
 import { notifyLowWalletBalance, notifyQuotaWarning } from "../../email/notifications";
 import { QuotaExceededError, UpgradeRequiredError, UpstreamError } from "../../lib/errors";
 import { isCloudMode, type Env } from "../../types/env";
@@ -137,7 +137,7 @@ async function chargeOverage(env: Env, tenantId: string, rawCostUsd: number): Pr
 /**
  * Fires the 80%/100%-of-quota email at most once per threshold per billing
  * period: the notice key itself encodes the period (currentPeriod()), so
- * markNotifiedOnce's "ever" semantics naturally reset every month with no
+ * sendOnce's "ever" semantics naturally reset every month with no
  * time math needed here.
  */
 async function warnOnQuotaThreshold(env: Env, tenantId: string): Promise<void> {
@@ -153,9 +153,7 @@ async function warnOnQuotaThreshold(env: Env, tenantId: string): Promise<void> {
   const thresholds: Array<80 | 100> = [100, 80]; // check 100 first so a call that jumps straight past 80 still gets the right (higher) notice
   for (const threshold of thresholds) {
     if (pctUsed < threshold) continue;
-    if (await markNotifiedOnce(env.DB, tenantId, `quota_warning_${threshold}:${period}`)) {
-      await notifyQuotaWarning(env, tenantId, threshold, plan);
-    }
+    await sendOnce(env.DB, tenantId, `quota_warning_${threshold}:${period}`, () => notifyQuotaWarning(env, tenantId, threshold, plan));
     break;
   }
 }

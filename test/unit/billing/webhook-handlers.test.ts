@@ -13,21 +13,24 @@ import {
 import type { Env } from "../../../src/types/env";
 
 vi.mock("../../../src/email/notifications", () => ({
-  notifyPaymentReceipt: vi.fn(),
-  notifyPaymentFailed: vi.fn(),
-  notifySubscriptionCancelled: vi.fn(),
-  notifyWalletTopup: vi.fn()
+  notifyPaymentReceipt: vi.fn(async () => true),
+  notifyPaymentFailed: vi.fn(async () => true),
+  notifySubscriptionCancelled: vi.fn(async () => true),
+  notifyWalletTopup: vi.fn(async () => true)
 }));
 import { notifyPaymentFailed, notifyPaymentReceipt, notifySubscriptionCancelled, notifyWalletTopup } from "../../../src/email/notifications";
 
-// A real "send once" ledger, so retried and follow-up events can be tested.
+// A real "send once" ledger (claim, send, release on failure), so retried
+// and follow-up events can be tested.
 const sentKeys = new Set<string>();
 vi.mock("../../../src/email/dedup", () => ({
-  markNotifiedOnce: vi.fn(async (_db: unknown, tenantId: string, key: string) => {
+  sendOnce: vi.fn(async (_db: unknown, tenantId: string, key: string, send: () => Promise<boolean>) => {
     const k = `${tenantId}|${key}`;
     if (sentKeys.has(k)) return false;
     sentKeys.add(k);
-    return true;
+    const sent = await send();
+    if (!sent) sentKeys.delete(k);
+    return sent;
   })
 }));
 
@@ -133,6 +136,14 @@ describe("Dodo event handlers' lifecycle-email calls", () => {
     await handleSubscriptionOnHold(fakeEnv(), fakePayload({ status: "on_hold" }));
     await handleSubscriptionFailed(fakeEnv(), fakePayload({ status: "failed" }));
     expect(notifyPaymentFailed).toHaveBeenCalledTimes(1);
+  });
+
+  it("tries again on the next delivery when the email itself failed to send", async () => {
+    vi.mocked(notifyPaymentReceipt).mockResolvedValueOnce(false);
+    await handleSubscriptionActive(fakeEnv(), fakePayload());
+    await handleSubscriptionActive(fakeEnv(), fakePayload());
+    await handleSubscriptionActive(fakeEnv(), fakePayload());
+    expect(notifyPaymentReceipt).toHaveBeenCalledTimes(2);
   });
 
   it("sends one cancellation email per subscription, even on a retried delivery", async () => {

@@ -29,7 +29,7 @@ import { addWebsite, deleteWebsite, listWebsites, updateWebsite } from "../db/we
 import { normalizeDomain } from "../envelope/entities";
 import { MONTHLY_QUOTA_USD, TEAM_SEATS } from "../billing/quotas";
 import { buildDiscoveredProperties, type DiscoveredProperty } from "./discovery";
-import { markNotifiedOnce, markNotifiedWithCooldown } from "../email/dedup";
+import { markNotifiedWithCooldown, sendOnce } from "../email/dedup";
 import { notifyApiKeyIssued, notifyReconnectRequired, notifyTeamInvite, notifyWelcome } from "../email/notifications";
 import { ConfigError } from "../lib/errors";
 import { hasDodo, hasGoogleOAuth, isCloudMode, type Env } from "../types/env";
@@ -264,9 +264,7 @@ dashboard.get("/", async (c) => {
   // Approximates "signup complete" as "first dashboard visit": no Clerk
   // user.created webhook exists in this build (out of scope to add one
   // just for this welcome email).
-  if (await markNotifiedOnce(env.DB, tenantId, "welcome")) {
-    await notifyWelcome(env, tenantId);
-  }
+  await sendOnce(env.DB, tenantId, "welcome", () => notifyWelcome(env, tenantId));
 
   const [websiteRows, sub, usage, recentActivity, email, apiKeys, gscState, ga4State] = await Promise.all([
     listWebsites(env.DB, tenantId),

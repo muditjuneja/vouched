@@ -4,7 +4,7 @@ import { QuotaExceededError, UpgradeRequiredError } from "../../../src/lib/error
 import type { Env } from "../../../src/types/env";
 
 vi.mock("../../../src/email/notifications", () => ({
-  notifyQuotaWarning: vi.fn(),
+  notifyQuotaWarning: vi.fn(async () => true),
   notifyLowWalletBalance: vi.fn()
 }));
 import { notifyLowWalletBalance, notifyQuotaWarning } from "../../../src/email/notifications";

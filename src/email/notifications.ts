@@ -36,7 +36,7 @@ function wrap(title: string, bodyHtml: string, dashboardPath: string | null = "/
   return `<h1>${title}</h1>${bodyHtml}${link}<p>${DISPLAY_NAME}</p>`;
 }
 
-/** Sent on a tenant's first dashboard visit, see the dashboard route's markNotifiedOnce("welcome") gate. */
+/** Sent on a tenant's first dashboard visit, see the dashboard route's sendOnce(..., "welcome") gate. */
 export async function notifyWelcome(env: Env, tenantId: string): Promise<boolean> {
   return sendToTenant(
     env,
