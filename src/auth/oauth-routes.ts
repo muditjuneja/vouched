@@ -1,4 +1,5 @@
-import { verifyClerkSession } from "./clerk";
+import { resolveTenant } from "../db/team";
+import { authenticateBillingRequest } from "./clerk";
 import { buildAuthUrl, exchangeCodeForTokens, type OAuthReturnTo } from "./google-oauth";
 import type { ScopeGroup } from "../db/google-tokens";
 import { isCloudMode, type Env } from "../types/env";
@@ -33,11 +34,13 @@ export async function handleOAuthStart(request: Request, env: Env): Promise<Resp
 
   let tenantId: string | null = null;
   if (isCloudMode(env)) {
-    const session = await verifyClerkSession(request, env);
-    if (!session) {
-      return new Response("unauthorized: sign in first", { status: 401 });
-    }
-    tenantId = session.userId;
+    // Same stale-token handling as the billing routes (a bare session check
+    // 401'd a genuinely signed-in user whose token was due for refresh).
+    const auth = await authenticateBillingRequest(request, env);
+    if (!auth.ok) return auth.response;
+    // A team member connects Google for the team's workspace, not their
+    // own personal one.
+    tenantId = (await resolveTenant(env.DB, auth.session.userId)).tenantId;
   } else {
     const setupToken = url.searchParams.get("setup_token");
     if (setupToken !== env.MCP_BEARER_TOKEN) {

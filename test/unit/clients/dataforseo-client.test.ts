@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { dfsLivePost } from "../../../src/clients/dataforseo/client";
-import { QuotaExceededError } from "../../../src/lib/errors";
+import { QuotaExceededError, UpgradeRequiredError } from "../../../src/lib/errors";
 import type { Env } from "../../../src/types/env";
 
 vi.mock("../../../src/email/notifications", () => ({
@@ -149,12 +149,12 @@ describe("dfsLivePost quota enforcement (cloud mode, bundled access)", () => {
     vi.unstubAllGlobals();
   });
 
-  it("blocks a free-plan tenant before ever calling DataForSEO", async () => {
+  it("tells a free-plan tenant to upgrade, before ever calling DataForSEO", async () => {
     const { db } = fakeDb(); // no subscription row -> free plan, no wallet
     const env = fakeEnv(db, { ...cloudOverrides, __tenantId: "tenant-free" });
 
     await expect(dfsLivePost(env, "research_keywords", "/v3/whatever/live", {})).rejects.toThrow(
-      QuotaExceededError
+      UpgradeRequiredError
     );
     expect(fetchSpy).not.toHaveBeenCalled();
   });
@@ -226,7 +226,7 @@ describe("dfsLivePost quota enforcement (cloud mode, bundled access)", () => {
     const { db } = fakeDb(); // no subscription row -> free plan, blocked before this point anyway
     const env = fakeEnv(db, { ...cloudOverrides, __tenantId: "tenant-free" });
 
-    await expect(dfsLivePost(env, "research_keywords", "/v3/whatever/live", {})).rejects.toThrow(QuotaExceededError);
+    await expect(dfsLivePost(env, "research_keywords", "/v3/whatever/live", {})).rejects.toThrow(UpgradeRequiredError);
     expect(notifyQuotaWarning).not.toHaveBeenCalled();
   });
 });
@@ -268,14 +268,14 @@ describe("dfsLivePost overage wallet", () => {
     expect(walletBalance("tenant-pro")).toBeCloseTo(5 - 1.15, 5);
   });
 
-  it("lets a free-plan tenant with no subscription pay purely from their wallet, no plan needed", async () => {
+  it("never lets a free-plan tenant spend wallet balance on paid data (e.g. left over after downgrading)", async () => {
     const { db, setWalletBalance, walletBalance } = fakeDb();
     setWalletBalance("tenant-wallet-only", 10);
     const env = fakeEnv(db, { ...cloudOverrides, __tenantId: "tenant-wallet-only" });
 
-    const result = await dfsLivePost(env, "research_keywords", "/v3/whatever/live", {});
-    expect(result).toEqual([{ hit: true }]);
-    expect(walletBalance("tenant-wallet-only")).toBeCloseTo(10 - 1.15, 5);
+    await expect(dfsLivePost(env, "research_keywords", "/v3/whatever/live", {})).rejects.toThrow(UpgradeRequiredError);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(walletBalance("tenant-wallet-only")).toBe(10);
   });
 
   it("blocks once both the quota and the wallet are exhausted", async () => {

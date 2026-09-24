@@ -1,5 +1,5 @@
 import type { Child } from "hono/jsx";
-import { MONTHLY_QUOTA_USD, PLAN_PRICES_USD } from "../../billing/quotas";
+import { MONTHLY_QUOTA_USD, PLAN_PRICES_USD, TEAM_SEATS } from "../../billing/quotas";
 import { Button, Card, CodeWindow, Table } from "../../design";
 import { DISPLAY_NAME, MCP_SERVER_NAME, cloudCtaHref } from "../brand";
 import { AgentPreview } from "../components/AgentPreview";
@@ -120,7 +120,7 @@ function LandingPage({ cloudMode }: { cloudMode: boolean }) {
             </span>
           </>
         }
-        lede="Connect Claude, Cursor, or any MCP client to 18 SEO tools. Pull keyword research, live SERPs, backlink profiles, URL indexing, and verified GSC/GA4 data — with source, timestamp, and confidence on every fact."
+        lede="Connect Claude, Cursor, or any MCP client to 18 SEO tools. Pull keyword research, live SERPs, backlink profiles, URL indexing, and verified GSC/GA4 data, with source, timestamp, and confidence on every fact."
         visual={<AgentPreview />}
       >
         <div class="cta-row">
@@ -140,7 +140,7 @@ function LandingPage({ cloudMode }: { cloudMode: boolean }) {
       </Hero>
 
       <section>
-        <p class="chapter">01 — Product</p>
+        <p class="chapter">01 · Product</p>
         <h2>What the agent can do</h2>
         <p>
           Every tool returns a typed envelope: facts plus provenance so you can verify where every number came from.
@@ -199,7 +199,7 @@ function LandingPage({ cloudMode }: { cloudMode: boolean }) {
       </section>
 
       <section>
-        <p class="chapter">02 — In the conversation</p>
+        <p class="chapter">02 · In the conversation</p>
         <h2>How it works</h2>
         <ol class="chapter-steps">
           {HOW_IT_WORKS.map((step, index) => (
@@ -215,10 +215,10 @@ function LandingPage({ cloudMode }: { cloudMode: boolean }) {
       </section>
 
       <section id="self-host">
-        <p class="chapter">03 — How you run it</p>
+        <p class="chapter">03 · How you run it</p>
         <h2>Choose Cloud or self-host</h2>
         <p>
-          Same tools either way. The split is who operates the Worker and who holds the DataForSEO key — not which signals exist.
+          Same tools either way. The split is who operates the Worker and who holds the DataForSEO key, not which signals exist.
         </p>
         <div class="deploy-grid">
           <Card title="Vouched Cloud">
@@ -249,7 +249,7 @@ ${CONNECT_COMMAND}`}</CodeWindow>
       </section>
 
       <section>
-        <p class="chapter">04 — Price</p>
+        <p class="chapter">04 · Price</p>
         <h2>Pricing</h2>
         <p>Community is $0. Cloud is a flat monthly quota, not credits.</p>
         <div class="pricing-rail">
@@ -275,7 +275,7 @@ ${CONNECT_COMMAND}`}</CodeWindow>
             <p class="price-amount">
               ${PLAN_PRICES_USD.team} <small>/mo</small>
             </p>
-            <p>For teams tracking more sites. Includes ${MONTHLY_QUOTA_USD.team}/mo of DataForSEO usage.</p>
+            <p>{TEAM_SEATS} seats in one shared workspace. Includes ${MONTHLY_QUOTA_USD.team}/mo of DataForSEO usage.</p>
           </div>
         </div>
         <p>
@@ -284,7 +284,7 @@ ${CONNECT_COMMAND}`}</CodeWindow>
       </section>
 
       <section>
-        <p class="chapter">05 — Open vs closed</p>
+        <p class="chapter">05 · Open vs closed</p>
         <h2>vs OpenRush</h2>
         <Table class="compare" headers={["", DISPLAY_NAME, "OpenRush"]}>
           <tr>
@@ -318,11 +318,11 @@ ${CONNECT_COMMAND}`}</CodeWindow>
       </section>
 
       <section class="faq">
-        <p class="chapter">06 — Questions</p>
+        <p class="chapter">06 · Questions</p>
         <h2>Frequently asked</h2>
         <div class="faq-list">
           <details open>
-            <summary>Cloud or self-host — which should I pick?</summary>
+            <summary>Cloud or self-host: which should I pick?</summary>
             <div class="faq-answer">
               <p>
                 Same 18 tools. Cloud means we host the Worker and bundle DataForSEO access.
@@ -400,7 +400,7 @@ export function renderLanding(canonicalUrl: string, cloudMode: boolean): string 
   return renderPage({
     title: `${DISPLAY_NAME}: SEO facts your agent can vouch for`,
     description:
-      "Open-source MCP server for SEO and marketing data. Same 18 tools on Vouched Cloud or self-hosted Community — keyword research, backlinks, SERP, URL indexing, GSC/GA4, with provenance on every fact.",
+      "Open-source MCP server for SEO and marketing data. Same 18 tools on Vouched Cloud or self-hosted Community: keyword research, backlinks, SERP, URL indexing, GSC/GA4, with provenance on every fact.",
     canonicalUrl,
     cloudMode,
     children: <LandingPage cloudMode={cloudMode} />

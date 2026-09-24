@@ -2,7 +2,7 @@ import { debitWallet, getEffectivePlan, getWalletBalance } from "../../db/subscr
 import { currentPeriod, getUsage, recordUsage } from "../../db/usage-counters";
 import { markNotifiedOnce, markNotifiedWithCooldown } from "../../email/dedup";
 import { notifyLowWalletBalance, notifyQuotaWarning } from "../../email/notifications";
-import { QuotaExceededError, UpstreamError } from "../../lib/errors";
+import { QuotaExceededError, UpgradeRequiredError, UpstreamError } from "../../lib/errors";
 import { isCloudMode, type Env } from "../../types/env";
 import { MONTHLY_QUOTA_USD, OVERAGE_MARKUP_MULTIPLIER } from "../../billing/quotas";
 import { recordCost } from "./cost-tracker";
@@ -64,6 +64,10 @@ export async function dfsLivePost<TResult>(
 
   if (usingBundled) {
     const plan = await getEffectivePlan(env.DB, tenantId!);
+    // Checked before the wallet, not just via the $0 free quota: a tenant
+    // who downgraded with wallet balance left must not keep spending it on
+    // paid data from a free plan.
+    if (plan === "free") throw new UpgradeRequiredError();
     const quotaUsd = MONTHLY_QUOTA_USD[plan];
     const usage = await getUsage(env.DB, tenantId!);
     const usedUsd = usage?.cost_incurred_usd ?? 0;

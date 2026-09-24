@@ -56,5 +56,11 @@ export const MIN_TOPUP_USD = 5;
  */
 export const FREE_DAILY_TOOL_CALLS = 100;
 
+/** People (owner included) who can share one Team workspace. Flat, part of the $50 Team plan, no per-seat billing. */
+export const TEAM_SEATS = 5;
+
+/** How long a team invite link stays valid. */
+export const TEAM_INVITE_TTL_DAYS = 7;
+
 /** Fixed top-up amounts offered on the dashboard's "buy credits" form. Nothing stops a future custom-amount field from calling startWalletTopup with any value >= MIN_TOPUP_USD. */
 export const TOPUP_PRESETS_USD = [10, 25, 100];

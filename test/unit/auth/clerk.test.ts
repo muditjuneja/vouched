@@ -1,6 +1,6 @@
 import type { createClerkClient } from "@clerk/backend";
 import { describe, expect, it, vi } from "vitest";
-import { authenticateBillingRequest, authenticateDashboardRequest, extractSessionToken, getTenantEmail } from "../../../src/auth/clerk";
+import { authenticateBillingRequest, authenticateDashboardRequest, getTenantEmail } from "../../../src/auth/clerk";
 import { ConfigError } from "../../../src/lib/errors";
 import type { Env } from "../../../src/types/env";
 
@@ -28,40 +28,6 @@ function fakeClerkClient(
     }
   })) as unknown as typeof createClerkClient;
 }
-
-describe("extractSessionToken", () => {
-  it("prefers an Authorization: Bearer header over any cookie", () => {
-    const req = new Request("https://example.com/", {
-      headers: {
-        Authorization: "Bearer header-token",
-        Cookie: "__session=cookie-token"
-      }
-    });
-    expect(extractSessionToken(req)).toBe("header-token");
-  });
-
-  it("falls back to the __session cookie when there's no Authorization header", () => {
-    const req = new Request("https://example.com/", {
-      headers: { Cookie: "other=1; __session=cookie-token; more=2" }
-    });
-    expect(extractSessionToken(req)).toBe("cookie-token");
-  });
-
-  it("returns null when neither is present", () => {
-    const req = new Request("https://example.com/");
-    expect(extractSessionToken(req)).toBeNull();
-  });
-
-  it("ignores a non-Bearer Authorization header and still checks the cookie", () => {
-    const req = new Request("https://example.com/", {
-      headers: {
-        Authorization: "Basic dXNlcjpwYXNz",
-        Cookie: "__session=cookie-token"
-      }
-    });
-    expect(extractSessionToken(req)).toBe("cookie-token");
-  });
-});
 
 describe("getTenantEmail", () => {
   it("returns the primary email address when one is set", async () => {
@@ -206,7 +172,7 @@ describe("authenticateDashboardRequest", () => {
 
 describe("authenticateBillingRequest", () => {
   // The bug this exists to fix: /billing/checkout, /billing/topup, and
-  // /billing/portal used to call the bare verifyClerkSession (only checks
+  // /billing/portal used to call a bare session check (only checks
   // an already-valid token, no refresh/handshake), so a token due for its
   // silent refresh 401'd on these routes even with a genuinely signed-in
   // browser session. This wraps authenticateDashboardRequest instead, the

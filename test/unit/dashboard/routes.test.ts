@@ -21,6 +21,17 @@ vi.mock("../../../src/auth/clerk", async (importOriginal) => {
   return { ...actual, authenticateDashboardRequest };
 });
 
+// The gate resolves the signed-in user to a workspace via D1 (src/db/team.ts,
+// tested on its own in test/unit/db/team.test.ts). Here every user is simply
+// the owner of their own workspace.
+vi.mock("../../../src/db/team", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../../src/db/team")>();
+  return {
+    ...actual,
+    resolveTenant: vi.fn(async (_db: D1Database, userId: string) => ({ userId, tenantId: userId, role: "owner", pausedTeamId: null }))
+  };
+});
+
 import { dashboard } from "../../../src/dashboard/routes";
 
 function fakeEnv(overrides: Partial<Env> = {}): Env {

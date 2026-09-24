@@ -8,9 +8,25 @@ import type { WebsiteRow } from "../db/websites";
 import type { DiscoveredProperty } from "./discovery";
 
 export interface DashboardUser {
+  /** The signed-in person's own email, not the workspace owner's. */
   email: string | null;
+  /** The workspace's plan (the team's plan for a member). */
   plan: Plan;
   tenantId: string;
+  role: "owner" | "member";
+}
+
+/** Settings' team section. Present for anyone on or owning a team, or whose team membership is paused. */
+export interface TeamSettings {
+  role: "owner" | "member";
+  seatLimit: number;
+  ownerEmail: string | null;
+  members: { userId: string; email: string | null; joinedAt: string }[];
+  pendingInvites: { inviteId: string; email: string; expiresAt: string }[];
+  /** Owner on the Team plan with a free seat: shows the invite form. */
+  canInvite: boolean;
+  /** Set when the user is a member of a team whose plan lapsed: they're in their personal workspace until it's renewed. */
+  pausedTeamOwnerEmail: string | null;
 }
 
 export interface ActionNotice {
@@ -106,6 +122,8 @@ export interface BillingData {
   topupSuccess: boolean;
   /** Prefills the upgrade/top-up forms' email field so an already-signed-in tenant never retypes it; null falls back to a visible input. */
   prefillEmail: string | null;
+  /** False for team members: billing is owner-only, so they see a note instead of upgrade/top-up forms. */
+  canManageBilling: boolean;
   notice?: ActionNotice | null;
 }
 
@@ -122,6 +140,7 @@ export interface SettingsData {
   /** Set right after the OAuth callback redirects back here (see src/auth/oauth-routes.ts's handleOAuthCallback), so the tenant lands on a real confirmation instead of a dead-end text page. */
   justConnected: "webmaster_console" | "analytics_property" | null;
   notice?: ActionNotice | null;
+  team?: TeamSettings | null;
 }
 
 export interface ApiKeyCreatedData {

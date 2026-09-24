@@ -305,12 +305,11 @@ Wired into:
   `dfsLivePost`, at 80%/100% of the tenant's monthly quota, once per
   threshold per billing period (the notice key itself encodes the period).
 
-**Deliberately not built**: a team-invite email (no multi-seat/invite
-mechanism exists anywhere in this codebase yet, Team is currently just a
-pricing tier name) and a pSEO lead-capture confirmation (verified: no
+**Deliberately not built**: a pSEO lead-capture confirmation (verified: no
 marketing page collects an email address, so there's nothing to hook).
-Both are documented gaps in `src/email/notifications.ts`, not silently
-dropped.
+A documented gap in `src/email/notifications.ts`, not silently dropped.
+(The team-invite email this section used to list as missing now exists,
+see M21.)
 
 **Flagged unverified from the outset, still true**: xmit.sh's own docs
 site (`xmit.sh/docs`) is directly egress-blocked from this sandbox, its
@@ -332,9 +331,13 @@ positive balance, then gets debited afterward at real cost times
 flat convenience markup rather than the ~60% margin baked into the
 bundled quota, closer to a processing-and-margin fee in the spirit of
 OpenRouter's ~5% BYOK pass-through cut). `QuotaExceededError` still
-fires once both the quota and the wallet are exhausted. This works
-independently of plan: even a free-plan tenant with no subscription at
-all can pay purely out of a wallet balance, no upgrade required.
+fires once both the quota and the wallet are exhausted.
+
+**Changed in M21**: the wallet no longer works without a plan. A free
+tenant can't top up (`/billing/topup` returns 403) and can't make paid
+market-data calls at all, even with an existing balance
+(`UpgradeRequiredError`). Otherwise wallet pay-as-you-go strictly beat
+both subscriptions.
 
 The wallet is funded via a one-time (non-subscription) Dodo checkout
 (`src/billing/dodo-client.ts`'s `startWalletTopup`, a new
@@ -454,6 +457,60 @@ New design-system components (`src/design/`): `NavItem`, `StatCard`,
 disclosure (same pattern the marketing pricing page's FAQ already uses),
 not a checkbox or any new script, this app still has zero client JS
 framework, by design.
+
+## M21: Plan split (Option C) + Team seats
+
+**Why**: wallet pay-as-you-go was strictly cheaper than both subscriptions
+(Pro always cost more for the same usage, and Team cost more still), so
+nobody had a reason to subscribe. Two changes fix that.
+
+**Plan split**:
+- **Free** is your own Google data only (GSC, GA4, core tools), capped at
+  `FREE_DAILY_TOOL_CALLS` (100) tool calls per day.
+- **Paid market data** (the DataForSEO-backed `seo`/`serp`/`backlinks`/
+  `ai_visibility` tools) needs Pro or Team. The gate is in `dfsLivePost`,
+  before the quota and wallet checks, and it surfaces to the agent as
+  `upgrade_required: ...`.
+- **Wallet top-ups** are Pro/Team only. A balance left over after a
+  downgrade stays frozen, not refunded or spent, until the tenant
+  resubscribes.
+
+**Team seats**: the flat $50 Team plan includes `TEAM_SEATS` (5) people,
+counting the owner.
+- Tables: `tenant_members`, `tenant_invites`, and
+  `mcp_api_keys.created_by`, all in migration
+  `0009_team_seats.sql`.
+- **The tenant model doesn't change.** A workspace's id is still its
+  owner's Clerk user id. `resolveTenant` (`src/db/team.ts`) maps a
+  signed-in user to a workspace in three places:
+  - the dashboard gate
+  - the billing routes (owner-only, 403 for members)
+  - OAuth start (a member connecting Google connects the shared workspace)
+- **Membership only counts while the team's plan is `team`.** If it
+  lapses, members fall back to their own personal workspace, which was
+  never touched, and return automatically on renewal.
+- **Joining:**
+  - Blocked while the joiner has their own paid plan, so nobody pays
+    twice. Blocked if they're already on a team.
+  - The invite link must be opened by the invited email address, so a
+    forwarded or leaked link doesn't hand out a seat.
+  - Pending invites (7-day TTL, `TEAM_INVITE_TTL_DAYS`) hold a seat.
+  - Tokens are stored only as a sha256 hash.
+  - Accepting claims the invite with a conditional `UPDATE` before
+    inserting the membership, and undoes the claim if the insert fails.
+- **API keys are per person.** Each person sees and revokes only their own.
+  - A member's key resolves to the team workspace.
+  - `/mcp` re-checks that the key's creator is still active on that team
+    (403 otherwise).
+  - Removing a member, or a member leaving, deletes their keys outright.
+- **Owner-only:** billing, inviting and removing people. Everything else
+  (websites, Google connections, usage) is shared.
+- **Dashboard:** a Team section in Settings, an `/dashboard/invite/:token`
+  accept page, and `notifyTeamInvite` for the invite email. If the email
+  can't be sent, Settings shows the owner the link to pass on themselves.
+
+**Not built**: transferring ownership, per-member usage breakdown, more
+than one team per person, seat add-ons beyond 5.
 
 ## Verification discipline
 

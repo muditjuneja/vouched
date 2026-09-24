@@ -4,6 +4,7 @@ import type { Plan } from "../db/subscriptions";
 import type { Env } from "../types/env";
 import { sendEmail } from "./client";
 import { DISPLAY_NAME } from "../lib/product";
+import { TEAM_INVITE_TTL_DAYS } from "../billing/quotas";
 
 /**
  * Every function here resolves the tenant's email itself (via Clerk, see
@@ -18,6 +19,11 @@ async function sendToTenant(env: Env, tenantId: string, subject: string, html: s
     return false;
   }
   return sendEmail(env, { to, subject, html });
+}
+
+/** Anything user-supplied (a key label, an email address) goes through this before landing in email HTML. */
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
 function wrap(title: string, bodyHtml: string): string {
@@ -39,7 +45,7 @@ export async function notifyWelcome(env: Env, tenantId: string): Promise<boolean
 
 /** Sent every time an MCP API key is created: issuance and rotation both go through the same call. */
 export async function notifyApiKeyIssued(env: Env, tenantId: string, label: string | null): Promise<boolean> {
-  const labelText = label ? ` ("${label}")` : "";
+  const labelText = label ? ` ("${escapeHtml(label)}")` : "";
   return sendToTenant(
     env,
     tenantId,
@@ -144,3 +150,23 @@ export async function notifyLowWalletBalance(env: Env, tenantId: string, remaini
 // Not applicable: a pSEO lead-capture confirmation. Verified against
 // src/marketing/pages.ts/routes.ts (M16's own output): no marketing page
 // collects an email address (no <form> exists), so there's nothing to hook.
+
+/**
+ * Sent to an invitee's email address, not to a tenant: they may not have
+ * an account yet. The accept link only works when opened by a signed-in
+ * user with this exact email (see src/db/team.ts's checkInvite), so a
+ * forwarded email can't hand out a seat.
+ */
+export async function notifyTeamInvite(env: Env, toEmail: string, inviterEmail: string | null, acceptUrl: string): Promise<boolean> {
+  const who = inviterEmail ? escapeHtml(inviterEmail) : "A teammate";
+  return sendEmail(env, {
+    to: toEmail,
+    subject: `You're invited to a ${DISPLAY_NAME} team`,
+    html: wrap(
+      "You've been invited to a team",
+      `<p>${who} invited you to join their ${DISPLAY_NAME} Team workspace. Sign in (or create an account) with this email address, then accept here:</p>` +
+        `<p><a href="${escapeHtml(acceptUrl)}">${escapeHtml(acceptUrl)}</a></p>` +
+        `<p>The link expires in ${TEAM_INVITE_TTL_DAYS} days.</p>`
+    )
+  });
+}

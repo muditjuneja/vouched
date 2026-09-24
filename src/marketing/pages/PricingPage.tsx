@@ -1,5 +1,5 @@
 import { Table } from "../../design";
-import { MONTHLY_QUOTA_USD, PLAN_PRICES_USD } from "../../billing/quotas";
+import { FREE_DAILY_TOOL_CALLS, MONTHLY_QUOTA_USD, PLAN_PRICES_USD, TEAM_SEATS } from "../../billing/quotas";
 import { TOOL_MANIFEST } from "../../mcp/manifest";
 import { Hero } from "../components/Hero";
 import { CheckIcon } from "../components/icons";
@@ -53,9 +53,10 @@ function PricingPage({ cloudMode }: { cloudMode: boolean }) {
           </p>
           <ul>
             <li>Everything in Community</li>
+            <li>Keyword, backlink, SERP and AI-visibility tools</li>
             <li>${MONTHLY_QUOTA_USD.pro}/mo bundled DataForSEO included</li>
+            <li>Prepaid wallet for usage past that, at cost plus 15%</li>
             <li>Dashboard: connection status, usage, API keys</li>
-            <li>MCP API key management (create / revoke)</li>
           </ul>
           {!cloudMode ? <p class="muted">Not enabled on this deployment; this describes the hosted cloud plan, not this server.</p> : null}
         </PricingCard>
@@ -68,17 +69,23 @@ function PricingPage({ cloudMode }: { cloudMode: boolean }) {
           ctaHref={cloudMode ? cloudCtaHref(true) : "/pricing#cloud"}
         >
           <p>
-            Same hosted product as Pro, with a larger bundled DataForSEO allowance: ${MONTHLY_QUOTA_USD.team}/mo of underlying cost
-            included, for teams tracking more sites or running more research per month.
+            Pro for a team: one shared workspace for up to {TEAM_SEATS} people, and a larger bundled DataForSEO allowance of{" "}
+            {`$${MONTHLY_QUOTA_USD.team}/mo`} of underlying cost.
           </p>
           <ul>
             <li>Everything in Pro</li>
+            <li>{TEAM_SEATS} seats included, invite by email</li>
+            <li>Shared websites and Google connections</li>
+            <li>Each person gets their own API keys</li>
             <li>${MONTHLY_QUOTA_USD.team}/mo bundled DataForSEO quota</li>
-            <li>Same per-tenant dashboard and key management</li>
           </ul>
           {!cloudMode ? <p class="muted">Not enabled on this deployment; this describes the hosted cloud plan, not this server.</p> : null}
         </PricingCard>
         </div>
+        <p class="muted" style="margin-top:1rem">
+          <strong>Cloud Free:</strong> $0 on the hosted version for your own Search Console and GA4 data, up to {FREE_DAILY_TOOL_CALLS} tool
+          calls a day. Keyword, backlink, SERP and AI-visibility data need Pro or Team.
+        </p>
       </section>
 
       <section>
@@ -119,6 +126,12 @@ function PricingPage({ cloudMode }: { cloudMode: boolean }) {
             <td>
               <Yes />
             </td>
+          </tr>
+          <tr>
+            <td>People per workspace</td>
+            <td>Up to you</td>
+            <td>1</td>
+            <td>{TEAM_SEATS} included</td>
           </tr>
           <tr>
             <td>DataForSEO access</td>
@@ -166,6 +179,24 @@ function PricingPage({ cloudMode }: { cloudMode: boolean }) {
             </div>
           </details>
           <details>
+            <summary>What does the free cloud plan include?</summary>
+            <div class="faq-answer">
+              <p>
+                Your own Google data: Search Console performance, indexing and sitemaps, plus GA4, up to {FREE_DAILY_TOOL_CALLS} tool calls
+                a day. Paid market data (keywords, backlinks, SERPs, AI visibility) costs us real money per call, so it starts at Pro.
+              </p>
+            </div>
+          </details>
+          <details>
+            <summary>How do Team seats work?</summary>
+            <div class="faq-answer">
+              <p>
+                The owner invites people by email from Settings. Everyone shares the workspace's websites, Google connections and quota, and
+                each person creates their own API keys. Only the owner manages billing. Removing someone stops their keys immediately.
+              </p>
+            </div>
+          </details>
+          <details>
             <summary>Can I switch from cloud to self-host later?</summary>
             <div class="faq-answer">
               <p>Yes, it's the same MIT-licensed codebase. Clone the repo and deploy your own copy whenever you want.</p>
@@ -176,8 +207,8 @@ function PricingPage({ cloudMode }: { cloudMode: boolean }) {
             <div class="faq-answer">
               <p>
                 Add credit to your prepaid overage wallet from the dashboard, and DataForSEO-backed calls keep working past your monthly quota,
-                billed at cost plus a small markup, no plan upgrade needed. It works standalone too: skip the subscription entirely and pay
-                straight from the wallet.
+                billed at cost plus a small markup, no plan upgrade needed. The wallet tops up a Pro or Team plan; it isn't a way to use market
+                data without one.
               </p>
             </div>
           </details>

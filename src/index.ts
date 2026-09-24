@@ -8,6 +8,7 @@ import { buildDodoWebhookHandler } from "./billing/webhook-handlers";
 import { dashboard } from "./dashboard/routes";
 import { verifyApiKey } from "./db/mcp-api-keys";
 import { getEffectivePlan, getSubscription, type Plan } from "./db/subscriptions";
+import { getMembership, resolveTenant } from "./db/team";
 import { ConfigError } from "./lib/errors";
 import { marketing } from "./marketing/routes";
 import { buildMcpServer } from "./mcp/server";
@@ -32,6 +33,18 @@ function isAuthorized(request: Request, env: Env): boolean {
   const [scheme, token] = header.split(" ");
   if (scheme !== "Bearer" || !token) return false;
   return timingSafeEqual(token, env.MCP_BEARER_TOKEN);
+}
+
+/**
+ * Billing always acts on the signed-in user's own subscription row, so a
+ * team member is turned away rather than starting a checkout that would
+ * either bill them personally while on someone else's plan or touch the
+ * owner's billing.
+ */
+async function requireWorkspaceOwner(db: D1Database, userId: string): Promise<Response | null> {
+  const ctx = await resolveTenant(db, userId);
+  if (ctx.role === "owner") return null;
+  return new Response("forbidden: only the workspace owner can manage billing", { status: 403 });
 }
 
 // Hono carries the whole cloud-facing surface (dashboard, landing/pSEO
@@ -85,6 +98,13 @@ app.get("/billing/checkout", async (c) => {
   }
   const auth = await authenticateBillingRequest(c.req.raw, c.env);
   if (!auth.ok) return auth.response;
+  const notOwner = await requireWorkspaceOwner(c.env.DB, auth.session.userId);
+  if (notOwner) return notOwner;
+  // A member whose team's plan lapsed is back in their own workspace, but
+  // subscribing here would have them paying twice once the team renews.
+  if ((await getMembership(c.env.DB, auth.session.userId)) !== null) {
+    return c.text("forbidden: you're still a member of a team; leave it from Settings before subscribing yourself", 403);
+  }
 
   const plan = c.req.query("plan");
   const email = c.req.query("email");
@@ -121,6 +141,14 @@ app.get("/billing/topup", async (c) => {
   }
   const auth = await authenticateBillingRequest(c.req.raw, c.env);
   if (!auth.ok) return auth.response;
+  const notOwner = await requireWorkspaceOwner(c.env.DB, auth.session.userId);
+  if (notOwner) return notOwner;
+
+  // Paid data (and so the wallet that pays for overage on it) is a
+  // subscriber feature: free plans get their own Google data only.
+  if ((await getEffectivePlan(c.env.DB, auth.session.userId)) === "free") {
+    return c.text("forbidden: wallet top-ups are for Pro and Team subscribers, upgrade first", 403);
+  }
 
   const amount = Number(c.req.query("amount"));
   const email = c.req.query("email");
@@ -159,6 +187,8 @@ app.get("/billing/portal", async (c) => {
   }
   const auth = await authenticateBillingRequest(c.req.raw, c.env);
   if (!auth.ok) return auth.response;
+  const notOwner = await requireWorkspaceOwner(c.env.DB, auth.session.userId);
+  if (notOwner) return notOwner;
   const sub = await getSubscription(c.env.DB, auth.session.userId);
   if (!sub?.dodo_customer_id) {
     return c.text("no billing account on file yet", 404);
@@ -190,9 +220,20 @@ app.all("/mcp", async (c) => {
     if (scheme !== "Bearer" || !token) {
       return c.text("unauthorized", 401, { "WWW-Authenticate": "Bearer" });
     }
-    tenantId = await verifyApiKey(c.env.DB, token);
-    if (!tenantId) {
+    const key = await verifyApiKey(c.env.DB, token);
+    if (!key) {
       return c.text("unauthorized", 401, { "WWW-Authenticate": "Bearer" });
+    }
+    tenantId = key.tenantId;
+    // A key a team member created only works while they're still on that
+    // team and it's still on the Team plan. Removing a member also deletes
+    // their keys; this covers the plan lapsing, where keys aren't deleted
+    // because renewal should bring access straight back.
+    if (key.createdBy !== key.tenantId) {
+      const creator = await resolveTenant(c.env.DB, key.createdBy);
+      if (creator.tenantId !== key.tenantId) {
+        return c.text("forbidden: this key belongs to a team you're no longer active on", 403);
+      }
     }
 
     plan = await getEffectivePlan(c.env.DB, tenantId);

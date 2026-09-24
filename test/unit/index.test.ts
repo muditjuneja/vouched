@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "../../src/types/env";
 
-const { authenticateBillingRequest, getSubscription, getEffectivePlan, verifyApiKey, startCheckout, startWalletTopup, startCustomerPortalSession } =
+const { authenticateBillingRequest, getSubscription, getEffectivePlan, verifyApiKey, resolveTenant, getMembership, startCheckout, startWalletTopup, startCustomerPortalSession } =
   vi.hoisted(() => ({
     authenticateBillingRequest: vi.fn(),
     getSubscription: vi.fn(),
     getEffectivePlan: vi.fn(),
     verifyApiKey: vi.fn(),
+    resolveTenant: vi.fn(),
+    getMembership: vi.fn(),
     startCheckout: vi.fn(),
     startWalletTopup: vi.fn(),
     startCustomerPortalSession: vi.fn()
@@ -18,6 +20,10 @@ vi.mock("../../src/auth/clerk", async (importOriginal) => {
 vi.mock("../../src/db/subscriptions", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/db/subscriptions")>();
   return { ...actual, getSubscription, getEffectivePlan };
+});
+vi.mock("../../src/db/team", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../src/db/team")>();
+  return { ...actual, resolveTenant, getMembership };
 });
 vi.mock("../../src/db/mcp-api-keys", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/db/mcp-api-keys")>();
@@ -89,8 +95,16 @@ function signedIn(userId = "user_1", withRefreshedCookies: (r: Response) => Resp
   return { ok: true as const, session: { userId }, withRefreshedCookies };
 }
 
+/** Everyone is the owner of their own workspace unless a test says otherwise. */
+function ownWorkspace(userId: string) {
+  return { userId, tenantId: userId, role: "owner" as const, pausedTeamId: null };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
+  resolveTenant.mockImplementation(async (_db: D1Database, userId: string) => ownWorkspace(userId));
+  getEffectivePlan.mockResolvedValue("pro");
+  getMembership.mockResolvedValue(null);
 });
 
 describe("/billing/checkout", () => {
@@ -153,6 +167,66 @@ describe("/billing/topup", () => {
   });
 });
 
+describe("billing is the workspace owner's alone", () => {
+  const member = { userId: "user_2", tenantId: "owner_1", role: "member" as const, pausedTeamId: null };
+
+  it.each([
+    ["/billing/checkout?plan=pro&email=a@b.com"],
+    ["/billing/topup?amount=10&email=a@b.com"],
+    ["/billing/portal"]
+  ])("403s a team member on %s without starting anything", async (path) => {
+    authenticateBillingRequest.mockResolvedValueOnce(signedIn("user_2"));
+    resolveTenant.mockResolvedValueOnce(member);
+    const res = await app.request(path, {}, cloudEnv);
+    expect(res.status).toBe(403);
+    expect(startCheckout).not.toHaveBeenCalled();
+    expect(startWalletTopup).not.toHaveBeenCalled();
+    expect(startCustomerPortalSession).not.toHaveBeenCalled();
+  });
+
+  it("403s checkout for a member whose team lapsed, so they never end up paying twice", async () => {
+    authenticateBillingRequest.mockResolvedValueOnce(signedIn("user_2"));
+    resolveTenant.mockResolvedValueOnce({ userId: "user_2", tenantId: "user_2", role: "owner", pausedTeamId: "owner_1" });
+    getMembership.mockResolvedValueOnce({ tenant_id: "owner_1", created_at: "" });
+    const res = await app.request("/billing/checkout?plan=pro&email=a@b.com", {}, cloudEnv);
+    expect(res.status).toBe(403);
+    expect(startCheckout).not.toHaveBeenCalled();
+  });
+
+  it("403s a wallet top-up on the free plan: paid market data needs a subscription first", async () => {
+    authenticateBillingRequest.mockResolvedValueOnce(signedIn());
+    getEffectivePlan.mockResolvedValueOnce("free");
+    const res = await app.request("/billing/topup?amount=10&email=a@b.com", {}, cloudEnv);
+    expect(res.status).toBe(403);
+    expect(startWalletTopup).not.toHaveBeenCalled();
+  });
+});
+
+describe("/mcp with a team member's key", () => {
+  const authed = { headers: { Authorization: "Bearer vsm_key" } };
+  const limiter = { limit: vi.fn(async () => ({ success: false })) } as unknown as RateLimit;
+
+  it("403s once the creator is no longer active on that team", async () => {
+    verifyApiKey.mockResolvedValueOnce({ tenantId: "owner_1", createdBy: "user_2" });
+    // Removed, or the team's plan lapsed: they resolve back to their own workspace.
+    resolveTenant.mockResolvedValueOnce({ userId: "user_2", tenantId: "user_2", role: "owner", pausedTeamId: "owner_1" });
+    const res = await app.request("/mcp", authed, { ...cloudEnv, MCP_RATE_LIMIT_FREE: limiter, MCP_RATE_LIMIT_PAID: limiter });
+    expect(res.status).toBe(403);
+    expect(getEffectivePlan).not.toHaveBeenCalled();
+  });
+
+  it("lets an active member's key through to the team's plan and limiter", async () => {
+    verifyApiKey.mockResolvedValueOnce({ tenantId: "owner_1", createdBy: "user_2" });
+    resolveTenant.mockResolvedValueOnce({ userId: "user_2", tenantId: "owner_1", role: "member", pausedTeamId: null });
+    getEffectivePlan.mockResolvedValueOnce("team");
+    const res = await app.request("/mcp", authed, { ...cloudEnv, MCP_RATE_LIMIT_FREE: limiter, MCP_RATE_LIMIT_PAID: limiter });
+    // The (denying) limiter is the first thing past the membership check.
+    expect(res.status).toBe(429);
+    expect(getEffectivePlan).toHaveBeenCalledWith(cloudEnv.DB, "owner_1");
+    expect(limiter.limit).toHaveBeenCalledWith({ key: "owner_1" });
+  });
+});
+
 describe("/mcp in cloud mode: per-plan burst limit", () => {
   function fakeLimiter(success: boolean) {
     return { limit: vi.fn(async () => ({ success })) } as unknown as RateLimit & { limit: ReturnType<typeof vi.fn> };
@@ -162,7 +236,7 @@ describe("/mcp in cloud mode: per-plan burst limit", () => {
   it("uses the free limiter for a free-plan tenant and 429s when it says no", async () => {
     const free = fakeLimiter(false);
     const paid = fakeLimiter(true);
-    verifyApiKey.mockResolvedValueOnce("tenant-1");
+    verifyApiKey.mockResolvedValueOnce({ tenantId: "tenant-1", createdBy: "tenant-1" });
     getEffectivePlan.mockResolvedValueOnce("free");
     const res = await app.request("/mcp", authed, { ...cloudEnv, MCP_RATE_LIMIT_FREE: free, MCP_RATE_LIMIT_PAID: paid });
     expect(res.status).toBe(429);
@@ -174,7 +248,7 @@ describe("/mcp in cloud mode: per-plan burst limit", () => {
   it("uses the paid limiter for a paid-plan tenant", async () => {
     const free = fakeLimiter(true);
     const paid = fakeLimiter(false);
-    verifyApiKey.mockResolvedValueOnce("tenant-1");
+    verifyApiKey.mockResolvedValueOnce({ tenantId: "tenant-1", createdBy: "tenant-1" });
     getEffectivePlan.mockResolvedValueOnce("pro");
     const res = await app.request("/mcp", authed, { ...cloudEnv, MCP_RATE_LIMIT_FREE: free, MCP_RATE_LIMIT_PAID: paid });
     expect(res.status).toBe(429);
@@ -183,7 +257,7 @@ describe("/mcp in cloud mode: per-plan burst limit", () => {
   });
 
   it("fails closed with a 500, not an unlimited pass, when the binding is missing", async () => {
-    verifyApiKey.mockResolvedValueOnce("tenant-1");
+    verifyApiKey.mockResolvedValueOnce({ tenantId: "tenant-1", createdBy: "tenant-1" });
     getEffectivePlan.mockResolvedValueOnce("free");
     const res = await app.request("/mcp", authed, cloudEnv);
     expect(res.status).toBe(500);

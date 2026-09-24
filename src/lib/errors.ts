@@ -17,7 +17,7 @@ export class ConnectionRequiredError extends Error {
   }
 }
 
-/** A configuration problem (missing secret, malformed env) — not the caller's fault. */
+/** A configuration problem (missing secret, malformed env), not the caller's fault. */
 export class ConfigError extends Error {
   constructor(message: string) {
     super(message);
@@ -29,7 +29,7 @@ export class ConfigError extends Error {
  * Thrown by a DataForSEO-backed tool when a cloud tenant's bundled-access
  * usage has hit their plan's included quota for the current billing
  * period. Not thrown at all for self-host (BYOK has no quota) or for a
- * cloud tenant with their own key — only for bundled-access calls.
+ * cloud tenant with their own key, only for bundled-access calls.
  */
 export class QuotaExceededError extends Error {
   readonly plan: string;
@@ -43,6 +43,20 @@ export class QuotaExceededError extends Error {
     this.name = "QuotaExceededError";
     this.plan = plan;
     this.quotaUsd = quotaUsd;
+  }
+}
+
+/**
+ * Thrown by a DataForSEO-backed tool when a cloud tenant is on the free
+ * plan: paid market data (keywords, backlinks, SERPs) is a subscriber
+ * feature, free workspaces get their own Google data only. Separate from
+ * QuotaExceededError so an agent can tell "upgrade to use this at all"
+ * apart from "you've used this month's allowance".
+ */
+export class UpgradeRequiredError extends Error {
+  constructor() {
+    super("This tool uses paid market data, which needs a Pro or Team plan. Free plans include your own Search Console and Analytics data.");
+    this.name = "UpgradeRequiredError";
   }
 }
 

@@ -8,25 +8,41 @@ import { listSites, type SearchConsoleSite } from "../clients/google/search-cons
 import type { ScopeGroup } from "../db/google-tokens";
 import { deleteToken } from "../db/google-tokens";
 import { createApiKey, listApiKeys, revokeApiKey } from "../db/mcp-api-keys";
-import { getEffectivePlan, getSubscription, getWalletBalance, listWalletLedger } from "../db/subscriptions";
+import { getEffectivePlan, getSubscription, getWalletBalance, listWalletLedger, type Plan } from "../db/subscriptions";
 import { getUsage } from "../db/usage-counters";
+import {
+  acceptInvite,
+  checkInvite,
+  createInvite,
+  getInviteByToken,
+  leaveTeam,
+  listMembers,
+  listPendingInvites,
+  normalizeEmail,
+  removeMember,
+  resolveTenant,
+  revokeInvite,
+  seatsUsed,
+  type TenantContext
+} from "../db/team";
 import { addWebsite, deleteWebsite, listWebsites, updateWebsite } from "../db/websites";
 import { normalizeDomain } from "../envelope/entities";
-import { MONTHLY_QUOTA_USD } from "../billing/quotas";
+import { MONTHLY_QUOTA_USD, TEAM_SEATS } from "../billing/quotas";
 import { buildDiscoveredProperties, type DiscoveredProperty } from "./discovery";
 import { markNotifiedOnce, markNotifiedWithCooldown } from "../email/dedup";
-import { notifyApiKeyIssued, notifyReconnectRequired, notifyWelcome } from "../email/notifications";
+import { notifyApiKeyIssued, notifyReconnectRequired, notifyTeamInvite, notifyWelcome } from "../email/notifications";
 import { ConfigError } from "../lib/errors";
 import { hasDodo, hasGoogleOAuth, isCloudMode, type Env } from "../types/env";
 import { renderApiKeyCreated } from "./pages/ApiKeyCreatedPage";
 import { renderBilling } from "./pages/BillingPage";
 import { renderCloudDisabled } from "./pages/CloudDisabledPage";
+import { renderInvite } from "./pages/InvitePage";
 import { renderOverview } from "./pages/OverviewPage";
 import { renderSettings } from "./pages/SettingsPage";
 import { renderSignInRequired } from "./pages/SignInRequiredPage";
 import { renderUsage } from "./pages/UsagePage";
 import { renderWebsites } from "./pages/WebsitesPage";
-import type { ActionNotice, DashboardUser, DashboardWebsite } from "./types";
+import type { ActionNotice, DashboardUser, DashboardWebsite, TeamSettings } from "./types";
 
 const RECONNECT_NUDGE_COOLDOWN_HOURS = 24;
 
@@ -43,14 +59,64 @@ function parseActionNotice(action: string | undefined): ActionNotice | null {
       return { type: "warn", message: "MCP API key was revoked." };
     case "disconnected":
       return { type: "warn", message: "Google account disconnected." };
+    case "invited":
+      return { type: "success", message: "Invite sent." };
+    case "already_invited":
+      return { type: "info", message: "That address already has a pending invite." };
+    case "invite_revoked":
+      return { type: "warn", message: "Invite withdrawn." };
+    case "member_removed":
+      return { type: "warn", message: "Member removed. Their API keys for this workspace no longer work." };
+    case "team_full":
+      return { type: "warn", message: "All seats are taken." };
+    case "not_team":
+      return { type: "warn", message: "Inviting people needs the Team plan." };
+    case "bad_email":
+      return { type: "warn", message: "That doesn't look like an email address." };
+    case "left_team":
+      return { type: "info", message: "You left the team and are back in your own workspace." };
+    case "joined_team":
+      return { type: "success", message: "You joined the team. Everything here is now the team's workspace." };
     default:
       return null;
   }
 }
 
-async function getDashboardUser(env: Env, tenantId: string): Promise<DashboardUser> {
-  const [email, plan] = await Promise.all([getTenantEmail(env, tenantId), getEffectivePlan(env.DB, tenantId)]);
-  return { email, plan, tenantId };
+/** The signed-in person's own email, with the workspace's plan: a member sees their own address but the team's plan. */
+async function getDashboardUser(env: Env, ctx: TenantContext): Promise<DashboardUser> {
+  const [email, plan] = await Promise.all([getTenantEmail(env, ctx.userId), getEffectivePlan(env.DB, ctx.tenantId)]);
+  return { email, plan, tenantId: ctx.tenantId, role: ctx.role };
+}
+
+/**
+ * Settings' team section, or null when there's nothing to show (an owner
+ * who isn't on Team and has never had members). Members see teammates but
+ * not pending invites; only the owner manages seats.
+ */
+async function loadTeamSettings(env: Env, ctx: TenantContext, plan: Plan): Promise<TeamSettings | null> {
+  if (ctx.pausedTeamId) {
+    const ownerEmail = await getTenantEmail(env, ctx.pausedTeamId);
+    return { role: "member", seatLimit: TEAM_SEATS, ownerEmail, members: [], pendingInvites: [], canInvite: false, pausedTeamOwnerEmail: ownerEmail };
+  }
+  const members = await listMembers(env.DB, ctx.tenantId);
+  if (ctx.role === "owner" && plan !== "team" && members.length === 0) return null;
+
+  const isOwner = ctx.role === "owner";
+  const [ownerEmail, memberEmails, pending, used] = await Promise.all([
+    getTenantEmail(env, ctx.tenantId),
+    Promise.all(members.map((m) => getTenantEmail(env, m.user_id))),
+    isOwner ? listPendingInvites(env.DB, ctx.tenantId) : Promise.resolve([]),
+    seatsUsed(env.DB, ctx.tenantId)
+  ]);
+  return {
+    role: ctx.role,
+    seatLimit: TEAM_SEATS,
+    ownerEmail,
+    members: members.map((m, i) => ({ userId: m.user_id, email: memberEmails[i] ?? null, joinedAt: m.created_at })),
+    pendingInvites: pending.map((inv) => ({ inviteId: inv.invite_id, email: inv.email, expiresAt: inv.expires_at })),
+    canInvite: isOwner && plan === "team" && used < TEAM_SEATS,
+    pausedTeamOwnerEmail: null
+  };
 }
 
 
@@ -114,7 +180,7 @@ async function discoverProperties(
   return { discovered, gscSites, ga4Properties };
 }
 
-type DashboardEnv = { Bindings: Env; Variables: { tenantId: string } };
+type DashboardEnv = { Bindings: Env; Variables: { tenantId: string; ctx: TenantContext } };
 
 export const dashboard = new Hono<DashboardEnv>();
 
@@ -146,7 +212,13 @@ dashboard.use("*", async (c, next) => {
   if (!auth.session) {
     return c.html(renderSignInRequired(c.req.url, c.env.CLERK_SIGN_IN_URL ?? null), 401);
   }
-  c.set("tenantId", auth.session.userId);
+  // The signed-in user becomes a workspace here, once: their own, or the
+  // team's when they're an active member (see resolveTenant). Every route
+  // below scopes to ctx.tenantId; ctx.userId is only for per-person things
+  // (their email, their API keys, owner-only checks).
+  const ctx = await resolveTenant(c.env.DB, auth.session.userId);
+  c.set("ctx", ctx);
+  c.set("tenantId", ctx.tenantId);
   await next();
   // A stale session token got silently refreshed via authenticateDashboardRequest's
   // GET probe (see its doc comment): carry the refreshed cookies onto whatever
@@ -185,14 +257,14 @@ dashboard.get("/", async (c) => {
     getSubscription(env.DB, tenantId),
     getUsage(env.DB, tenantId),
     listCostLog(env, tenantId, { limit: 5 }),
-    getTenantEmail(env, tenantId),
-    listApiKeys(env.DB, tenantId),
+    getTenantEmail(env, c.get("ctx").userId),
+    listApiKeys(env.DB, tenantId, c.get("ctx").userId),
     checkConnectionState(env, "webmaster_console", tenantId),
     checkConnectionState(env, "analytics_property", tenantId)
   ]);
   const plan = await getEffectivePlan(env.DB, tenantId);
   const walletBalanceUsd = await getWalletBalance(env.DB, tenantId);
-  const user: DashboardUser = { email, plan, tenantId };
+  const user: DashboardUser = { email, plan, tenantId, role: c.get("ctx").role };
   const workerOrigin = new URL(c.req.url).origin;
   const notice = parseActionNotice(c.req.query("action"));
 
@@ -224,7 +296,7 @@ dashboard.get("/websites", async (c) => {
 
   const [websiteRows, user] = await Promise.all([
     listWebsites(env.DB, tenantId),
-    getDashboardUser(env, tenantId)
+    getDashboardUser(env, c.get("ctx"))
   ]);
   // Same caveat as list_websites the MCP tool: one connection check per
   // scope group, not per site (see getAnyToken's doc comment).
@@ -339,7 +411,7 @@ dashboard.get("/usage", async (c) => {
   const limit = 50;
   const [rows, user, usage] = await Promise.all([
     listCostLog(c.env, tenantId, { limit: limit + 1, beforeId }),
-    getDashboardUser(c.env, tenantId),
+    getDashboardUser(c.env, c.get("ctx")),
     getUsage(c.env.DB, tenantId)
   ]);
   const hasMore = rows.length > limit;
@@ -367,10 +439,10 @@ dashboard.get("/billing", async (c) => {
     getUsage(env.DB, tenantId),
     getWalletBalance(env.DB, tenantId),
     listWalletLedger(env.DB, tenantId),
-    getTenantEmail(env, tenantId)
+    getTenantEmail(env, c.get("ctx").userId)
   ]);
   const plan = await getEffectivePlan(env.DB, tenantId);
-  const user: DashboardUser = { email, plan, tenantId };
+  const user: DashboardUser = { email, plan, tenantId, role: c.get("ctx").role };
   const actionParam = c.req.query("action");
   const notice = parseActionNotice(actionParam);
 
@@ -389,41 +461,43 @@ dashboard.get("/billing", async (c) => {
       checkoutSuccess: c.req.query("checkout") === "success",
       topupSuccess: c.req.query("topup") === "success",
       prefillEmail: email,
+      canManageBilling: c.get("ctx").role === "owner",
       notice
     })
   );
 });
 
-dashboard.get("/settings", async (c) => {
-  const tenantId = c.get("tenantId");
-  const env = c.env;
-
-  const [apiKeys, email, gsc, ga4, plan] = await Promise.all([
-    listApiKeys(env.DB, tenantId),
-    getTenantEmail(env, tenantId),
+/**
+ * Builds the Settings page. Shared by GET /settings and the invite action,
+ * which re-renders it with a one-off notice (the invite link, when email
+ * isn't configured) instead of redirecting.
+ */
+async function settingsHtml(env: Env, ctx: TenantContext, notice: ActionNotice | null, justConnected: string | undefined): Promise<string> {
+  const tenantId = ctx.tenantId;
+  const [apiKeys, user, gsc, ga4] = await Promise.all([
+    listApiKeys(env.DB, tenantId, ctx.userId),
+    getDashboardUser(env, ctx),
     checkConnectionState(env, "webmaster_console", tenantId),
-    checkConnectionState(env, "analytics_property", tenantId),
-    getEffectivePlan(env.DB, tenantId)
+    checkConnectionState(env, "analytics_property", tenantId)
   ]);
-  const user: DashboardUser = { email, plan, tenantId };
-  const connectedParam = c.req.query("connected");
-  const actionParam = c.req.query("action");
-  const notice = parseActionNotice(actionParam);
+  const team = await loadTeamSettings(env, ctx, user.plan);
+  return renderSettings({
+    user,
+    email: user.email,
+    tenantId,
+    plan: user.plan,
+    apiKeys,
+    gsc,
+    ga4,
+    googleOAuthConfigured: hasGoogleOAuth(env),
+    justConnected: justConnected && isScopeGroup(justConnected) ? justConnected : null,
+    notice,
+    team
+  });
+}
 
-  return c.html(
-    renderSettings({
-      user,
-      email,
-      tenantId,
-      plan,
-      apiKeys,
-      gsc,
-      ga4,
-      googleOAuthConfigured: hasGoogleOAuth(env),
-      justConnected: connectedParam && isScopeGroup(connectedParam) ? connectedParam : null,
-      notice
-    })
-  );
+dashboard.get("/settings", async (c) => {
+  return c.html(await settingsHtml(c.env, c.get("ctx"), parseActionNotice(c.req.query("action")), c.req.query("connected")));
 });
 
 dashboard.post("/api-keys", async (c) => {
@@ -431,16 +505,18 @@ dashboard.post("/api-keys", async (c) => {
   const body = await c.req.parseBody();
   const label = String(body.label ?? "").trim() || undefined;
 
-  const created = await createApiKey(c.env.DB, tenantId, label);
-  await notifyApiKeyIssued(c.env, tenantId, label ?? null);
+  const ctx = c.get("ctx");
+  const created = await createApiKey(c.env.DB, tenantId, label, ctx.userId);
+  // To the person who made it, not the workspace owner: it's their key.
+  await notifyApiKeyIssued(c.env, ctx.userId, label ?? null);
   const workerOrigin = new URL(c.req.url).origin;
-  const user = await getDashboardUser(c.env, tenantId);
+  const user = await getDashboardUser(c.env, ctx);
   return c.html(renderApiKeyCreated(created.plaintext, workerOrigin, user));
 });
 
 dashboard.post("/api-keys/:keyId/revoke", async (c) => {
   const tenantId = c.get("tenantId");
-  await revokeApiKey(c.env.DB, tenantId, c.req.param("keyId"));
+  await revokeApiKey(c.env.DB, tenantId, c.req.param("keyId"), c.get("ctx").userId);
   return c.redirect("/dashboard/settings?action=revoked", 303);
 });
 
@@ -454,6 +530,88 @@ dashboard.post("/google/:scopeGroup/disconnect", async (c) => {
   return c.redirect("/dashboard/settings?action=disconnected", 303);
 });
 
+
+
+/** Team management is owner-only; members get a plain 403 rather than a silent no-op. */
+function ownerOnly(ctx: TenantContext): Response | null {
+  return ctx.role === "owner" ? null : new Response("forbidden: only the workspace owner can manage the team", { status: 403 });
+}
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+dashboard.post("/team/invites", async (c) => {
+  const ctx = c.get("ctx");
+  const denied = ownerOnly(ctx);
+  if (denied) return denied;
+  const env = c.env;
+  if ((await getEffectivePlan(env.DB, ctx.tenantId)) !== "team") return c.redirect("/dashboard/settings?action=not_team", 303);
+
+  const email = normalizeEmail(String((await c.req.parseBody()).email ?? ""));
+  if (!EMAIL_PATTERN.test(email)) return c.redirect("/dashboard/settings?action=bad_email", 303);
+  const pending = await listPendingInvites(env.DB, ctx.tenantId);
+  if (pending.some((invite) => invite.email === email)) return c.redirect("/dashboard/settings?action=already_invited", 303);
+  if ((await seatsUsed(env.DB, ctx.tenantId)) >= TEAM_SEATS) return c.redirect("/dashboard/settings?action=team_full", 303);
+
+  const { token } = await createInvite(env.DB, ctx.tenantId, email, ctx.userId);
+  const acceptUrl = new URL(`/dashboard/invite/${token}`, new URL(c.req.url).origin).toString();
+  const sent = await notifyTeamInvite(env, email, await getTenantEmail(env, ctx.userId), acceptUrl);
+  if (sent) return c.redirect("/dashboard/settings?action=invited", 303);
+  // Email isn't configured (or failed): show the link once so the owner can
+  // send it themselves, rendered directly rather than via a redirect so the
+  // token never lands in a URL or browser history.
+  return c.html(
+    await settingsHtml(env, ctx, { type: "info", message: `Invite created, but email couldn't be sent. Share this link with ${email}: ${acceptUrl}` }, undefined)
+  );
+});
+
+dashboard.post("/team/invites/:inviteId/revoke", async (c) => {
+  const ctx = c.get("ctx");
+  const denied = ownerOnly(ctx);
+  if (denied) return denied;
+  await revokeInvite(c.env.DB, ctx.tenantId, c.req.param("inviteId"));
+  return c.redirect("/dashboard/settings?action=invite_revoked", 303);
+});
+
+dashboard.post("/team/members/:userId/remove", async (c) => {
+  const ctx = c.get("ctx");
+  const denied = ownerOnly(ctx);
+  if (denied) return denied;
+  await removeMember(c.env.DB, ctx.tenantId, c.req.param("userId"));
+  return c.redirect("/dashboard/settings?action=member_removed", 303);
+});
+
+dashboard.post("/team/leave", async (c) => {
+  const left = await leaveTeam(c.env.DB, c.get("ctx").userId);
+  return c.redirect(left ? "/dashboard?action=left_team" : "/dashboard/settings", 303);
+});
+
+async function invitePageData(env: Env, ctx: TenantContext, token: string) {
+  const invite = await getInviteByToken(env.DB, token);
+  const [userEmail, ownerEmail, user] = await Promise.all([
+    getTenantEmail(env, ctx.userId),
+    invite ? getTenantEmail(env, invite.tenant_id) : Promise.resolve(null),
+    getDashboardUser(env, ctx)
+  ]);
+  const blocker = await checkInvite(env.DB, invite, ctx.userId, userEmail);
+  return { invite, data: { user, token, ownerEmail, inviteEmail: invite?.email ?? null, userEmail, blocker } };
+}
+
+// Reached from the invite email. A signed-out visitor gets the dashboard's
+// normal sign-in page, whose redirect_url brings them straight back here.
+dashboard.get("/invite/:token", async (c) => {
+  const { data } = await invitePageData(c.env, c.get("ctx"), c.req.param("token"));
+  return c.html(renderInvite(data), data.blocker ? 409 : 200);
+});
+
+dashboard.post("/invite/:token/accept", async (c) => {
+  const ctx = c.get("ctx");
+  const { invite, data } = await invitePageData(c.env, ctx, c.req.param("token"));
+  if (data.blocker || !invite) return c.html(renderInvite(data), 409);
+  if (!(await acceptInvite(c.env.DB, invite, ctx.userId))) {
+    return c.html(renderInvite({ ...data, blocker: "already_used" }), 409);
+  }
+  return c.redirect("/dashboard?action=joined_team", 303);
+});
 
 // Every write action above is POST-only; nothing in this app ever links
 // to a bare GET on one of these paths. The one thing that can still land

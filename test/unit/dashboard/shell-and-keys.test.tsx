@@ -19,7 +19,8 @@ describe("Sidebar component", () => {
         user={{
           email: "alex@example.com",
           plan: "pro",
-          tenantId: "user_123"
+          tenantId: "user_123",
+          role: "owner"
         }}
       />
     );
@@ -36,7 +37,8 @@ describe("renderApiKeyCreated", () => {
     const html = renderApiKeyCreated("vouch_live_abc123", "https://seo-mcp.workers.dev", {
       email: "test@example.com",
       plan: "team",
-      tenantId: "t_1"
+      tenantId: "t_1",
+      role: "owner"
     });
     expect(html).toContain("vouch_live_abc123");
     expect(html).toContain('data-copy="vouch_live_abc123"');

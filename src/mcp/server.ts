@@ -21,7 +21,7 @@ import { inspectSerp } from "../domains/serp/inspect-serp";
 import type { ToolModule } from "../domains/types";
 import type { Plan } from "../db/subscriptions";
 import { ofeEnvelopeSchema } from "../envelope/schema";
-import { ConnectionRequiredError, QuotaExceededError } from "../lib/errors";
+import { ConnectionRequiredError, QuotaExceededError, UpgradeRequiredError } from "../lib/errors";
 import { MCP_SERVER_NAME } from "../lib/product";
 import { hasDataForSEO, type Env } from "../types/env";
 import { checkDailyCap } from "./daily-cap";
@@ -123,6 +123,12 @@ export function buildMcpServer(env: Env, tenantId: string | null = null, plan: P
             return {
               isError: true,
               content: [{ type: "text" as const, text: `quota_exceeded: ${error.message}` }]
+            };
+          }
+          if (error instanceof UpgradeRequiredError) {
+            return {
+              isError: true,
+              content: [{ type: "text" as const, text: `upgrade_required: ${error.message}` }]
             };
           }
           const message = error instanceof Error ? error.message : String(error);

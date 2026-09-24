@@ -2,6 +2,7 @@ import { Callout } from "../../design";
 import { renderPage } from "../Layout";
 import { ApiKeysSection } from "../components/ApiKeysSection";
 import { ConnectionsSection } from "../components/ConnectionsSection";
+import { TeamSection } from "../components/TeamSection";
 import type { SettingsData } from "../types";
 
 const SCOPE_LABEL = { webmaster_console: "Search Console", analytics_property: "Analytics" } as const;
@@ -38,6 +39,7 @@ function SettingsPage({ data }: { data: SettingsData }) {
           </div>
         </div>
       </section>
+      {data.team ? <TeamSection team={data.team} /> : null}
       <ConnectionsSection data={data} />
       <ApiKeysSection data={data} />
     </>

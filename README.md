@@ -38,7 +38,9 @@ M0-M19 are complete and pushed: the full 20-tool-manifest self-hosted
 server (19 currently exposed, see above), plus
 the cloud surface (Hono, multi-tenant D1, Clerk, Dodo billing, bundled
 DataForSEO quotas with a real margin, a prepaid overage wallet for usage
-beyond a plan's bundled quota, dashboard, marketing/pSEO). External
+beyond a plan's bundled quota, 5-seat Team workspaces, dashboard,
+marketing/pSEO). On cloud, Free covers your own Google data (100 tool calls
+a day) and paid market data needs Pro or Team, see `docs/CLOUD.md` M21. External
 integrations built without a live account in this sandbox have unverified
 assumptions called out in comments and docs; confirm against the real
 service before trusting those claims.

@@ -1,55 +1,10 @@
-import { createClerkClient, verifyToken, type ClerkClient } from "@clerk/backend";
+import { createClerkClient, type ClerkClient } from "@clerk/backend";
 import { ConfigError } from "../lib/errors";
 import type { Env } from "../types/env";
 
-const SESSION_COOKIE_NAME = "__session";
-
-/** Exported for unit testing the header/cookie parsing without a real Clerk instance. */
-export function extractSessionToken(request: Request): string | null {
-  const authHeader = request.headers.get("Authorization");
-  if (authHeader?.startsWith("Bearer ")) return authHeader.slice(7);
-
-  const cookieHeader = request.headers.get("Cookie");
-  if (!cookieHeader) return null;
-  for (const part of cookieHeader.split(";")) {
-    const [name, ...rest] = part.trim().split("=");
-    if (name === SESSION_COOKIE_NAME) return rest.join("=") || null;
-  }
-  return null;
-}
-
 export interface ClerkSession {
-  /** The Clerk user id, this server's tenant_id everywhere else. */
+  /** The signed-in Clerk user id. Not necessarily the tenant: a team member acts in the owner's workspace, see src/db/team.ts's resolveTenant. */
   userId: string;
-}
-
-/**
- * Verifies a dashboard request's Clerk session (from the Authorization
- * header or Clerk's `__session` cookie). Prefers CLERK_JWT_KEY (a PEM
- * public key from the Clerk dashboard) for zero-network-roundtrip
- * verification, Clerk's own recommendation for edge runtimes, falling
- * back to CLERK_SECRET_KEY (which verifies against Clerk's API instead)
- * when only that's configured. Returns null for anything invalid/expired/
- * missing rather than throwing: "not logged in" is expected, not
- * exceptional, for a dashboard route.
- *
- * Only checks for a session that already exists. It never establishes
- * one, so it's the wrong tool for the entry gate right after a Clerk
- * redirect, see authenticateDashboardRequest below for why.
- */
-export async function verifyClerkSession(request: Request, env: Env): Promise<ClerkSession | null> {
-  const token = extractSessionToken(request);
-  if (!token) return null;
-
-  try {
-    const payload = await verifyToken(token, {
-      secretKey: env.CLERK_SECRET_KEY,
-      jwtKey: env.CLERK_JWT_KEY
-    });
-    return { userId: payload.sub };
-  } catch {
-    return null;
-  }
 }
 
 export interface DashboardAuthResult {
@@ -63,15 +18,14 @@ export interface DashboardAuthResult {
 
 /**
  * Verifies a dashboard *page* request, completing Clerk's handshake
- * protocol when needed instead of only checking for an existing session
- * the way verifyClerkSession above does.
+ * protocol when needed instead of only checking for an existing session.
  *
  * Locally (and on any deployment without a custom Clerk domain), Clerk's
  * hosted Account Portal lives on a different origin than this app, so
  * right after sign-in it can't set a same-origin `__session` cookie
  * directly: it redirects back with a `__clerk_db_jwt` query param
- * instead. `ClerkClient.authenticateRequest` (unlike the bare
- * `verifyToken` verifyClerkSession uses) recognizes that param and, when
+ * instead. `ClerkClient.authenticateRequest` (unlike a bare `verifyToken`
+ * check, which this file used to have) recognizes that param and, when
  * it finds one, returns a `handshake` status carrying redirect headers
  * that bounce the browser through Clerk's Frontend API and back, this
  * time with a real `__session` cookie set. Skipping this step is exactly
@@ -174,7 +128,7 @@ export type BillingAuthResult =
  * Same handshake + silent-refresh robustness authenticateDashboardRequest
  * gives the dashboard, collapsed into one call for the handful of bare
  * billing routes (checkout/topup/portal) that predate the dashboard and
- * were still gated by the bare verifyClerkSession above, confirmed against
+ * were still gated by a bare verifyToken session check, confirmed against
  * a real Clerk session: a token due for its silent refresh 401s on these
  * routes ("unauthorized: sign in first") even though the exact same
  * browser session refreshes fine on any dashboard page, since only the
