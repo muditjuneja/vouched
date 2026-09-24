@@ -36,12 +36,22 @@ Workers & Pages → Create → Import a repository → `muditjuneja/experiments`
 | Project name | `vouched-hq` | Must equal `name` in `wrangler.jsonc`, or the build fails. |
 | Production branch (Advanced settings) | `main` | The GitHub repo's default branch is a different project. |
 | Root directory | blank | The Worker lives at the repo root. |
-| Build command | `npm run typecheck && npm run lint` | Optional, but it stops broken code from shipping. |
+| Build variable | `SKIP_DEPENDENCY_INSTALL` = `1` | Turns off the automatic `npm ci`, which fails on this lockfile (see below). |
+| Build command | `npm install --no-audit --no-fund && npm run typecheck && npm run lint` | Installs dependencies, then stops a deploy with type or lint errors. |
 | Deploy command | `npx wrangler deploy` | |
 | Preview builds | Off | Previews use the same D1, KV and R2 as production, so a branch preview would touch live data. Turn back on once there's a staging database. |
 | Protect with Cloudflare Access | Off | It would block the public site and MCP clients. |
 
-Every push to `main` deploys.
+Every push to `main` deploys. Node comes from `.nvmrc` (22), matching local
+development.
+
+**Why not the automatic `npm ci`:** `agents` pulls in `rolldown` as a peer
+dependency, and npm leaves rolldown's platform-specific packages
+(`@rolldown/binding-*`) out of `package-lock.json` every time it saves the file.
+`npm ci` on the Linux build machine then refuses to install ("package.json and
+package-lock.json are not in sync"). Editing the lockfile by hand doesn't last:
+the next local `npm install` strips the entries again. `npm install` still uses
+the locked versions but tolerates the gap.
 
 ## 3. Database migrations
 
