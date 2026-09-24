@@ -101,11 +101,39 @@ describe("authenticateDashboardRequest", () => {
   });
 
   it("returns null session, no redirect, when Clerk reports signed-out on a GET (nothing eligible to retry)", async () => {
-    const makeClient = fakeAuthClerkClient(() => ({ status: "signed-out" }));
+    const makeClient = fakeAuthClerkClient(() => ({ status: "signed-out", headers: new Headers() }));
     const result = await authenticateDashboardRequest(req, fakeEnv({ CLERK_PUBLISHABLE_KEY: "pk_test" }), makeClient);
     expect(result.session).toBeNull();
     expect(result.handshakeRedirect).toBeNull();
     expect(result.refreshedSetCookies).toEqual([]);
+  });
+
+  describe("development Clerk instances (dev browser)", () => {
+    it("redirects with Clerk's cookies when a resolved handshake ends signed-out, instead of dropping them", async () => {
+      const resolved = new Headers({ Location: "https://example.com/dashboard" });
+      resolved.append("Set-Cookie", "__clerk_db_jwt=dvb_abc; Path=/");
+      const handshakeReq = new Request("https://example.com/dashboard?__clerk_handshake=t&__clerk_db_jwt=dvb_abc");
+      const makeClient = fakeAuthClerkClient(() => ({ status: "signed-out", headers: resolved }));
+      const result = await authenticateDashboardRequest(handshakeReq, fakeEnv({ CLERK_PUBLISHABLE_KEY: "pk_test_x" }), makeClient);
+      expect(result.handshakeRedirect?.status).toBe(303);
+      expect(result.handshakeRedirect?.headers.get("Location")).toBe("https://example.com/dashboard");
+      expect(result.handshakeRedirect?.headers.getSetCookie()).toEqual(["__clerk_db_jwt=dvb_abc; Path=/"]);
+    });
+
+    it("hands back the dev-browser id from the cookie so the sign-in link can pass it on", async () => {
+      const cookieReq = new Request("https://example.com/dashboard", { headers: { Cookie: "__client_uat=0; __clerk_db_jwt_Ab12=dvb_xyz" } });
+      const makeClient = fakeAuthClerkClient(() => ({ status: "signed-out", headers: new Headers() }));
+      const result = await authenticateDashboardRequest(cookieReq, fakeEnv({ CLERK_PUBLISHABLE_KEY: "pk_test_x" }), makeClient);
+      expect(result.session).toBeNull();
+      expect(result.devBrowserToken).toBe("dvb_xyz");
+    });
+
+    it("never reads a dev-browser id on a production instance", async () => {
+      const cookieReq = new Request("https://example.com/dashboard", { headers: { Cookie: "__clerk_db_jwt=dvb_xyz" } });
+      const makeClient = fakeAuthClerkClient(() => ({ status: "signed-out", headers: new Headers() }));
+      const result = await authenticateDashboardRequest(cookieReq, fakeEnv({ CLERK_PUBLISHABLE_KEY: "pk_live_x" }), makeClient);
+      expect(result.devBrowserToken).toBeNull();
+    });
   });
 
   it("returns the handshake's redirect headers verbatim when Clerk reports a handshake is needed", async () => {
@@ -131,7 +159,7 @@ describe("authenticateDashboardRequest", () => {
         if (request.method === "GET") {
           return { status: "signed-in", toAuth: () => ({ userId: "user_1" }), headers: refreshedCookies };
         }
-        return { status: "signed-out" };
+        return { status: "signed-out", headers: new Headers() };
       });
 
       const result = await authenticateDashboardRequest(postReq, fakeEnv({ CLERK_PUBLISHABLE_KEY: "pk_test" }), makeClient);
@@ -141,7 +169,7 @@ describe("authenticateDashboardRequest", () => {
     });
 
     it("gives up and reports signed-out when the probe can't refresh either (no valid session at all)", async () => {
-      const makeClient = fakeAuthClerkClient(() => ({ status: "signed-out" }));
+      const makeClient = fakeAuthClerkClient(() => ({ status: "signed-out", headers: new Headers() }));
       const result = await authenticateDashboardRequest(postReq, fakeEnv({ CLERK_PUBLISHABLE_KEY: "pk_test" }), makeClient);
       expect(result.session).toBeNull();
       expect(result.refreshedSetCookies).toEqual([]);
@@ -151,7 +179,7 @@ describe("authenticateDashboardRequest", () => {
       const handshakeHeaders = new Headers({ Location: "https://clerk.example.com/handshake?redirect_url=%2Fdashboard%2Fwebsites" });
       const makeClient = fakeAuthClerkClient((request) => {
         if (request.method === "GET") return { status: "handshake", headers: handshakeHeaders };
-        return { status: "signed-out" };
+        return { status: "signed-out", headers: new Headers() };
       });
 
       const result = await authenticateDashboardRequest(postReq, fakeEnv({ CLERK_PUBLISHABLE_KEY: "pk_test" }), makeClient);
@@ -200,7 +228,7 @@ describe("authenticateBillingRequest", () => {
   });
 
   it("returns a 401 response (not a thrown error) when there's no session at all", async () => {
-    const makeClient = fakeAuthClerkClient(() => ({ status: "signed-out" }));
+    const makeClient = fakeAuthClerkClient(() => ({ status: "signed-out", headers: new Headers() }));
     const result = await authenticateBillingRequest(req, fakeEnv({ CLERK_PUBLISHABLE_KEY: "pk_test" }), makeClient);
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -226,7 +254,7 @@ describe("authenticateBillingRequest", () => {
     const postReq = new Request("https://example.com/billing/checkout?plan=pro", { method: "POST" });
     const makeClient = fakeAuthClerkClient((request) => {
       if (request.method === "GET") return { status: "signed-in", toAuth: () => ({ userId: "user_1" }), headers: refreshedCookies };
-      return { status: "signed-out" };
+      return { status: "signed-out", headers: new Headers() };
     });
     const result = await authenticateBillingRequest(postReq, fakeEnv({ CLERK_PUBLISHABLE_KEY: "pk_test" }), makeClient);
     expect(result.ok).toBe(true);

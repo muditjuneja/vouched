@@ -211,7 +211,9 @@ dashboard.use("*", async (c, next) => {
   }
   if (auth.handshakeRedirect) return auth.handshakeRedirect;
   if (!auth.session) {
-    return c.html(renderSignInRequired(c.req.url, c.env.CLERK_SIGN_IN_URL ?? null), 401);
+    const page = c.html(renderSignInRequired(c.req.url, c.env.CLERK_SIGN_IN_URL ?? null, auth.devBrowserToken ?? null), 401);
+    for (const cookie of auth.refreshedSetCookies) page.headers.append("Set-Cookie", cookie);
+    return page;
   }
   // The signed-in user becomes a workspace here, once: their own, or the
   // team's when they're an active member (see resolveTenant). Every route

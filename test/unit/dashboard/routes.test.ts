@@ -52,7 +52,7 @@ describe("dashboard gate", () => {
   });
 
   it("requires a Clerk session in cloud mode and offers a sign-in link when configured", async () => {
-    authenticateDashboardRequest.mockResolvedValueOnce({ session: null, handshakeRedirect: null });
+    authenticateDashboardRequest.mockResolvedValueOnce({ session: null, handshakeRedirect: null, refreshedSetCookies: [] });
     const env = fakeEnv({
       CLOUD_MODE: "1",
       CLERK_SECRET_KEY: "sk_test",
@@ -65,8 +65,22 @@ describe("dashboard gate", () => {
     expect(body).toContain("redirect_url=");
   });
 
+  it("on a development Clerk instance, passes the dev-browser id to the sign-in page and keeps Clerk's cookies", async () => {
+    authenticateDashboardRequest.mockResolvedValueOnce({
+      session: null,
+      handshakeRedirect: null,
+      refreshedSetCookies: ["__clerk_db_jwt=dvb_xyz; Path=/"],
+      devBrowserToken: "dvb_xyz"
+    });
+    const env = fakeEnv({ CLOUD_MODE: "1", CLERK_SECRET_KEY: "sk_test", CLERK_SIGN_IN_URL: "https://app.accounts.dev/sign-in" });
+    const res = await dashboard.request("/", {}, env);
+    expect(res.status).toBe(401);
+    expect(await res.text()).toContain("__clerk_db_jwt=dvb_xyz");
+    expect(res.headers.getSetCookie()).toEqual(["__clerk_db_jwt=dvb_xyz; Path=/"]);
+  });
+
   it("still 401s without crashing when no sign-in URL is configured", async () => {
-    authenticateDashboardRequest.mockResolvedValueOnce({ session: null, handshakeRedirect: null });
+    authenticateDashboardRequest.mockResolvedValueOnce({ session: null, handshakeRedirect: null, refreshedSetCookies: [] });
     const env = fakeEnv({ CLOUD_MODE: "1", CLERK_SECRET_KEY: "sk_test" });
     const res = await dashboard.request("/", {}, env);
     expect(res.status).toBe(401);

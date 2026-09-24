@@ -14,6 +14,20 @@ export interface DashboardAuthResult {
   handshakeRedirect: Response | null;
   /** Set only when a stale session token was silently refreshed via the same-cookie GET probe below: append these onto whatever response the real request produces, so the browser's cookie jar picks up the refreshed token too. */
   refreshedSetCookies: string[];
+  /**
+   * Development Clerk instances only: this browser's "dev browser" id, which
+   * the sign-in link must pass to Clerk's hosted sign-in page. Without it the
+   * sign-in happens under a different id than the one this site checks, and
+   * the user comes back still signed out. Null on production instances.
+   */
+  devBrowserToken?: string | null;
+}
+
+/** Reads the dev-browser cookie (plain or Clerk's suffixed variant) when the publishable key is a development one. */
+function devBrowserTokenFrom(request: Request, publishableKey: string): string | null {
+  if (!publishableKey.startsWith("pk_test_")) return null;
+  const match = /(?:^|;\s*)__clerk_db_jwt(?:_[^=;]+)?=([^;]+)/.exec(request.headers.get("cookie") ?? "");
+  return match?.[1] ?? null;
 }
 
 /**
@@ -117,7 +131,19 @@ export async function authenticateDashboardRequest(
     }
   }
 
-  return { session: null, handshakeRedirect: null, refreshedSetCookies: [] };
+  // Signed out. On a development instance this can be the resolution of a
+  // handshake: Clerk then sets this site's dev-browser cookie and redirects
+  // to the same URL minus its handshake query params. Both have to reach the
+  // browser, or the next request starts over with no dev browser.
+  if (requestState.headers.get("location")) {
+    return { session: null, handshakeRedirect: new Response(null, { status: 303, headers: requestState.headers }), refreshedSetCookies: [] };
+  }
+  return {
+    session: null,
+    handshakeRedirect: null,
+    refreshedSetCookies: requestState.headers.getSetCookie(),
+    devBrowserToken: devBrowserTokenFrom(request, env.CLERK_PUBLISHABLE_KEY)
+  };
 }
 
 export type BillingAuthResult =

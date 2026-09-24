@@ -2,14 +2,17 @@ import { DISPLAY_NAME } from "../../lib/product";
 import { GITHUB_URL } from "../../marketing/github-url";
 import { renderPage } from "../Layout";
 
-function buildTarget(currentUrl: string, signInUrl: string | null): string | null {
+/** `devBrowserToken` is only set on a development Clerk instance, see DashboardAuthResult.devBrowserToken. */
+function buildTarget(currentUrl: string, signInUrl: string | null, devBrowserToken: string | null): string | null {
   if (!signInUrl) return null;
-  const separator = signInUrl.includes("?") ? "&" : "?";
-  return `${signInUrl}${separator}redirect_url=${encodeURIComponent(currentUrl)}`;
+  const url = new URL(signInUrl);
+  url.searchParams.set("redirect_url", currentUrl);
+  if (devBrowserToken) url.searchParams.set("__clerk_db_jwt", devBrowserToken);
+  return url.toString();
 }
 
-function SignInPage({ currentUrl, signInUrl }: { currentUrl: string; signInUrl: string | null }) {
-  const target = buildTarget(currentUrl, signInUrl);
+function SignInPage({ currentUrl, signInUrl, devBrowserToken }: { currentUrl: string; signInUrl: string | null; devBrowserToken: string | null }) {
+  const target = buildTarget(currentUrl, signInUrl, devBrowserToken);
   return (
     <>
       <div class="auth-card">
@@ -58,11 +61,11 @@ function SignInPage({ currentUrl, signInUrl }: { currentUrl: string; signInUrl: 
   );
 }
 
-export function renderSignInRequired(currentUrl: string, signInUrl: string | null): string {
+export function renderSignInRequired(currentUrl: string, signInUrl: string | null, devBrowserToken: string | null = null): string {
   return renderPage({
     title: "Sign in",
     activePath: "",
     hideSidebar: true,
-    children: <SignInPage currentUrl={currentUrl} signInUrl={signInUrl} />
+    children: <SignInPage currentUrl={currentUrl} signInUrl={signInUrl} devBrowserToken={devBrowserToken} />
   });
 }
