@@ -56,6 +56,10 @@ function PrivacyPage() {
             <strong>Team invites:</strong> the email address of each person you invite.
           </li>
           <li>
+            <strong>Emails we send you:</strong> we keep a copy of account and billing emails, to answer support questions and check
+            they're delivered.
+          </li>
+          <li>
             <strong>Technical data:</strong> our hosting provider, Cloudflare, processes IP addresses and request details to deliver and
             protect the service.
           </li>

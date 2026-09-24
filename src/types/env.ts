@@ -56,6 +56,8 @@ export interface Env {
   XMIT_FROM_EMAIL?: string;
   /** Override for xmit.sh's API base URL: a safety valve since the endpoint path itself is a best-effort guess (see src/email/client.ts). Defaults to https://api.xmit.sh. */
   XMIT_API_BASE_URL?: string;
+  /** Optional: a blind copy of every platform email goes here (an operator inbox). */
+  XMIT_BCC_EMAIL?: string;
   // The cloud tier's own DataForSEO account, distinct from
   // DATAFORSEO_LOGIN/PASSWORD above, which remain the self-host BYOK path.
   CLOUD_DATAFORSEO_LOGIN?: string;

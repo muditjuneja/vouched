@@ -106,6 +106,7 @@ Worker runs in self-host mode.
 | `DODO_PRODUCT_ID_PRO`, `DODO_PRODUCT_ID_TEAM` | Subscriptions | Dodo → Products |
 | `DODO_PRODUCT_ID_WALLET_TOPUP` | Wallet top-ups | A Dodo **Single Payment** product with *Pay what you want* on |
 | `XMIT_API_KEY`, `XMIT_FROM_EMAIL` | Transactional email, e.g. `hello@vouchedhq.com` | xmit.sh |
+| `XMIT_BCC_EMAIL` | Optional: an operator inbox that gets a blind copy of every email | Your address |
 | `ADMIN_ALERT_WEBHOOK_URL` | Optional Slack/Discord alerts for billing failures and budget warnings | Slack or Discord incoming webhook |
 | `PAGESPEED_API_KEY` | Not needed: `audit_site` is hidden for now | |
 

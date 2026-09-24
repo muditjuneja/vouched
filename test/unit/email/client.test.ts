@@ -45,6 +45,14 @@ describe("sendEmail", () => {
     });
   });
 
+  it("blind-copies the operator inbox when XMIT_BCC_EMAIL is set, and never the recipient themselves", async () => {
+    await sendEmail({ ...fakeEnv(), XMIT_BCC_EMAIL: "ops@example.com" }, { to: "user@example.com", subject: "Hi", html: "<p>hi</p>" });
+    expect(JSON.parse((fetchSpy.mock.calls[0] as [string, RequestInit])[1].body as string).bcc).toBe("ops@example.com");
+
+    await sendEmail({ ...fakeEnv(), XMIT_BCC_EMAIL: "ops@example.com" }, { to: "ops@example.com", subject: "Hi", html: "<p>hi</p>" });
+    expect(JSON.parse((fetchSpy.mock.calls[1] as [string, RequestInit])[1].body as string)).not.toHaveProperty("bcc");
+  });
+
   it("derives the plain-text copy from the HTML, keeping link targets and unescaping entities", () => {
     expect(htmlToText('<h1>Title</h1><p>Tom &amp; Jerry&#39;s</p><p><a href="https://x.test/d">Open Vouched</a></p>')).toBe(
       "Title\n\nTom & Jerry's\n\nOpen Vouched: https://x.test/d"

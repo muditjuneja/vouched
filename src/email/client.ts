@@ -59,7 +59,15 @@ export async function sendEmail(env: Env, input: SendEmailInput): Promise<boolea
         Authorization: `Bearer ${env.XMIT_API_KEY}`,
         "content-type": "application/json"
       },
-      body: JSON.stringify({ from, to: input.to, subject: input.subject, html: input.html, text: htmlToText(input.html) })
+      body: JSON.stringify({
+        from,
+        to: input.to,
+        subject: input.subject,
+        html: input.html,
+        text: htmlToText(input.html),
+        // An operator copy of every platform email, when configured.
+        ...(env.XMIT_BCC_EMAIL && env.XMIT_BCC_EMAIL !== input.to ? { bcc: env.XMIT_BCC_EMAIL } : {})
+      })
     });
     if (!res.ok) {
       console.warn(`[email] xmit.sh send failed (${res.status}): ${await res.text()}`);

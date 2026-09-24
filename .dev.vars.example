@@ -70,6 +70,8 @@ DODO_PRODUCT_ID_WALLET_TOPUP=
 # best-effort guess, see src/email/client.ts's doc comment) needs correcting.
 XMIT_API_KEY=
 XMIT_FROM_EMAIL=
+# Optional: an operator address that gets a blind copy of every email sent.
+XMIT_BCC_EMAIL=
 XMIT_API_BASE_URL=
 
 # The cloud tier's own DataForSEO account for bundled access, separate
