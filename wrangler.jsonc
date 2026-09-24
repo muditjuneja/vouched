@@ -1,6 +1,10 @@
 {
 	"$schema": "./node_modules/wrangler/config-schema.json",
-	"name": "vouched-seo-mcp",
+	// The Worker's own name (the Cloudflare project, and its workers.dev
+	// subdomain). Deliberately separate from the MCP server name clients see
+	// (MCP_SERVER_NAME in src/lib/product.ts) and from the D1/R2 resource
+	// names below, which are existing resources and keep their names.
+	"name": "vouched-hq",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-06-11",
 	"compatibility_flags": [
