@@ -67,7 +67,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const inspectPage: ToolModule<typeof inputSchema> = {
   name: "inspect_page",
   title: "Inspect page",
-  description: "Ranking keywords and estimated traffic for a single URL. Paid market data (Pro and Team plans).",
+  description: "Ranking keywords and estimated traffic for a single URL. Paid market data (Pro and Team plans). Inputs and output: https://vouchedhq.com/tools/inspect-page",
   inputSchema,
   handler
 };

@@ -87,7 +87,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const inspectIndexing: ToolModule<typeof inputSchema> = {
   name: "inspect_indexing",
   title: "Inspect indexing",
-  description: "Google's own indexing status for one URL: indexed?, canonical Google chose, rich results, last crawl time.",
+  description: "Google's own indexing status for one URL: indexed?, canonical Google chose, rich results, last crawl time. Uses Google Search Console's URL Inspection API: https://developers.google.com/webmaster-tools/v1/urlInspection.index/inspect",
   inputSchema,
   handler
 };
