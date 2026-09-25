@@ -19,7 +19,7 @@ export interface ToolCostEstimate {
 export const TOOL_COST_ESTIMATES: Record<string, ToolCostEstimate> = {
   inspect_serp: { usd: 0.002 },
   discover_competitors: { usd: 0.013 },
-  research_keywords: { usd: 0.013 },
+  research_keywords: { usd: 0.013, per: "seed keyword" },
   inspect_page: { usd: 0.013 },
   inspect_search_visibility: { usd: 0.012 },
   inspect_keyword: { usd: 0.016 },
@@ -41,6 +41,7 @@ export function describeCost(estimate: ToolCostEstimate): string {
 export function costUnit(estimate: ToolCostEstimate): string {
   if (estimate.per === "competitor") return "calls with one competitor";
   if (estimate.per === "domain compared") return "domains compared";
+  if (estimate.per === "seed keyword") return "seed keywords";
   return "calls";
 }
 

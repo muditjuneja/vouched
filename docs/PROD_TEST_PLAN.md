@@ -114,9 +114,9 @@ upgrade arrived exactly once (plus the BCC copy), billing emails are working.
 |---|---|---|---|
 | 4.1 | `inspect_domain {domain: MARKET_DOMAIN}` | `search_index` | Overview, top keywords and competitors; confidence 0.75 |
 | 4.2 | `discover_competitors {domain: MARKET_DOMAIN, limit: 5}` | `search_index` | Up to 5 competitor domains |
-| 4.3 | `research_keywords {seedKeywords: [KEYWORD], limit: 10}` | `search_index` | `seo.keyword_opportunity` facts with volume, KD, CPC |
+| 4.3 | `research_keywords {seedKeywords: [KEYWORD], limit: 10}` | `search_index` | `seo.keyword_opportunity` facts with volume, KD, CPC and `search_intent`; every keyword contains KEYWORD (method `keyword_suggestions`), navigational ones last |
 | 4.4 | `inspect_keyword {keyword: KEYWORD}` | `live_serp` | Volume, difficulty, intent for that one keyword |
-| 4.5 | `compare_keyword_coverage {domain: MARKET_DOMAIN, competitors: [RIVAL]}` | `search_index` | Keywords the rival ranks for that the domain doesn't |
+| 4.5 | `compare_keyword_coverage {domain: MARKET_DOMAIN, competitors: [RIVAL]}` | `search_index` | Keywords the rival ranks for that the domain doesn't, each with `search_intent`; rival brand searches kept but listed last as navigational |
 | 4.6 | `inspect_search_visibility {domain: MARKET_DOMAIN, keywords: [KEYWORD, "email api"]}` | `live_serp` or `search_index` | A position (or "not ranking") per keyword |
 | 4.7 | `inspect_page {url: "https://" + MARKET_DOMAIN}` | `search_index` | Page-level metrics |
 | 4.8 | `inspect_serp {keyword: KEYWORD, depth: 10}` | `live_serp` | ~10 `serp.result` facts at 0.85, plus any `serp.feature` facts at 0.6 |

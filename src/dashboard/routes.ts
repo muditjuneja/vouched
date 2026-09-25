@@ -3,7 +3,7 @@ import { authenticateDashboardRequest, getTenantEmail, revokeClerkSession } from
 import { checkConnectionState, getValidAccessToken, type ConnectionState } from "../auth/google-oauth";
 import { isScopeGroup, SCOPE_GROUPS } from "../auth/oauth-routes";
 import { listCostLog } from "../clients/dataforseo/cost-tracker";
-import { listPropertiesWithDomains, type GA4Property } from "../clients/google/analytics-ga4";
+import { ga4PropertyName, listPropertiesWithDomains, type GA4Property } from "../clients/google/analytics-ga4";
 import { listSites, type SearchConsoleSite } from "../clients/google/search-console";
 import type { ScopeGroup } from "../db/google-tokens";
 import { deleteToken } from "../db/google-tokens";
@@ -372,7 +372,7 @@ dashboard.post("/websites", async (c) => {
       name,
       primaryDomain,
       gscSiteUrl: gscSiteUrl || undefined,
-      ga4PropertyId: ga4PropertyId || undefined
+      ga4PropertyId: ga4PropertyId ? ga4PropertyName(ga4PropertyId) : undefined
     },
     tenantId
   );
@@ -404,7 +404,7 @@ dashboard.post("/websites/:websiteId/update", async (c) => {
       name,
       primaryDomain,
       gscSiteUrl: gscSiteUrl || null,
-      ga4PropertyId: ga4PropertyId || null
+      ga4PropertyId: ga4PropertyId ? ga4PropertyName(ga4PropertyId) : null
     },
     tenantId
   );

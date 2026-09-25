@@ -1,4 +1,4 @@
-import { UpstreamError } from "../../lib/errors";
+import { googleUpstreamError } from "../../lib/errors";
 
 export interface GA4Report {
   dimensionHeaders?: { name: string }[];
@@ -17,13 +17,23 @@ export interface GA4ReportQuery {
   limit?: number;
 }
 
+/**
+ * The Data API's resource name for a property: "properties/517891211".
+ * The dashboard's manual field accepts the bare number people copy from
+ * GA4's admin screen, so both forms are accepted and one is sent.
+ */
+export function ga4PropertyName(propertyId: string): string {
+  const id = propertyId.trim();
+  return /^\d+$/.test(id) ? `properties/${id}` : id;
+}
+
 /** Plain REST call, no Google client library, see docs/ARCHITECTURE.md. */
 export async function runReport(
   accessToken: string,
   propertyId: string,
   query: GA4ReportQuery
 ): Promise<GA4Report> {
-  const res = await fetch(`https://analyticsdata.googleapis.com/v1beta/${propertyId}:runReport`, {
+  const res = await fetch(`https://analyticsdata.googleapis.com/v1beta/${ga4PropertyName(propertyId)}:runReport`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -37,7 +47,7 @@ export async function runReport(
     })
   });
   if (!res.ok) {
-    throw new UpstreamError("ga4", await res.text(), res.status);
+    throw await googleUpstreamError("ga4", res);
   }
   return res.json();
 }
@@ -69,7 +79,7 @@ export async function listProperties(accessToken: string): Promise<GA4Property[]
     headers: { Authorization: `Bearer ${accessToken}` }
   });
   if (!res.ok) {
-    throw new UpstreamError("ga4", await res.text(), res.status);
+    throw await googleUpstreamError("ga4", res);
   }
   const body = (await res.json()) as AccountSummariesResponse;
   return (body.accountSummaries ?? []).flatMap((account) =>

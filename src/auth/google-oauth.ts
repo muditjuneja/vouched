@@ -1,5 +1,5 @@
 import { getAnyToken, upsertToken, type ScopeGroup } from "../db/google-tokens";
-import { ConnectionRequiredError, UpstreamError } from "../lib/errors";
+import { ConnectionRequiredError, UpstreamError, googleUpstreamError } from "../lib/errors";
 import type { Env } from "../types/env";
 
 const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
@@ -93,7 +93,7 @@ export async function exchangeCodeForTokens(
     })
   });
   if (!res.ok) {
-    throw new UpstreamError("google_oauth", await res.text(), res.status);
+    throw await googleUpstreamError("google_oauth", res);
   }
   const tokens = (await res.json()) as TokenResponse;
   if (!tokens.refresh_token) {
@@ -125,7 +125,7 @@ async function refresh(env: Env, refreshToken: string): Promise<{ accessToken: s
     })
   });
   if (!res.ok) {
-    throw new UpstreamError("google_oauth", await res.text(), res.status);
+    throw await googleUpstreamError("google_oauth", res);
   }
   const tokens = (await res.json()) as TokenResponse;
   return { accessToken: tokens.access_token, expiresAt: expiresAtFrom(tokens.expires_in) };

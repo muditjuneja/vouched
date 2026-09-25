@@ -72,3 +72,23 @@ export class UpstreamError extends Error {
     this.status = status;
   }
 }
+
+/**
+ * An UpstreamError for a failed Google response, with only Google's own
+ * one-line reason ("User does not have sufficient permissions for this
+ * property", "Token has been expired or revoked"). A response that isn't
+ * Google's JSON error (an HTML 404 page, a proxy error) never reaches the
+ * agent: it becomes "request failed (HTTP 404)" and the body is logged.
+ */
+export async function googleUpstreamError(upstream: string, res: Response): Promise<UpstreamError> {
+  const body = await res.text();
+  let reason: string | null = null;
+  try {
+    const parsed = JSON.parse(body) as { error?: string | { message?: string }; error_description?: string };
+    reason = typeof parsed.error === "object" ? (parsed.error.message ?? null) : (parsed.error_description ?? parsed.error ?? null);
+  } catch {
+    // Not JSON: fall through to the short message.
+  }
+  if (!reason) console.warn(`[${upstream}] HTTP ${res.status}: ${body.slice(0, 500)}`);
+  return new UpstreamError(upstream, reason ? `${reason} (HTTP ${res.status})` : `request failed (HTTP ${res.status})`, res.status);
+}

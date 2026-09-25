@@ -342,6 +342,14 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
         description: "One or more seed terms to expand into a ranked demand list."
       },
       {
+        name: "mode",
+        type: "string",
+        required: false,
+        default: "suggestions",
+        constraints: "suggestions or ideas",
+        description: "suggestions: searches that contain a seed phrase, one request per seed. ideas: the wider category around the seeds in one request, including searches that share no words with them."
+      },
+      {
         name: "limit",
         type: "number",
         required: false,
@@ -350,9 +358,9 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
         description: "Maximum number of keyword suggestions to return."
       }
     ],
-    dataSummary: "Keyword ideas with monthly search volume, cost-per-click (CPC), paid competition index, and organic keyword difficulty.",
+    dataSummary: "Keyword ideas with monthly search volume, cost-per-click (CPC), paid competition index, organic keyword difficulty and search intent. Navigational searches (people looking for one site) are listed last, not removed.",
     emittedFacts: [
-      { type: "seo.keyword_opportunity", description: "Search demand metrics for an expanded keyword idea.", fields: ["keyword", "search_volume", "cpc", "competition", "keyword_difficulty"] }
+      { type: "seo.keyword_opportunity", description: "Search demand metrics for an expanded keyword idea.", fields: ["keyword", "search_volume", "cpc", "competition", "keyword_difficulty", "search_intent"] }
     ],
     entitiesEmitted: [
       { kind: "keyword", description: "Discovered search queries." }
@@ -364,26 +372,26 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     exampleResponse: {
       schema_version: "ofe/1.0",
       domain: "seo",
-      data: { seed_keywords: ["mcp server", "model context protocol"] },
+      data: { seed_keywords: ["mcp server", "model context protocol"], mode: "suggestions" },
       facts: [
         {
           type: "seo.keyword_opportunity",
           subject: ["urn:keyword:mcp+server+examples"],
-          data: { keyword: "mcp server examples", search_volume: 4800, cpc: 2.15, competition: 0.34, keyword_difficulty: 28 },
-          provenance: { source_class: "search_index", method: "keyword_ideas", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
+          data: { keyword: "mcp server examples", search_volume: 4800, cpc: 2.15, competition: 0.34, keyword_difficulty: 28, search_intent: "informational" },
+          provenance: { source_class: "search_index", method: "keyword_suggestions", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         },
         {
           type: "seo.keyword_opportunity",
           subject: ["urn:keyword:best+mcp+servers+for+claude"],
-          data: { keyword: "best mcp servers for claude", search_volume: 3200, cpc: 3.40, competition: 0.41, keyword_difficulty: 35 },
-          provenance: { source_class: "search_index", method: "keyword_ideas", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
+          data: { keyword: "best mcp servers for claude", search_volume: 3200, cpc: 3.40, competition: 0.41, keyword_difficulty: 35, search_intent: "commercial" },
+          provenance: { source_class: "search_index", method: "keyword_suggestions", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         }
       ],
       entities: [
         { id: "urn:keyword:mcp+server+examples", kind: "keyword", label: "mcp server examples" },
         { id: "urn:keyword:best+mcp+servers+for+claude", kind: "keyword", label: "best mcp servers for claude" }
       ],
-      coverage: { returned: 2, total: null, as_of: "2026-09-24T00:00:00Z", scope_note: null },
+      coverage: { returned: 2, total: null, as_of: "2026-09-24T00:00:00Z", scope_note: "searches containing a seed phrase, highest search volume first" },
       deltas: [],
       resources: [],
       next_actions: [
@@ -397,7 +405,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     },
     provenance: {
       sourceClass: "search_index",
-      method: "keyword_ideas",
+      method: "keyword_suggestions or keyword_ideas, by mode",
       confidence: 0.75
     }
   },
@@ -418,9 +426,9 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
         description: "Competitor domains to find keyword gaps against."
       }
     ],
-    dataSummary: "Pairwise keyword intersections identifying queries where competitors rank but you do not ('competitor_only') or where you rank and they do not ('you_only').",
+    dataSummary: "Keywords each competitor ranks for in the top 20 that your domain doesn't, highest search volume first, with search intent. Navigational searches (usually the competitor's own brand) are listed last, not removed.",
     emittedFacts: [
-      { type: "seo.keyword_opportunity", description: "A keyword a competitor ranks for that your domain doesn't, with its demand and the competitor's position.", fields: ["keyword", "search_volume", "keyword_difficulty", "competitor_domain", "competitor_position", "competitor_url"] }
+      { type: "seo.keyword_opportunity", description: "A keyword a competitor ranks for that your domain doesn't, with its demand and the competitor's position.", fields: ["keyword", "search_volume", "keyword_difficulty", "search_intent", "competitor_domain", "competitor_position", "competitor_url"] }
     ],
     entitiesEmitted: [
       { kind: "domain", description: "Your domain and each competitor domain." },
@@ -438,7 +446,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
         {
           type: "seo.keyword_opportunity",
           subject: ["urn:domain:vouchedhq.com", "urn:domain:semrush.com", "urn:keyword:open+source+semrush"],
-          data: { keyword: "open source semrush", search_volume: 880, keyword_difficulty: 22, competitor_domain: "semrush.com", competitor_position: 4, competitor_url: "https://www.semrush.com/" },
+          data: { keyword: "open source semrush", search_volume: 880, keyword_difficulty: 22, search_intent: "commercial", competitor_domain: "semrush.com", competitor_position: 4, competitor_url: "https://www.semrush.com/" },
           provenance: { source_class: "search_index", method: "keyword_gap", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         }
       ],

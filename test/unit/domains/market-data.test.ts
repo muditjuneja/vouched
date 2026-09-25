@@ -26,6 +26,7 @@ const FIXTURE_BY_PATH: Record<string, string> = {
   "/v3/dataforseo_labs/google/ranked_keywords/live": "ranked_keywords",
   "/v3/dataforseo_labs/google/competitors_domain/live": "competitors_domain",
   "/v3/dataforseo_labs/google/keyword_ideas/live": "keyword_ideas",
+  "/v3/dataforseo_labs/google/keyword_suggestions/live": "keyword_suggestions",
   "/v3/dataforseo_labs/google/keyword_overview/live": "keyword_overview",
   "/v3/dataforseo_labs/google/domain_intersection/live": "domain_intersection_gap",
   "/v3/serp/google/organic/live/advanced": "serp",
@@ -88,32 +89,60 @@ describe("Labs tools read the rows, not the wrapper", () => {
     expect(result.coverage.returned).toBe(2);
   });
 
-  it("research_keywords: one fact per idea with volume and difficulty", async () => {
-    const result = await researchKeywords.handler({ seedKeywords: ["phone"] }, env);
-    expect(result.facts.map((f) => [f.data.keyword, f.data.search_volume, f.data.keyword_difficulty])).toEqual([
-      ["nothing phone", 165000, 31],
-      ["find phone", 14800, 57],
-      ["tin can phone", 135000, 5]
+  it("research_keywords: suggestions by default, one request per seed, merged and sorted by volume", async () => {
+    const result = await researchKeywords.handler({ seedKeywords: ["seo", "seo tool"] }, env);
+    expect(requests.map((r) => [r.path, r.body.keyword])).toEqual([
+      ["/v3/dataforseo_labs/google/keyword_suggestions/live", "seo"],
+      ["/v3/dataforseo_labs/google/keyword_suggestions/live", "seo tool"]
     ]);
-    expect(result.coverage.returned).toBe(3);
+    // Both seeds return the same sandbox row: listed once.
+    expect(result.facts.map((f) => [f.data.keyword, f.data.search_volume, f.data.keyword_difficulty, f.data.search_intent])).toEqual([
+      ["seo marketing tool", 110000, 64, "commercial"]
+    ]);
+    expect(result.facts[0]!.provenance.method).toBe("keyword_suggestions");
+  });
+
+  it("research_keywords: ideas mode is one request for the wider category, with nothing filtered out", async () => {
+    const result = await researchKeywords.handler({ seedKeywords: ["nothing"], mode: "ideas" }, env);
+    expect(requests).toHaveLength(1);
     expect(requests[0]!.body.order_by).toEqual(["keyword_info.search_volume,desc"]);
+    expect(result.facts.map((f) => f.data.keyword)).toEqual(["nothing phone", "find phone", "tin can phone"]);
+    expect(result.facts[0]!.provenance.method).toBe("keyword_ideas");
   });
 
-  it("research_keywords: keeps only ideas that share a word with a seed, and says how many were left out", async () => {
-    const result = await researchKeywords.handler({ seedKeywords: ["nothing"] }, env);
-    expect(result.facts.map((f) => f.data.keyword)).toEqual(["nothing phone"]);
-    expect(result.coverage.scope_note).toContain("2 broader ideas left out");
+  it("research_keywords: navigational searches go last, labelled, not dropped", async () => {
+    const ideas = JSON.parse(fixture("keyword_ideas")) as { tasks: Array<{ result: Array<{ items: Array<{ keyword: string; search_intent_info: { main_intent: string } }> }> }> };
+    ideas.tasks[0]!.result[0]!.items.find((i) => i.keyword === "nothing phone")!.search_intent_info.main_intent = "navigational";
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(ideas), { status: 200 })));
+    const result = await researchKeywords.handler({ seedKeywords: ["phone"], mode: "ideas" }, env);
+    expect(result.facts.map((f) => [f.data.keyword, f.data.search_intent])).toEqual([
+      ["find phone", "informational"],
+      ["tin can phone", "transactional"],
+      ["nothing phone", "navigational"]
+    ]);
+    expect(result.coverage.scope_note).toContain("1 navigational searches (people looking for one site) listed last");
   });
 
-  it("compare_keyword_coverage: top-20 positions only, highest volume first, brand searches left out, rest exported", async () => {
-    const result = await compareKeywordCoverage.handler({ domain: "xmit.sh", competitors: ["source.com"], limit: 1 }, env);
+  it("compare_keyword_coverage: top-20 positions only, highest volume first, intent on every row", async () => {
+    const result = await compareKeywordCoverage.handler({ domain: "xmit.sh", competitors: ["source.com"] }, env);
     expect(requests[0]!.body).toMatchObject({
       filters: ["first_domain_serp_element.rank_group", "<=", 20],
       order_by: ["keyword_data.keyword_info.search_volume,desc"]
     });
-    // Both fixture keywords contain "source", the competitor's brand.
-    expect(result.facts).toHaveLength(0);
-    expect(result.coverage.scope_note).toContain("2 searches for a competitor's own brand left out");
+    // Both fixture keywords contain "source", the competitor's name: kept, since no brand guessing happens.
+    expect(result.facts.map((f) => [f.data.keyword, f.data.search_intent])).toEqual([
+      ["seo open source", "commercial"],
+      ["source seo", "commercial"]
+    ]);
+  });
+
+  it("compare_keyword_coverage: navigational searches go last, labelled, not dropped", async () => {
+    const gap = JSON.parse(fixture("domain_intersection_gap")) as { tasks: Array<{ result: Array<{ items: Array<{ keyword_data: { keyword: string; search_intent_info: { main_intent: string } } }> }> }> };
+    gap.tasks[0]!.result[0]!.items[0]!.keyword_data.search_intent_info.main_intent = "navigational";
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(gap), { status: 200 })));
+    const result = await compareKeywordCoverage.handler({ domain: "xmit.sh", competitors: ["source.com"] }, env);
+    expect(result.facts.map((f) => f.data.keyword)).toEqual(["source seo", "seo open source"]);
+    expect(result.coverage.scope_note).toContain("1 navigational searches (people looking for one site, often the competitor's brand) listed last");
   });
 
   it("compare_keyword_coverage: lists up to the limit and exports the rest", async () => {
@@ -230,7 +259,8 @@ describe("tool errors", () => {
   it("come back as an MCP error and an envelope with a stable code", () => {
     const result = toolError("connection_required", "Connect Google Analytics first.", { connection: "analytics_property" });
     expect(result.isError).toBe(true);
-    expect(result.content[0]!.text).toBe("connection_required: Connect Google Analytics first.");
+    // Serialized envelope as the text too, per the MCP spec, for clients that only read `content`.
+    expect(JSON.parse(result.content[0]!.text)).toEqual(result.structuredContent);
     expect(result.structuredContent).toMatchObject({
       schema_version: "ofe/1.0",
       data: { error: { code: "connection_required", connection: "analytics_property" } },

@@ -104,7 +104,9 @@ export function toolError(code: string, message: string, extra: Record<string, u
     .build();
   return {
     isError: true,
-    content: [{ type: "text" as const, text: `${code}: ${message}` }],
+    // The MCP spec asks for the structured result serialized as text too,
+    // for clients that only read `content`.
+    content: [{ type: "text" as const, text: JSON.stringify(result) }],
     structuredContent: result
   };
 }

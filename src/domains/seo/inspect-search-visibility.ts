@@ -103,7 +103,9 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
       returned: args.keywords.length,
       total: args.keywords.length,
       as_of: observedAt.toISOString(),
-      scope_note: null
+      scope_note: args.recheckLive
+        ? "search_index rankings come from the last index crawl and can trail Google by days or weeks; live_recheck facts show the page right now"
+        : "rankings come from the last index crawl and can trail Google by days or weeks; pass recheckLive: true to check the live results page"
     })
     .build();
 }

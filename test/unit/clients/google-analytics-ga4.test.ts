@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { listProperties, listPropertiesWithDomains } from "../../../src/clients/google/analytics-ga4";
+import { ga4PropertyName, listProperties, listPropertiesWithDomains, runReport } from "../../../src/clients/google/analytics-ga4";
+import { googleUpstreamError } from "../../../src/lib/errors";
 
 describe("listProperties", () => {
   const fetchSpy = vi.fn();
@@ -136,5 +137,52 @@ describe("listPropertiesWithDomains", () => {
     });
     const properties = await listPropertiesWithDomains("token-123");
     expect(properties).toEqual([{ property: "properties/111", displayName: "Site A", domain: null }]);
+  });
+});
+
+describe("runReport", () => {
+  const fetchSpy = vi.fn();
+  const query = { startDate: "28daysAgo", endDate: "today", dimensions: ["date"], metrics: ["sessions"] };
+
+  beforeEach(() => {
+    fetchSpy.mockReset();
+    vi.stubGlobal("fetch", fetchSpy);
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("calls properties/<id>:runReport whether the stored id has the prefix or not", async () => {
+    for (const stored of ["517891211", "properties/517891211", " 517891211 "]) {
+      fetchSpy.mockResolvedValueOnce(new Response(JSON.stringify({ rows: [] }), { status: 200 }));
+      await runReport("token", stored, query);
+      expect(fetchSpy).toHaveBeenLastCalledWith("https://analyticsdata.googleapis.com/v1beta/properties/517891211:runReport", expect.anything());
+    }
+  });
+
+  it("ga4PropertyName leaves anything that isn't a bare number alone", () => {
+    expect(ga4PropertyName("517891211")).toBe("properties/517891211");
+    expect(ga4PropertyName("properties/517891211")).toBe("properties/517891211");
+  });
+});
+
+describe("googleUpstreamError", () => {
+  it("keeps Google's own one-line reason from a JSON error", async () => {
+    const res = new Response(JSON.stringify({ error: { code: 403, message: "User does not have sufficient permissions for this property.", status: "PERMISSION_DENIED" } }), { status: 403 });
+    const error = await googleUpstreamError("ga4", res);
+    expect(error.message).toBe("ga4: User does not have sufficient permissions for this property. (HTTP 403)");
+  });
+
+  it("keeps an OAuth error's description", async () => {
+    const res = new Response(JSON.stringify({ error: "invalid_grant", error_description: "Token has been expired or revoked." }), { status: 400 });
+    expect((await googleUpstreamError("google_oauth", res)).message).toBe("google_oauth: Token has been expired or revoked. (HTTP 400)");
+  });
+
+  it("never passes an HTML error page through", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const res = new Response("<!DOCTYPE html><html><style>body{}</style>Error 404 (Not Found)</html>", { status: 404 });
+    const error = await googleUpstreamError("ga4", res);
+    expect(error.message).toBe("ga4: request failed (HTTP 404)");
+    expect(error.status).toBe(404);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
   });
 });

@@ -1,4 +1,4 @@
-import { UpstreamError } from "../../lib/errors";
+import { googleUpstreamError } from "../../lib/errors";
 
 export interface SearchAnalyticsRow {
   keys: string[];
@@ -66,7 +66,7 @@ export async function querySearchAnalytics(
     }
   );
   if (!res.ok) {
-    throw new UpstreamError("search_console", await res.text(), res.status);
+    throw await googleUpstreamError("search_console", res);
   }
   return res.json();
 }
@@ -95,7 +95,7 @@ export async function listSites(accessToken: string): Promise<SearchConsoleSite[
     headers: { Authorization: `Bearer ${accessToken}` }
   });
   if (!res.ok) {
-    throw new UpstreamError("search_console", await res.text(), res.status);
+    throw await googleUpstreamError("search_console", res);
   }
   const body = (await res.json()) as SitesListResponse;
   return (body.siteEntry ?? []).filter((site) => site.permissionLevel !== "siteUnverifiedUser");
@@ -154,7 +154,7 @@ export async function listSitemaps(accessToken: string, siteUrl: string): Promis
     headers: { Authorization: `Bearer ${accessToken}` }
   });
   if (!res.ok) {
-    throw new UpstreamError("search_console", await res.text(), res.status);
+    throw await googleUpstreamError("search_console", res);
   }
   const body = (await res.json()) as SitemapsListResponse;
   // warnings/errors/submitted/indexed can come back as JSON strings (Google
@@ -242,7 +242,7 @@ export async function inspectUrl(accessToken: string, siteUrl: string, inspectio
     body: JSON.stringify({ inspectionUrl, siteUrl })
   });
   if (!res.ok) {
-    throw new UpstreamError("search_console", await res.text(), res.status);
+    throw await googleUpstreamError("search_console", res);
   }
   const body = (await res.json()) as RawUrlInspectionResponse;
   const result = body.inspectionResult;

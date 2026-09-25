@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { domainIntersection } from "../../clients/dataforseo/endpoints/labs";
 import { envelope } from "../../envelope/builder";
-import { brandOf, domainEntityId, keywordEntityId } from "../../envelope/entities";
+import { domainEntityId, keywordEntityId } from "../../envelope/entities";
 import type { Entity } from "../../envelope/types";
 import { storeDataset, type FactDataset } from "../../resources/store";
 import { provenance } from "../../envelope/provenance";
@@ -20,7 +20,12 @@ const FETCH_PER_COMPETITOR = 100;
 
 /** A keyword the competitor (target1) ranks for and the domain (target2) doesn't. */
 interface GapItem {
-  keyword_data?: { keyword?: string; keyword_info?: { search_volume?: number; cpc?: number }; keyword_properties?: { keyword_difficulty?: number } };
+  keyword_data?: {
+    keyword?: string;
+    keyword_info?: { search_volume?: number; cpc?: number };
+    keyword_properties?: { keyword_difficulty?: number };
+    search_intent_info?: { main_intent?: string };
+  };
   first_domain_serp_element?: { rank_group?: number; url?: string; etv?: number } | null;
 }
 
@@ -48,25 +53,26 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   const entities = new Map<string, Entity>([[domainId, { id: domainId, kind: "domain", label: args.domain }]]);
   const exportItems: FactDataset["items"] = [];
   let inline = 0;
-  let brandDropped = 0;
+  let navigational = 0;
   let capped = false;
 
   for (const { competitor, items } of perCompetitor) {
     const competitorId = domainEntityId(competitor);
-    const brand = brandOf(competitor);
     builder.addEntity({ id: competitorId, kind: "domain", label: competitor });
     entities.set(competitorId, { id: competitorId, kind: "domain", label: competitor });
     if (items.length >= FETCH_PER_COMPETITOR) capped = true;
 
+    // Navigational searches are people looking for one site, usually the
+    // competitor itself ("resend login"): rarely a gap you can close, so
+    // they go last. Intent is the index's own label; nothing is dropped.
+    const isNavigational = (item: GapItem) => item.keyword_data?.search_intent_info?.main_intent === "navigational";
+    const ordered = [...items.filter((item) => !isNavigational(item)), ...items.filter(isNavigational)];
+    navigational += items.length - ordered.filter((item) => !isNavigational(item)).length;
+
     let listed = 0;
-    for (const item of items) {
+    for (const item of ordered) {
       const keyword = item.keyword_data?.keyword;
       if (!keyword) continue;
-      // Searches for the competitor's own brand ("resend login") aren't a gap you can close.
-      if (brand.length >= 3 && keyword.toLowerCase().includes(brand)) {
-        brandDropped++;
-        continue;
-      }
       const keywordId = keywordEntityId(keyword);
       const entity: Entity = { id: keywordId, kind: "keyword", label: keyword };
       const subject = [domainId, competitorId, keywordId];
@@ -74,6 +80,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
         keyword,
         search_volume: item.keyword_data?.keyword_info?.search_volume ?? null,
         keyword_difficulty: item.keyword_data?.keyword_properties?.keyword_difficulty ?? null,
+        search_intent: item.keyword_data?.search_intent_info?.main_intent ?? null,
         competitor_domain: competitor,
         competitor_position: item.first_domain_serp_element?.rank_group ?? null,
         competitor_url: item.first_domain_serp_element?.url ?? null
@@ -106,7 +113,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   }
 
   const notes = [`keywords each competitor ranks for in the top ${MAX_COMPETITOR_POSITION} and ${args.domain} doesn't, highest search volume first`];
-  if (brandDropped > 0) notes.push(`${brandDropped} searches for a competitor's own brand left out`);
+  if (navigational > 0) notes.push(`${navigational} navigational searches (people looking for one site, often the competitor's brand) listed last`);
   if (exportItems.length > inline) notes.push(`${exportItems.length - inline} more in export_dataset`);
   return builder
     .setCoverage({ returned: inline, total: capped ? null : exportItems.length, as_of: observedAt.toISOString(), scope_note: notes.join("; ") })

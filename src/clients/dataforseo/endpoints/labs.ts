@@ -66,6 +66,17 @@ export function keywordIdeas(env: Env, toolName: string, seedKeywords: string[],
   });
 }
 
+/** Searches that contain the seed phrase ("transactional email api" -> "best transactional email api"). One seed per request. */
+export function keywordSuggestions(env: Env, toolName: string, seedKeyword: string, limit = 50) {
+  return dfsLiveItems(env, toolName, "/v3/dataforseo_labs/google/keyword_suggestions/live", {
+    keyword: seedKeyword,
+    location_code: DEFAULT_LOCATION_CODE,
+    language_code: DEFAULT_LANGUAGE_CODE,
+    limit,
+    order_by: ["keyword_info.search_volume,desc"]
+  });
+}
+
 export function keywordOverview(env: Env, toolName: string, keywords: string[]) {
   return dfsLiveItems(env, toolName, "/v3/dataforseo_labs/google/keyword_overview/live", {
     keywords,
