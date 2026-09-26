@@ -1,0 +1,15 @@
+{
+  "name": "vouched",
+  "version": "0.1.0",
+  "description": "SEO data your AI can cite: Search Console, GA4, keywords, backlinks, SERPs and AI visibility.",
+  "author": {
+    "name": "Vouched",
+    "email": "hello@vouchedhq.com",
+    "url": "https://vouchedhq.com"
+  },
+  "homepage": "https://vouchedhq.com",
+  "repository": "https://github.com/muditjuneja/vouched",
+  "license": "MIT",
+  "keywords": ["seo", "search-console", "google-analytics", "ga4", "keywords", "backlinks", "serp", "ai-visibility", "mcp"],
+  "logo": "assets/brand/mark-512.png"
+}

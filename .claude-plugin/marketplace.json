@@ -1,0 +1,15 @@
+{
+  "name": "vouched",
+  "description": "Vouched: SEO data your AI can cite.",
+  "owner": {
+    "name": "Vouched",
+    "email": "hello@vouchedhq.com"
+  },
+  "plugins": [
+    {
+      "name": "vouched",
+      "source": "./",
+      "description": "SEO data your AI can cite: Search Console, GA4, keywords, backlinks, SERPs and AI visibility."
+    }
+  ]
+}

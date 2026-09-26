@@ -37,8 +37,8 @@ export class QuotaExceededError extends Error {
 
   constructor(plan: string, quotaUsd: number) {
     super(
-      `You've used the $${quotaUsd.toFixed(2)} of market data included in your ${plan} plan this month, and your overage wallet is empty. ` +
-        "Top up the wallet from Billing to keep going, or wait for your next billing period. Your Google tools keep working."
+      `This workspace has used the $${quotaUsd.toFixed(2)} of market data included in its ${plan} plan this month, and its overage wallet is empty. ` +
+        "Market data is available again from the next billing period. Search Console and Analytics tools keep working."
     );
     this.name = "QuotaExceededError";
     this.plan = plan;
@@ -52,10 +52,14 @@ export class QuotaExceededError extends Error {
  * feature, free workspaces get their own Google data only. Separate from
  * QuotaExceededError so an agent can tell "upgrade to use this at all"
  * apart from "you've used this month's allowance".
+ *
+ * Tool-error messages here state what's unavailable and never ask the user
+ * to upgrade or buy: ChatGPT's app directory rejects apps that promote
+ * purchases of digital goods. Upgrade prompts live in the dashboard.
  */
 export class UpgradeRequiredError extends Error {
   constructor() {
-    super("This tool uses paid market data, which needs a Pro or Team plan. Free plans include your own Search Console and Analytics data.");
+    super("This tool uses paid market data, which this workspace's plan doesn't include. Search Console and Analytics tools are available.");
     this.name = "UpgradeRequiredError";
   }
 }

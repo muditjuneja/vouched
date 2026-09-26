@@ -1,0 +1,44 @@
+# Runs when a version tag (v0.1.0, v0.2.0, ...) is pushed.
+# The tag is also what the Gemini CLI extensions gallery indexes.
+#
+# Needs the repository secret MCP_REGISTRY_PRIVATE_KEY: the hex ed25519
+# private key whose public half is in vouchedhq.com's TXT record (see
+# docs/LISTINGS.md, "Official MCP Registry").
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  publish-registry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check every manifest matches the tag
+        run: |
+          node -e '
+            const fs = require("fs");
+            const want = process.env.GITHUB_REF_NAME.replace(/^v/, "");
+            const files = ["server.json", "plugin.json", "gemini-extension.json", ".claude-plugin/plugin.json", ".cursor-plugin/plugin.json"];
+            let bad = false;
+            for (const f of files) {
+              const got = JSON.parse(fs.readFileSync(f, "utf8")).version;
+              if (got !== want) { console.error(`${f} has version ${got}, tag says ${want}`); bad = true; }
+            }
+            if (bad) process.exit(1);
+          '
+
+      - name: Install mcp-publisher
+        run: curl -sSL https://github.com/modelcontextprotocol/registry/releases/download/v1.8.1/mcp-publisher_linux_amd64.tar.gz | tar xz mcp-publisher
+
+      - name: Publish to the MCP Registry
+        env:
+          MCP_REGISTRY_PRIVATE_KEY: ${{ secrets.MCP_REGISTRY_PRIVATE_KEY }}
+        run: |
+          ./mcp-publisher login dns --domain vouchedhq.com --private-key "$MCP_REGISTRY_PRIVATE_KEY"
+          ./mcp-publisher publish

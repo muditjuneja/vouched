@@ -106,8 +106,15 @@ A trimmed `get_search_performance` result:
 Hosted:
 
 ```bash
-# Claude Code
+# Claude Code: the plugin (MCP server plus an SEO analysis skill)
+claude plugin marketplace add muditjuneja/vouched
+claude plugin install vouched@vouched
+
+# Claude Code: the MCP server only
 claude mcp add --transport http vouched https://vouchedhq.com/mcp
+
+# Gemini CLI
+gemini extensions install https://github.com/muditjuneja/vouched
 ```
 
 In Claude or ChatGPT, add `https://vouchedhq.com/mcp` as a custom connector. In Cursor, add it to `~/.cursor/mcp.json`:

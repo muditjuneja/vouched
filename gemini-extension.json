@@ -1,0 +1,10 @@
+{
+  "name": "vouched",
+  "version": "0.1.0",
+  "description": "SEO data your AI can cite: Search Console, GA4, keywords, backlinks, SERPs and AI visibility.",
+  "mcpServers": {
+    "vouched": {
+      "httpUrl": "https://vouchedhq.com/mcp"
+    }
+  }
+}

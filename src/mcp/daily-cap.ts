@@ -16,5 +16,5 @@ export async function checkDailyCap(env: Env, tenantId: string | null, plan: Pla
   if (!tenantId || plan !== "free") return null;
   const { allowed } = await consumeDailyToolCall(env.DB, tenantId, FREE_DAILY_TOOL_CALLS);
   if (allowed) return null;
-  return `daily_limit_exceeded: the free plan allows ${FREE_DAILY_TOOL_CALLS} tool calls per day (resets 00:00 UTC). Upgrade to a paid plan to remove the daily cap.`;
+  return `daily_limit_exceeded: the free plan allows ${FREE_DAILY_TOOL_CALLS} tool calls per day (resets 00:00 UTC).`;
 }
