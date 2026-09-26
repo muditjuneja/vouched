@@ -36,9 +36,19 @@ jobs:
       - name: Install mcp-publisher
         run: curl -sSL https://github.com/modelcontextprotocol/registry/releases/download/v1.8.1/mcp-publisher_linux_amd64.tar.gz | tar xz mcp-publisher
 
-      - name: Publish to the MCP Registry
+      # Logs in even when there's nothing to publish, so every tag proves the
+      # secret still matches the TXT record.
+      - name: Log in to the MCP Registry
         env:
           MCP_REGISTRY_PRIVATE_KEY: ${{ secrets.MCP_REGISTRY_PRIVATE_KEY }}
+        run: ./mcp-publisher login dns --domain vouchedhq.com --private-key "$MCP_REGISTRY_PRIVATE_KEY"
+
+      - name: Publish to the MCP Registry
         run: |
-          ./mcp-publisher login dns --domain vouchedhq.com --private-key "$MCP_REGISTRY_PRIVATE_KEY"
-          ./mcp-publisher publish
+          version="${GITHUB_REF_NAME#v}"
+          status=$(curl -s -o /dev/null -w "%{http_code}" "https://registry.modelcontextprotocol.io/v0/servers/com.vouchedhq%2Fvouched/versions/$version")
+          if [ "$status" = "200" ]; then
+            echo "Version $version is already in the registry; nothing to publish."
+          else
+            ./mcp-publisher publish
+          fi

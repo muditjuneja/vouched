@@ -66,7 +66,8 @@ Feeds the server lists in VS Code/GitHub Copilot and other clients.
      `MCP_REGISTRY_PRIVATE_KEY` (Settings → Secrets and variables → Actions).
      Keep a copy in a password manager; it can't be recovered from the
      public key.
-- **Publish:** push a version tag (see above). By hand instead:
+- **Publish:** push a version tag (see above). A tag for a version that's
+  already published only checks the login. By hand instead:
   `mcp-publisher login dns --domain vouchedhq.com --private-key <hex>`, then
   `mcp-publisher publish`.
 - **Rotating the key:** generate a new ed25519 pair, replace the TXT record
