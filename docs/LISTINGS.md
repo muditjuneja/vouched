@@ -57,7 +57,8 @@ The registry feeds VS Code, GitHub and other clients' server lists.
   (https://agent-plugins.org). `plugin.json` and `mcp.json` in the repo root
   make the repo a plugin: submit `https://github.com/muditjuneja/vouched` at
   cursor.directory/plugins/new with "Auto (GitHub)". Both files validate
-  against the 1.0.0 schemas.
+  against the 1.0.0 schemas. `skills/seo-analysis/SKILL.md` ships with the
+  plugin and tells the agent which tools to chain for common questions.
 - **Each release:** keep `version` in `plugin.json` in step with `server.json`.
 - Cursor also supports one-click install links; add one once its encoding is
   confirmed against Cursor's docs (the docs example was ambiguous when this
