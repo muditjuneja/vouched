@@ -5,6 +5,11 @@
   "type": "module",
   "version": "0.1.0",
   "license": "MIT",
+  "homepage": "https://vouchedhq.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/muditjuneja/vouched.git"
+  },
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",

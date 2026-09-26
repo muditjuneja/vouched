@@ -20,12 +20,9 @@ person to do. The server itself is the same everywhere:
 
 ## Before submitting anywhere
 
-1. **A public repository.** The site links to
-   `https://github.com/muditjuneja/experiments`, which isn't public, so
-   every "Self-host" and "GitHub" link is broken for visitors. Directories
-   that index source (Glama) need a public repo, and an open-source listing
-   without one invites the question. Publish the repo (or a clean copy),
-   then update `GITHUB_URL` in `src/marketing/github-url.ts`.
+1. **Public repository:** done, `https://github.com/muditjuneja/vouched`
+   (`GITHUB_URL` in `src/marketing/github-url.ts`, `repository` in
+   `server.json`).
 2. **Production Clerk app** (not the development one), so reviewers don't see
    a "Development mode" banner at sign-in.
 3. **A reviewer account:** directories test the sign-in themselves. Have one
@@ -41,7 +38,6 @@ The registry feeds VS Code, GitHub and other clients' server lists.
   `mcp-publisher login dns` (it tells you which TXT record to add to
   vouchedhq.com in Cloudflare), then `mcp-publisher publish`.
 - **Each release:** bump `version` in `server.json` and publish again.
-- Add `repository` to `server.json` once the repo is public.
 
 ## Anthropic's Claude connectors directory
 

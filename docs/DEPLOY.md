@@ -37,7 +37,7 @@ npx wrangler kv namespace create vouched-seo-mcp-oauth
 
 ## 2. CI/CD (Workers Builds)
 
-Workers & Pages → Create → Import a repository → `muditjuneja/experiments`.
+Workers & Pages → Create → Import a repository → `muditjuneja/vouched`.
 
 | Setting | Value | Why |
 |---|---|---|

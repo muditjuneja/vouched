@@ -5,6 +5,10 @@
   "description": "SEO data your AI can cite: Search Console, GA4, keywords, backlinks, SERPs and AI visibility.",
   "version": "0.1.0",
   "websiteUrl": "https://vouchedhq.com",
+  "repository": {
+    "url": "https://github.com/muditjuneja/vouched",
+    "source": "github"
+  },
   "remotes": [
     {
       "type": "streamable-http",

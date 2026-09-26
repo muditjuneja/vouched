@@ -66,17 +66,10 @@ none of them set. Adding them unlocks the corresponding domains, which
 in `describe_capabilities`) when `DATAFORSEO_LOGIN`/`DATAFORSEO_PASSWORD`
 are set.
 
-> **Field-shape caveat**: this build has no DataForSEO API key, so while
-> every endpoint *path* used above was confirmed against DataForSEO's own
-> `mcp-server-typescript` repo, the request/response *field names* in
-> `src/clients/dataforseo/endpoints/*.ts` follow documented conventions but
-> are unverified against a live call. Field extraction is written
-> defensively (optional chaining, a `raw` passthrough on facts where it
-> matters) so a wrong guess degrades to `null`/extra fields rather than a
-> crash, but confirm against the real API with your own key before
-> trusting these outputs, especially `inspect_page`'s and
-> `inspect_search_visibility`'s `filters` parameters (the least certain
-> part).
+> **Field shapes** are pinned by real responses saved from DataForSEO's
+> sandbox (`test/fixtures/dataforseo/`), and every tool has been run
+> against the live API. Set `DATAFORSEO_BASE_URL=https://sandbox.dataforseo.com`
+> to develop without spending anything.
 
 **`backlinks` domain** (M7, 2 tools): `inspect_backlinks` (view-selectable:
 authority / referring domains / anchors / individual backlinks, one call,
