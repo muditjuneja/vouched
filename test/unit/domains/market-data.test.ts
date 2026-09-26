@@ -179,12 +179,13 @@ describe("Labs tools read the rows, not the wrapper", () => {
     expect(result.entities.some((e) => e.label === "not in the fixture")).toBe(true);
   });
 
-  it("inspect_keyword: volume, difficulty and intent from the overview, positions from the live results", async () => {
+  it("inspect_keyword: metrics from the index only, one request, and points to inspect_serp for rankings", async () => {
     const result = await inspectKeyword.handler({ keyword: "seo tools" }, env);
+    expect(requests.map((r) => r.path)).toEqual(["/v3/dataforseo_labs/google/keyword_overview/live"]);
     expect(result.data).toMatchObject({ keyword_difficulty: 54, search_intent: "informational" });
     expect(result.data.search_volume).not.toBeNull();
-    const organic = result.facts.filter((f) => f.type === "serp.result").map((f) => f.data.position);
-    expect(organic.slice(0, 3)).toEqual([1, 2, 3]);
+    expect(result.facts.map((f) => [f.type, f.provenance.source_class])).toEqual([["seo.keyword_opportunity", "search_index"]]);
+    expect(result.next_actions).toEqual([{ tool: "inspect_serp", args: { keyword: "seo tools" }, use_when: "to see who ranks for it on Google right now" }]);
   });
 });
 

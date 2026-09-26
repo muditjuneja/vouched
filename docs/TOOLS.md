@@ -45,7 +45,7 @@ Generated from `src/mcp/manifest.ts` by `npm run docs:tools`, edit that file, no
 | `research_keywords` | Expand a seed term into a ranked demand list. | `seo.keyword_opportunity` | `search_index` | - |
 | `compare_keyword_coverage` | Keyword gap vs competitors. | `seo.keyword_opportunity` | `search_index` | - |
 | `inspect_search_visibility` | Ranking positions across a keyword set. | `seo.keyword_ranking`, `core.data_freshness` | `search_index`, `live_serp` | - |
-| `inspect_keyword` | Full detail on a single keyword. | `serp.result`, `serp.feature` | `search_index`, `live_serp` | - |
+| `inspect_keyword` | Search volume, difficulty, CPC and intent for one keyword. | `seo.keyword_opportunity` | `search_index` | - |
 | `inspect_page` | Keywords + traffic for a single URL. | `seo.keyword_ranking`, `seo.top_page` | `search_index` | - |
 
 ## `serp` (dataforseo)

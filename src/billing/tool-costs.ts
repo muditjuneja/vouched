@@ -22,7 +22,8 @@ export const TOOL_COST_ESTIMATES: Record<string, ToolCostEstimate> = {
   research_keywords: { usd: 0.013, per: "seed keyword" },
   inspect_page: { usd: 0.013 },
   inspect_search_visibility: { usd: 0.012 },
-  inspect_keyword: { usd: 0.016 },
+  // Measured $0.016 with the live results page, which is inspect_serp's $0.002; the metrics alone are the rest.
+  inspect_keyword: { usd: 0.014 },
   inspect_backlinks: { usd: 0.024 },
   compare_keyword_coverage: { usd: 0.024, per: "competitor" },
   compare_backlink_gap: { usd: 0.028, per: "competitor" },

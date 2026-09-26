@@ -10,9 +10,14 @@ import type { SearchConsoleSite } from "../../clients/google/search-console";
  * "why do I have to hand-type an internal Google id"; see WebsitesData's
  * doc comment.
  */
-export function GscSiteField({ sites, value }: { sites: SearchConsoleSite[] | null; value?: string | null }) {
+export function GscSiteField({ sites, value, error = null }: { sites: SearchConsoleSite[] | null; value?: string | null; error?: string | null }) {
   if (sites === null) {
-    return <input name="gscSiteUrl" placeholder="sc-domain:example.com (optional)" value={value ?? ""} />;
+    return (
+      <>
+        {error ? <p class="muted">{error}</p> : null}
+        <input name="gscSiteUrl" placeholder="sc-domain:example.com (optional)" value={value ?? ""} />
+      </>
+    );
   }
   if (sites.length === 0) {
     return <p class="muted">No Search Console properties found for the connected Google account.</p>;
@@ -29,9 +34,14 @@ export function GscSiteField({ sites, value }: { sites: SearchConsoleSite[] | nu
   );
 }
 
-export function Ga4PropertyField({ properties, value }: { properties: GA4Property[] | null; value?: string | null }) {
+export function Ga4PropertyField({ properties, value, error = null }: { properties: GA4Property[] | null; value?: string | null; error?: string | null }) {
   if (properties === null) {
-    return <input name="ga4PropertyId" placeholder="properties/123456789 (optional)" value={value ?? ""} />;
+    return (
+      <>
+        {error ? <p class="muted">{error}</p> : null}
+        <input name="ga4PropertyId" placeholder="properties/123456789 (optional)" value={value ?? ""} />
+      </>
+    );
   }
   if (properties.length === 0) {
     return <p class="muted">No Analytics properties found for the connected Google account.</p>;

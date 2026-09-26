@@ -100,9 +100,9 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
   {
     name: "inspect_keyword",
     domain: "seo",
-    summary: "Full detail on a single keyword.",
-    fact_types: ["serp.result", "serp.feature"],
-    source_classes: ["search_index", "live_serp"],
+    summary: "Search volume, difficulty, CPC and intent for one keyword.",
+    fact_types: ["seo.keyword_opportunity"],
+    source_classes: ["search_index"],
     requires_connection: null,
     billing: "dataforseo",
     implemented: true

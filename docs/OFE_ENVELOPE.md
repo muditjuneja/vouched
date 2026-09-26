@@ -36,8 +36,8 @@ Every tool in this server returns the same shape.
 ```
 
 Trust a fact by its `provenance`, not by which tool produced it, a single
-call (`inspect_keyword`) can mix `search_index` and `live_serp` facts in one
-response, and each carries its own confidence.
+call (`inspect_search_visibility` with `recheckLive`) can mix `search_index`
+and `live_serp` facts in one response, and each carries its own confidence.
 
 ## Canonical entity ids
 

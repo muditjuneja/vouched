@@ -94,6 +94,9 @@ export interface WebsitesData {
   /** Discovered Google properties available for selection when editing a website in its slide drawer. */
   gscSites?: SearchConsoleSite[] | null;
   ga4Properties?: GA4Property[] | null;
+  /** Why a listing above is null (not connected, or Google's error), shown next to the fallback text field. */
+  gscError?: string | null;
+  ga4Error?: string | null;
   /** ID of website whose edit side drawer should be open on initial load. */
   editingWebsiteId?: string | null;
 }

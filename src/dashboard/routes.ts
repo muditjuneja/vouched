@@ -143,20 +143,28 @@ async function fetchGoogleProperties(
   tenantId: string,
   gscState: ConnectionState,
   ga4State: ConnectionState
-): Promise<{ gscSites: SearchConsoleSite[] | null; ga4Properties: GA4Property[] | null }> {
-  const [gscSites, ga4Properties] = await Promise.all([
-    gscState === "connected"
-      ? getValidAccessToken(env, "webmaster_console", tenantId)
-          .then((token) => listSites(token))
-          .catch(() => null)
-      : Promise.resolve(null),
-    ga4State === "connected"
-      ? getValidAccessToken(env, "analytics_property", tenantId)
-          .then((token) => listPropertiesWithDomains(token))
-          .catch(() => null)
-      : Promise.resolve(null)
+): Promise<{ gscSites: SearchConsoleSite[] | null; gscError: string | null; ga4Properties: GA4Property[] | null; ga4Error: string | null }> {
+  const [gsc, ga4] = await Promise.all([
+    listIfConnected(gscState, "Search Console", () => getValidAccessToken(env, "webmaster_console", tenantId).then(listSites)),
+    listIfConnected(ga4State, "Google Analytics", () => getValidAccessToken(env, "analytics_property", tenantId).then(listPropertiesWithDomains))
   ]);
-  return { gscSites, ga4Properties };
+  return { gscSites: gsc.items, gscError: gsc.error, ga4Properties: ga4.items, ga4Error: ga4.error };
+}
+
+/** A property listing, or why there isn't one, so the page can say so instead of silently showing a blank text field. */
+async function listIfConnected<T>(
+  state: ConnectionState,
+  product: string,
+  list: () => Promise<T[]>
+): Promise<{ items: T[] | null; error: string | null }> {
+  if (state === "not_connected") return { items: null, error: `${product} isn't connected, so its properties can't be listed.` };
+  if (state === "reconnect_required") return { items: null, error: `${product} needs reconnecting before its properties can be listed.` };
+  try {
+    return { items: await list(), error: null };
+  } catch (error) {
+    console.warn(`[dashboard] listing ${product} properties failed:`, error);
+    return { items: null, error: `Couldn't list your ${product} properties: ${error instanceof Error ? error.message : String(error)}` };
+  }
 }
 
 /**
@@ -176,11 +184,13 @@ async function discoverProperties(
 ): Promise<{
   discovered: DiscoveredProperty[];
   gscSites: SearchConsoleSite[] | null;
+  gscError: string | null;
   ga4Properties: GA4Property[] | null;
+  ga4Error: string | null;
 }> {
-  const { gscSites, ga4Properties } = await fetchGoogleProperties(env, tenantId, gscState, ga4State);
-  const discovered = buildDiscoveredProperties(gscSites ?? [], ga4Properties ?? [], existingDomains);
-  return { discovered, gscSites, ga4Properties };
+  const listings = await fetchGoogleProperties(env, tenantId, gscState, ga4State);
+  const discovered = buildDiscoveredProperties(listings.gscSites ?? [], listings.ga4Properties ?? [], existingDomains);
+  return { discovered, ...listings };
 }
 
 type DashboardEnv = { Bindings: Env; Variables: { tenantId: string; ctx: TenantContext } };
@@ -330,7 +340,7 @@ dashboard.get("/websites", async (c) => {
     ga4: row.ga4_property_id ? ga4State : "not_configured"
   }));
   const existingDomains = new Set(websiteRows.map((row) => normalizeDomain(row.primary_domain)));
-  const { discovered, gscSites, ga4Properties } = await discoverProperties(env, tenantId, gscState, ga4State, existingDomains);
+  const { discovered, gscSites, gscError, ga4Properties, ga4Error } = await discoverProperties(env, tenantId, gscState, ga4State, existingDomains);
   const connectedParam = c.req.query("connected");
   const actionParam = c.req.query("action");
   const editParam = c.req.query("edit");
@@ -347,7 +357,9 @@ dashboard.get("/websites", async (c) => {
       justConnected: connectedParam && isScopeGroup(connectedParam) ? connectedParam : null,
       notice,
       gscSites,
+      gscError,
       ga4Properties,
+      ga4Error,
       editingWebsiteId: editParam ?? null
     })
   );

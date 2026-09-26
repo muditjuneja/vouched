@@ -552,15 +552,12 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
         description: "The keyword to inspect."
       }
     ],
-    dataSummary: "Detailed keyword metrics (search volume, CPC, competition score, difficulty, search intent) and the top 20 Google organic results and SERP features.",
+    dataSummary: "How big and how hard one keyword is: monthly search volume, CPC, paid competition, organic difficulty and search intent, from the search index. It doesn't fetch Google's live results; inspect_serp does that, so the two never disagree about who ranks.",
     emittedFacts: [
-      { type: "serp.result", description: "Organic ranking entry with page URL, domain, title, and position.", fields: ["position", "domain", "url", "title"] },
-      { type: "serp.feature", description: "SERP features present (featured snippet, PAA, knowledge graph, video carousel).", fields: ["feature_type", "position"] }
+      { type: "seo.keyword_opportunity", description: "Demand and difficulty for the keyword, in the same shape research_keywords returns.", fields: ["keyword", "search_volume", "cpc", "competition", "keyword_difficulty", "search_intent"] }
     ],
     entitiesEmitted: [
-      { kind: "keyword", description: "Target search query." },
-      { kind: "domain", description: "Domains appearing in the SERP." },
-      { kind: "page", description: "URLs ranking in top results." }
+      { kind: "keyword", description: "The keyword inspected." }
     ],
     exampleCall: {
       keyword: "open source mcp server"
@@ -578,31 +575,31 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
       },
       facts: [
         {
-          type: "serp.result",
-          subject: ["urn:page:https%3A%2F%2Fgithub.com%2Fmodelcontextprotocol"],
-          data: { position: 1, domain: "github.com", url: "https://github.com/modelcontextprotocol", title: "Model Context Protocol Specification and Servers" },
-          provenance: { source_class: "live_serp", method: "google_serp", confidence: 0.85, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
+          type: "seo.keyword_opportunity",
+          subject: ["keyword:en:US:open source mcp server"],
+          data: { keyword: "open source mcp server", search_volume: 2400, cpc: 1.85, competition: 0.28, keyword_difficulty: 24, search_intent: "informational" },
+          provenance: { source_class: "search_index", method: "keyword_overview", confidence: 0.75, observed_at: "2026-09-24T00:00:00Z", cache_hit: false }
         }
       ],
       entities: [
-        { id: "urn:keyword:open+source+mcp+server", kind: "keyword", label: "open source mcp server" },
-        { id: "urn:domain:github.com", kind: "domain", label: "github.com" },
-        { id: "urn:page:https%3A%2F%2Fgithub.com%2Fmodelcontextprotocol", kind: "page", label: "https://github.com/modelcontextprotocol" }
+        { id: "keyword:en:US:open source mcp server", kind: "keyword", label: "open source mcp server" }
       ],
-      coverage: { returned: 1, total: 20, as_of: "2026-09-24T00:00:00Z", scope_note: null },
+      coverage: { returned: 1, total: 1, as_of: "2026-09-24T00:00:00Z", scope_note: null },
       deltas: [],
       resources: [],
-      next_actions: []
+      next_actions: [
+        { tool: "inspect_serp", args: { keyword: "open source mcp server" }, use_when: "to see who ranks for it on Google right now" }
+      ]
     },
     agentWorkflow: {
-      triggerPrompt: "Analyze the keyword 'open source mcp server': who ranks #1 and what is search intent?",
-      agentReasoning: "The agent inspects commercial intent, volume, and ranking URLs before writing or recommending content optimization changes.",
-      followUpTools: ["inspect_page", "inspect_serp"]
+      triggerPrompt: "Is 'open source mcp server' worth targeting, and who ranks #1?",
+      agentReasoning: "The agent checks volume, difficulty and intent with inspect_keyword, then calls inspect_serp for the live results page.",
+      followUpTools: ["inspect_serp", "research_keywords"]
     },
     provenance: {
-      sourceClass: "live_serp",
-      method: "google_serp",
-      confidence: 0.85
+      sourceClass: "search_index",
+      method: "keyword_overview",
+      confidence: 0.75
     }
   },
 

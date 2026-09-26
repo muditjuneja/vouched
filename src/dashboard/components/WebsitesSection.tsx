@@ -117,13 +117,13 @@ export function WebsitesSection({ data }: { data: WebsitesData }) {
                       <label class="form-label">
                         Search Console property <span class="muted font-normal">(optional)</span>
                       </label>
-                      <GscSiteField sites={data.gscSites ?? null} value={row.gsc_site_url} />
+                      <GscSiteField sites={data.gscSites ?? null} value={row.gsc_site_url} error={data.gscError ?? null} />
                     </div>
                     <div class="form-group">
                       <label class="form-label">
                         Analytics property <span class="muted font-normal">(optional)</span>
                       </label>
-                      <Ga4PropertyField properties={data.ga4Properties ?? null} value={row.ga4_property_id} />
+                      <Ga4PropertyField properties={data.ga4Properties ?? null} value={row.ga4_property_id} error={data.ga4Error ?? null} />
                     </div>
                     <div class="drawer-actions">
                       <button type="submit" class="btn btn-primary btn-sm">
