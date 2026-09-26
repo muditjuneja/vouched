@@ -14,6 +14,15 @@
 		"nodejs_compat",
 		"global_fetch_strictly_public"
 	],
+	// Workers Logs: every request plus console output, searchable in the
+	// dashboard (Workers → vouched-hq → Logs). Kept here, not only in the
+	// dashboard, because each deploy applies this file.
+	"observability": {
+		"logs": {
+			"enabled": true,
+			"invocation_logs": true
+		}
+	},
 	// D1: config (websites), Google OAuth tokens, DataForSEO cost log,
 	// prior-observation snapshots (backs the OFE `deltas` field).
 	"d1_databases": [
