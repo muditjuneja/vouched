@@ -131,20 +131,52 @@ export async function handleSubscriptionFailed(env: Env, payload: SubscriptionWe
 /**
  * A one-time Dodo payment's webhook payload, much wider in reality
  * (Dodo's own `Payment` schema carries dozens of fields), narrowed to
- * just what handlePaymentSucceeded reads. `total_amount`'s unit is
- * assumed to be the smallest currency unit (USD cents), matching
- * startWalletTopup's own unverified assumption; see that function's doc
- * comment.
+ * just what handlePaymentSucceeded reads. Amounts are in the smallest
+ * unit of `currency` (cents for USD); `total_amount` includes `tax`.
  */
 export interface PaymentWebhookPayload {
   type: string;
   data: {
     payment_id: string;
     total_amount: number;
+    currency?: string;
+    tax?: number | null;
+    settlement_amount?: number;
+    settlement_currency?: string;
+    settlement_tax?: number | null;
     product_cart?: Array<{ product_id: string; quantity: number }> | null;
     customer: { customer_id: string };
     metadata?: Record<string, unknown>;
   };
+}
+
+/** Paid amounts within this share of the credit count as paid in full: card-currency rounding and conversion, never a discount (checkout blocks those). */
+const PAID_IN_FULL_RATIO = 0.95;
+
+/** What the customer paid before tax, in US cents, or null when the payment names no USD amount to check. */
+function paidUsdCentsBeforeTax(data: PaymentWebhookPayload["data"]): number | null {
+  if (data.currency === "USD") return data.total_amount - (data.tax ?? 0);
+  if (data.settlement_currency === "USD" && typeof data.settlement_amount === "number") {
+    return data.settlement_amount - (data.settlement_tax ?? 0);
+  }
+  return null;
+}
+
+/**
+ * How much credit a top-up payment buys, in USD. The wallet gets the
+ * top-up's own price (set by our server at checkout, in metadata), not
+ * the card total: with tax-exclusive prices that total includes tax, and
+ * with local-currency pricing it isn't in dollars at all. The price is
+ * checked against what was actually paid before tax, so a payment that
+ * came up short credits only what was paid. Exported for unit testing.
+ */
+export function topupCreditUsd(data: PaymentWebhookPayload["data"]): number {
+  const paidCents = paidUsdCentsBeforeTax(data);
+  const priced = Number(data.metadata?.credit_usd);
+  // Checkouts created before credit_usd existed: fall back to what was paid.
+  if (!Number.isFinite(priced) || priced <= 0) return paidCents === null ? 0 : Math.max(0, paidCents) / 100;
+  if (paidCents === null || paidCents >= priced * 100 * PAID_IN_FULL_RATIO) return priced;
+  return Math.max(0, paidCents) / 100;
 }
 
 /**
@@ -166,7 +198,12 @@ export async function handlePaymentSucceeded(env: Env, payload: PaymentWebhookPa
     return;
   }
 
-  const amountUsd = data.total_amount / 100;
+  const amountUsd = topupCreditUsd(data);
+  if (amountUsd <= 0) {
+    // Nothing was paid (a 100% discount on an old checkout): no credit, no "credited" email.
+    await sendAdminAlert(env, `Dodo wallet top-up ${data.payment_id} for ${tenantId} paid nothing, so nothing was credited`);
+    return;
+  }
   const credited = await creditWallet(env.DB, tenantId, amountUsd, data.payment_id);
   if (credited) {
     await notifyWalletTopup(env, tenantId, amountUsd);

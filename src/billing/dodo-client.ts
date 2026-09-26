@@ -121,7 +121,11 @@ export async function startWalletTopup(env: Env, input: StartWalletTopupInput): 
       product_cart: [{ product_id: env.DODO_PRODUCT_ID_WALLET_TOPUP, quantity: 1, amount: Math.round(input.amountUsd * 100) }],
       customer: { email: input.customerEmail },
       return_url: input.returnUrl,
-      metadata: { tenant_id: input.tenantId, purpose: "wallet_topup" }
+      // credit_usd is what the wallet gets: the top-up's price, before tax
+      // and in USD, whatever the card was charged (see handlePaymentSucceeded).
+      metadata: { tenant_id: input.tenantId, purpose: "wallet_topup", credit_usd: input.amountUsd.toFixed(2) },
+      // A discount would buy credit for less than it's worth.
+      feature_flags: { allow_discount_code: false }
     },
     { bearerToken: env.DODO_API_KEY, environment: dodoEnvironment(env) }
   );

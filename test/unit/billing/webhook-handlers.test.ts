@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   handlePaymentSucceeded,
+  topupCreditUsd,
   handleSubscriptionActive,
   handleSubscriptionCancelled,
   handleSubscriptionFailed,
@@ -59,7 +60,7 @@ function fakePayload(overrides: Partial<SubscriptionWebhookPayload["data"]> = {}
       status: "active",
       next_billing_date: "2026-10-01T00:00:00Z",
       customer: { customer_id: "cust_1" },
-      metadata: { tenant_id: "user_1" },
+      metadata: { tenant_id: "user_1", credit_usd: "10.00" },
       ...overrides
     }
   };
@@ -196,10 +197,12 @@ function fakePaymentPayload(overrides: Partial<PaymentWebhookPayload["data"]> = 
     type: "payment.succeeded",
     data: {
       payment_id: "pay_123",
-      total_amount: 1000, // $10.00, assumed cents
+      total_amount: 1000, // $10.00 in cents
+      currency: "USD",
+      tax: 0,
       product_cart: [{ product_id: "prod_wallet_topup", quantity: 1 }],
       customer: { customer_id: "cust_1" },
-      metadata: { tenant_id: "user_1" },
+      metadata: { tenant_id: "user_1", credit_usd: "10.00" },
       ...overrides
     }
   };
@@ -256,6 +259,44 @@ describe("handlePaymentSucceeded", () => {
     const env = fakeEnv({ DB: db, DODO_PRODUCT_ID_WALLET_TOPUP: "prod_wallet_topup" });
 
     await handlePaymentSucceeded(env, fakePaymentPayload({ metadata: undefined }));
+
+    expect(balances.size).toBe(0);
+    expect(notifyWalletTopup).not.toHaveBeenCalled();
+  });
+});
+
+describe("topupCreditUsd: the wallet gets the top-up's price, not the card total", () => {
+  const base = fakePaymentPayload().data;
+
+  it("leaves out tax added on top of a tax-exclusive price", () => {
+    expect(topupCreditUsd({ ...base, total_amount: 1180, tax: 180 })).toBe(10);
+  });
+
+  it("credits dollars when the card paid in another currency", () => {
+    // ₹850 plus ₹153 GST, settled to Dodo as $10.02 of which $1.80 is tax
+    const inr = { ...base, currency: "INR", total_amount: 100300, tax: 15300, settlement_currency: "USD", settlement_amount: 1202, settlement_tax: 180 };
+    expect(topupCreditUsd(inr)).toBe(10);
+  });
+
+  it("credits only what was paid when a payment came up short", () => {
+    expect(topupCreditUsd({ ...base, total_amount: 500 })).toBe(5);
+  });
+
+  it("credits nothing for a payment of $0", () => {
+    expect(topupCreditUsd({ ...base, total_amount: 0 })).toBe(0);
+  });
+
+  it("falls back to the pre-tax amount paid for checkouts created before the price was recorded", () => {
+    expect(topupCreditUsd({ ...base, total_amount: 1180, tax: 180, metadata: { tenant_id: "user_1" } })).toBe(10);
+  });
+});
+
+describe("handlePaymentSucceeded with nothing paid", () => {
+  it("records no credit and sends no 'credited' email", async () => {
+    const { db, balances } = fakeWalletDb();
+    const env = fakeEnv({ DB: db, DODO_PRODUCT_ID_WALLET_TOPUP: "prod_wallet_topup" });
+
+    await handlePaymentSucceeded(env, fakePaymentPayload({ total_amount: 0 }));
 
     expect(balances.size).toBe(0);
     expect(notifyWalletTopup).not.toHaveBeenCalled();
