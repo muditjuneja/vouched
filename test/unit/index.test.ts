@@ -324,6 +324,43 @@ describe("the Worker in cloud mode: standard MCP authorization", () => {
     const res = await worker.fetch(new Request("https://vouchedhq.com/health"), env, ctx);
     expect(res.status).toBe(200);
   });
+
+  function register(ip: string): Request {
+    return new Request("https://vouchedhq.com/oauth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "CF-Connecting-IP": ip },
+      body: JSON.stringify({ client_name: "Test", redirect_uris: ["https://client.example/cb"] })
+    });
+  }
+
+  it("lets a client register while its IP is under the limit, keyed by that IP", async () => {
+    const limiter = { limit: vi.fn().mockResolvedValue({ success: true }) };
+    const res = await worker.fetch(register("203.0.113.7"), { ...env, OAUTH_REGISTER_RATE_LIMIT: limiter }, ctx);
+    expect(res.status).toBe(201);
+    expect(limiter.limit).toHaveBeenCalledWith({ key: "203.0.113.7" });
+  });
+
+  it("429s client registration once an IP is over the limit, without storing a client", async () => {
+    const kv = fakeKv();
+    const put = vi.spyOn(kv, "put");
+    const limiter = { limit: vi.fn().mockResolvedValue({ success: false }) };
+    const res = await worker.fetch(register("203.0.113.7"), { ...env, OAUTH_KV: kv, OAUTH_REGISTER_RATE_LIMIT: limiter }, ctx);
+    expect(res.status).toBe(429);
+    expect(res.headers.get("Retry-After")).toBe("60");
+    expect(((await res.json()) as { error: string }).error).toBe("rate_limited");
+    expect(put).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when the registration limiter binding is missing", async () => {
+    const res = await worker.fetch(register("203.0.113.7"), env, ctx);
+    expect(res.status).toBe(500);
+  });
+
+  it("doesn't rate-limit anything but registration", async () => {
+    const limiter = { limit: vi.fn() };
+    await worker.fetch(new Request("https://vouchedhq.com/.well-known/oauth-authorization-server"), { ...env, OAUTH_REGISTER_RATE_LIMIT: limiter }, ctx);
+    expect(limiter.limit).not.toHaveBeenCalled();
+  });
 });
 
 describe("/billing/portal", () => {

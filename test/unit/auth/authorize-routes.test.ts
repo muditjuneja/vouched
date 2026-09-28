@@ -83,7 +83,7 @@ describe("/authorize", () => {
   it("on Allow, issues the grant for the signed-in Clerk user and redirects back to the app", async () => {
     authenticateDashboardRequest.mockResolvedValueOnce(signedIn);
     const oauth = fakeOAuth();
-    const res = await authorizeRoutes.request(url, { method: "POST", body: new URLSearchParams({ handle: "h1", decision: "approve" }) }, env(oauth));
+    const res = await authorizeRoutes.request(url, { method: "POST", headers: { Origin: new URL(url).origin }, body: new URLSearchParams({ handle: "h1", decision: "approve" }) }, env(oauth));
     expect(res.status).toBe(302);
     expect(res.headers.get("Location")).toBe("https://claude.ai/api/mcp/auth_callback?code=c1&state=s1");
     expect(oauth.completeAuthorization).toHaveBeenCalledWith(
@@ -94,8 +94,20 @@ describe("/authorize", () => {
   it("on Deny, redirects back with access_denied and issues nothing", async () => {
     authenticateDashboardRequest.mockResolvedValueOnce(signedIn);
     const oauth = fakeOAuth();
-    const res = await authorizeRoutes.request(url, { method: "POST", body: new URLSearchParams({ handle: "h1", decision: "deny" }) }, env(oauth));
+    const res = await authorizeRoutes.request(url, { method: "POST", headers: { Origin: new URL(url).origin }, body: new URLSearchParams({ handle: "h1", decision: "deny" }) }, env(oauth));
     expect(res.headers.get("Location")).toContain("error=access_denied");
+    expect(oauth.completeAuthorization).not.toHaveBeenCalled();
+  });
+
+  it("refuses an Allow posted from another site, before it even checks the session", async () => {
+    const oauth = fakeOAuth();
+    const res = await authorizeRoutes.request(
+      url,
+      { method: "POST", headers: { Origin: "https://evil.example" }, body: new URLSearchParams({ handle: "h1", decision: "approve" }) },
+      env(oauth)
+    );
+    expect(res.status).toBe(403);
+    expect(authenticateDashboardRequest).not.toHaveBeenCalled();
     expect(oauth.completeAuthorization).not.toHaveBeenCalled();
   });
 

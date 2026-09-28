@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { handleOAuthCallback, handleOAuthStart } from "./auth/oauth-routes";
 import { authenticateBillingRequest } from "./auth/clerk";
 import { authorizeRoutes } from "./auth/authorize-routes";
-import { oauthProviderFor, type McpCaller } from "./auth/mcp-oauth";
+import { limitClientRegistration, oauthProviderFor, type McpCaller } from "./auth/mcp-oauth";
 import { startCheckout, startCustomerPortalSession, startWalletTopup } from "./billing/dodo-client";
 import { MIN_TOPUP_USD } from "./billing/quotas";
 import { buildDodoWebhookHandler } from "./billing/webhook-handlers";
@@ -281,8 +281,10 @@ app.all("/mcp", async (c) => {
  * Self-host mode skips it entirely and keeps its shared bearer token.
  */
 export default {
-  fetch(request: Request, env: Env, ctx: ExecutionContext): Response | Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     if (!isCloudMode(env)) return app.fetch(request, env, ctx);
+    const limited = await limitClientRegistration(request, env);
+    if (limited) return limited;
     return oauthProviderFor(new URL(request.url).origin, app).fetch(request, env, ctx);
   }
 };

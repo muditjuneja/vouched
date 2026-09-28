@@ -106,6 +106,29 @@ describe("dashboard gate", () => {
     expect(res.status).toBe(500);
     expect(await res.text()).toContain("CLERK_PUBLISHABLE_KEY");
   });
+
+  it("refuses a form posted from another site before checking the session (CSRF)", async () => {
+    authenticateDashboardRequest.mockClear();
+    const env = fakeEnv({ CLOUD_MODE: "1", CLERK_SECRET_KEY: "sk_test" });
+    const res = await dashboard.request(
+      "https://vouchedhq.com/api-keys",
+      { method: "POST", headers: { Origin: "https://evil.example" }, body: new URLSearchParams({ label: "x" }) },
+      env
+    );
+    expect(res.status).toBe(403);
+    expect(authenticateDashboardRequest).not.toHaveBeenCalled();
+  });
+
+  it("lets a same-origin form through to the session check", async () => {
+    authenticateDashboardRequest.mockResolvedValueOnce({ session: null, handshakeRedirect: null, refreshedSetCookies: [] });
+    const env = fakeEnv({ CLOUD_MODE: "1", CLERK_SECRET_KEY: "sk_test" });
+    const res = await dashboard.request(
+      "https://vouchedhq.com/api-keys",
+      { method: "POST", headers: { Origin: "https://vouchedhq.com" }, body: new URLSearchParams({ label: "x" }) },
+      env
+    );
+    expect(res.status).toBe(401);
+  });
 });
 
 describe("dashboard's catch-all GET fallback", () => {

@@ -333,7 +333,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
         entities: [...entities.values()],
         items
       };
-      exportUri = await storeDataset(env.DATASETS, "gsc", "get_search_performance", dataset);
+      exportUri = await storeDataset(env.DATASETS, "gsc", "get_search_performance", dataset, env.__tenantId ?? null);
     }
   }
 

@@ -74,6 +74,15 @@
 			"name": "MCP_RATE_LIMIT_PAID",
 			"namespace_id": "1002",
 			"simple": { "limit": 60, "period": 60 }
+		},
+		// Per-IP cap on MCP OAuth client registration (/oauth/register, see
+		// src/auth/mcp-oauth.ts). The endpoint is open by design (the MCP spec
+		// has clients register themselves), and a real client registers once
+		// per connection, so this only stops scripted floods of OAUTH_KV writes.
+		{
+			"name": "OAUTH_REGISTER_RATE_LIMIT",
+			"namespace_id": "1003",
+			"simple": { "limit": 10, "period": 60 }
 		}
 	]
 }

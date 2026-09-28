@@ -14,7 +14,7 @@ function isFactDataset(value: unknown): value is FactDataset {
 }
 
 async function handler(args: z.infer<typeof inputSchema>, env: Env) {
-  const dataset = await readDataset(env.DATASETS, args.uri);
+  const dataset = await readDataset(env.DATASETS, args.uri, env.__tenantId ?? null);
 
   if (isFactDataset(dataset)) {
     // Replays the stored facts with their original type, data and

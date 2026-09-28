@@ -33,28 +33,37 @@ export const DATASET_TTL_DAYS = 7;
  * Stores a full (non-truncated) dataset in R2 and mints the `mcpseo://`
  * resource URI a summary response can point to instead of inlining
  * everything. `export_dataset` resolves the same URI back via `readDataset`.
+ *
+ * In cloud mode the export is tagged with the tenant that made it, and only
+ * that tenant can read it back: a URI can end up in chat transcripts or
+ * logs, and it shouldn't work as a key to someone else's Search Console data.
  */
 export async function storeDataset(
   bucket: R2Bucket,
   domain: string,
   tool: string,
-  data: unknown
+  data: unknown,
+  tenantId: string | null = null
 ): Promise<string> {
   const runId = crypto.randomUUID();
   const key = `${domain}/${tool}/${runId}.json`;
   await bucket.put(key, JSON.stringify(data), {
-    httpMetadata: { contentType: "application/json" }
+    httpMetadata: { contentType: "application/json" },
+    ...(tenantId ? { customMetadata: { tenant_id: tenantId } } : {})
   });
   return `${URI_SCHEME}${key}`;
 }
 
-export async function readDataset(bucket: R2Bucket, uri: string, now: Date = new Date()): Promise<unknown> {
+/** Another tenant's export reads as not found, same as an expired one, so a URI doesn't reveal whether it exists. */
+export async function readDataset(bucket: R2Bucket, uri: string, tenantId: string | null = null, now: Date = new Date()): Promise<unknown> {
   if (!uri.startsWith(URI_SCHEME)) {
     throw new UpstreamError("resources", `not a mcpseo:// resource uri: ${uri}`);
   }
   const key = uri.slice(URI_SCHEME.length);
   const object = await bucket.get(key);
-  if (!object || now.getTime() - object.uploaded.getTime() > DATASET_TTL_DAYS * 86_400_000) {
+  const expired = object !== null && now.getTime() - object.uploaded.getTime() > DATASET_TTL_DAYS * 86_400_000;
+  const notTheirs = object !== null && tenantId !== null && object.customMetadata?.tenant_id !== tenantId;
+  if (!object || expired || notTheirs) {
     throw new UpstreamError("resources", `dataset not found or expired: ${uri}`, 404);
   }
   return object.json();

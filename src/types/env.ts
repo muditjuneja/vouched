@@ -75,6 +75,8 @@ export interface Env {
    */
   MCP_RATE_LIMIT_FREE?: RateLimit;
   MCP_RATE_LIMIT_PAID?: RateLimit;
+  /** Per-IP limiter for MCP OAuth client registration (cloud mode), see src/auth/mcp-oauth.ts's limitClientRegistration. */
+  OAUTH_REGISTER_RATE_LIMIT?: RateLimit;
 
   /**
    * NOT a real Worker binding/secret: a per-request field `buildMcpServer`

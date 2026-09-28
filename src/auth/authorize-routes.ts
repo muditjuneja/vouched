@@ -1,5 +1,6 @@
 import { AuthorizationError, CimdFetchError } from "@cloudflare/workers-oauth-provider";
 import { Hono } from "hono";
+import { csrf } from "hono/csrf";
 import { renderAuthorize, renderAuthorizeError } from "../dashboard/pages/AuthorizePage";
 import { signInTarget } from "../dashboard/pages/SignInRequiredPage";
 import { resolveTenant } from "../db/team";
@@ -15,6 +16,9 @@ import { AUTHORIZE_PATH, MCP_SCOPE, type McpCaller } from "./mcp-oauth";
  * for the rest of the protocol, which the provider handles.
  */
 export const authorizeRoutes = new Hono<{ Bindings: Env }>();
+
+// Allow/Deny is a same-origin form POST; refuse one posted from another site.
+authorizeRoutes.use(AUTHORIZE_PATH, csrf());
 
 function html(body: string, status: number, headers: Headers = new Headers()): Response {
   headers.set("Content-Type", "text/html; charset=utf-8");

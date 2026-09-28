@@ -119,7 +119,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
       entities: [...entities.values()],
       items: exportItems
     };
-    const uri = await storeDataset(env.DATASETS, "backlinks", "compare_backlink_gap", dataset);
+    const uri = await storeDataset(env.DATASETS, "backlinks", "compare_backlink_gap", dataset, env.__tenantId ?? null);
     builder.addResource({ uri, description: `All ${exportItems.length} linking sites, beyond the ${limit} per competitor listed here.` });
   }
 
