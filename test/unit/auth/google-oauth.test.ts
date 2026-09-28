@@ -22,44 +22,43 @@ function fakeEnv(overrides: Partial<Env> = {}): Env {
 
 describe("buildAuthUrl", () => {
   it("requests the read-only webmasters scope plus openid/email for the gsc scope group", () => {
-    const url = new URL(buildAuthUrl(fakeEnv(), "https://worker.example/oauth/google/callback", "webmaster_console"));
+    const url = new URL(buildAuthUrl(fakeEnv(), "https://worker.example/oauth/google/callback", "webmaster_console", "n1"));
     expect(url.origin + url.pathname).toBe("https://accounts.google.com/o/oauth2/v2/auth");
     expect(url.searchParams.get("scope")).toContain("https://www.googleapis.com/auth/webmasters.readonly");
     expect(url.searchParams.get("scope")).toContain("openid");
-    expect(url.searchParams.get("state")).toBe("webmaster_console");
   });
 
   it("requests the read-only analytics scope for the analytics scope group", () => {
-    const url = new URL(buildAuthUrl(fakeEnv(), "https://worker.example/oauth/google/callback", "analytics_property"));
+    const url = new URL(buildAuthUrl(fakeEnv(), "https://worker.example/oauth/google/callback", "analytics_property", "n1"));
     expect(url.searchParams.get("scope")).toContain("https://www.googleapis.com/auth/analytics.readonly");
-    expect(url.searchParams.get("state")).toBe("analytics_property");
   });
 
   it("always requests offline access + forces consent, so a refresh_token is guaranteed", () => {
-    const url = new URL(buildAuthUrl(fakeEnv(), "https://worker.example/oauth/google/callback", "webmaster_console"));
+    const url = new URL(buildAuthUrl(fakeEnv(), "https://worker.example/oauth/google/callback", "webmaster_console", "n1"));
     expect(url.searchParams.get("access_type")).toBe("offline");
     expect(url.searchParams.get("prompt")).toBe("consent");
   });
 
   it("carries the client id and redirect uri through untouched", () => {
     const url = new URL(
-      buildAuthUrl(fakeEnv({ GOOGLE_OAUTH_CLIENT_ID: "abc" }), "https://worker.example/oauth/google/callback", "webmaster_console")
+      buildAuthUrl(fakeEnv({ GOOGLE_OAUTH_CLIENT_ID: "abc" }), "https://worker.example/oauth/google/callback", "webmaster_console", "n1")
     );
     expect(url.searchParams.get("client_id")).toBe("abc");
     expect(url.searchParams.get("redirect_uri")).toBe("https://worker.example/oauth/google/callback");
   });
 
-  it("encodes the tenant id and return page into state (cloud mode), defaulting returnTo to settings", () => {
-    const url = new URL(
-      buildAuthUrl(fakeEnv(), "https://worker.example/oauth/google/callback", "webmaster_console", "tenant-1")
-    );
-    expect(url.searchParams.get("state")).toBe("webmaster_console:tenant-1:settings");
+  it("puts the scope, return page and nonce into state, defaulting returnTo to settings", () => {
+    const url = new URL(buildAuthUrl(fakeEnv(), "https://worker.example/oauth/google/callback", "webmaster_console", "n1"));
+    expect(url.searchParams.get("state")).toBe("webmaster_console:settings:n1");
   });
 
   it("threads a websites returnTo through state so the callback can send the tenant back to the page they started from", () => {
-    const url = new URL(
-      buildAuthUrl(fakeEnv(), "https://worker.example/oauth/google/callback", "webmaster_console", "tenant-1", "websites")
-    );
-    expect(url.searchParams.get("state")).toBe("webmaster_console:tenant-1:websites");
+    const url = new URL(buildAuthUrl(fakeEnv(), "https://worker.example/oauth/google/callback", "webmaster_console", "n1", "websites"));
+    expect(url.searchParams.get("state")).toBe("webmaster_console:websites:n1");
+  });
+
+  it("never names a tenant in state: the callback takes it from the session", () => {
+    const url = new URL(buildAuthUrl(fakeEnv(), "https://worker.example/oauth/google/callback", "analytics_property", "n1"));
+    expect(url.searchParams.get("state")).toBe("analytics_property:settings:n1");
   });
 });

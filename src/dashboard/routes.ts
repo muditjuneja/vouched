@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { csrf } from "hono/csrf";
 import { authenticateDashboardRequest, getTenantEmail, revokeClerkSession } from "../auth/clerk";
 import { checkConnectionState, getValidAccessToken, type ConnectionState } from "../auth/google-oauth";
 import { isScopeGroup, SCOPE_GROUPS } from "../auth/oauth-routes";
@@ -46,6 +47,8 @@ import { renderWebsites } from "./pages/WebsitesPage";
 import type { ActionNotice, ConnectedApp, DashboardUser, DashboardWebsite, TeamSettings } from "./types";
 
 const RECONNECT_NUDGE_COOLDOWN_HOURS = 24;
+
+const sameOriginForms = csrf();
 
 function parseActionNotice(action: string | undefined): ActionNotice | null {
   if (!action) return null;
@@ -196,6 +199,15 @@ async function discoverProperties(
 type DashboardEnv = { Bindings: Env; Variables: { tenantId: string; ctx: TenantContext } };
 
 export const dashboard = new Hono<DashboardEnv>();
+
+// Every write below is a same-origin form POST. Clerk's SameSite=Lax session
+// cookie already keeps other sites' forms signed out; this also refuses them
+// outright, so it doesn't rest on one cookie attribute. Sign-out is left
+// open, same as the session gate below lets it through.
+dashboard.use("*", async (c, next) => {
+  if (c.req.path === "/logout" || c.req.path === "/dashboard/logout") return next();
+  return sameOriginForms(c, next);
+});
 
 // Every /dashboard/* route needs cloud mode plus a signed-in tenant, so
 // this is the one place both gates live, rather than repeating them per

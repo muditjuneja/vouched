@@ -50,7 +50,31 @@ export async function resolveApiKey({ token, request, env }: ResolveExternalToke
   return { props: caller, audience: mcpResource(new URL(request.url).origin) };
 }
 
-type FetchHandler = { fetch: (request: Request, env: Env, ctx: ExecutionContext) => Response | Promise<Response> };
+export const CLIENT_REGISTRATION_PATH = "/oauth/register";
+
+/**
+ * Dynamic client registration stays open to anyone (the MCP spec relies on
+ * it, and every grant still needs a signed-in user's consent), but each
+ * registration is a KV write, so one IP gets a handful a minute. Returns the
+ * response to send instead, or null to let the provider handle the request.
+ * Same fail-closed rule as /mcp's limiter when the binding is missing.
+ */
+export async function limitClientRegistration(request: Request, env: Env): Promise<Response | null> {
+  if (request.method !== "POST" || new URL(request.url).pathname !== CLIENT_REGISTRATION_PATH) return null;
+  const limiter = env.OAUTH_REGISTER_RATE_LIMIT;
+  if (!limiter) {
+    return new Response("server misconfigured: client registration rate limit binding is missing (wrangler.jsonc ratelimits)", { status: 500 });
+  }
+  const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
+  const { success } = await limiter.limit({ key: ip });
+  if (success) return null;
+  return Response.json(
+    { error: "rate_limited", error_description: "Too many client registrations from this address, try again in a minute." },
+    { status: 429, headers: { "Retry-After": "60" } }
+  );
+}
+
+type FetchHandler ={ fetch: (request: Request, env: Env, ctx: ExecutionContext) => Response | Promise<Response> };
 
 /**
  * One provider per origin: the resource URL and issuer are absolute, and
@@ -68,7 +92,7 @@ export function oauthProviderFor(origin: string, app: FetchHandler): OAuthProvid
       defaultHandler: app,
       authorizeEndpoint: AUTHORIZE_PATH,
       tokenEndpoint: "/oauth/token",
-      clientRegistrationEndpoint: "/oauth/register",
+      clientRegistrationEndpoint: CLIENT_REGISTRATION_PATH,
       scopesSupported: [MCP_SCOPE],
       resourceMetadata: {
         resource: mcpResource(origin),

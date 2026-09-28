@@ -21,17 +21,18 @@ export type OAuthReturnTo = "websites" | "settings";
 
 /**
  * `state` round-trips through Google untouched, so it's how the callback
- * learns which scope group (and, in cloud mode, which tenant and which
- * page to return to) this consent flow was for. Self-host: just the scope
- * group. Cloud mode: scope group, the Clerk user id that started the
- * flow, and the return page, colon-separated (a Clerk user id never
- * contains a colon, so this is an unambiguous split).
+ * learns which scope group this consent flow was for and which page to
+ * return to, plus `nonce`, the value /oauth/google/start also set in a
+ * cookie on the browser that started the flow: colon-separated
+ * "<scope>:<returnTo>:<nonce>". It deliberately never names a tenant: the
+ * callback takes that from the signed-in session, since anyone can build
+ * a consent URL with any state they like.
  */
 export function buildAuthUrl(
   env: Env,
   redirectUri: string,
   scopeGroup: ScopeGroup,
-  tenantId: string | null = null,
+  nonce: string,
   returnTo: OAuthReturnTo = "settings"
 ): string {
   const url = new URL(AUTH_ENDPOINT);
@@ -44,7 +45,7 @@ export function buildAuthUrl(
   // without this, reconnecting after a revoked/expired refresh_token would
   // silently fail to get a new one.
   url.searchParams.set("prompt", "consent");
-  url.searchParams.set("state", tenantId ? `${scopeGroup}:${tenantId}:${returnTo}` : scopeGroup);
+  url.searchParams.set("state", `${scopeGroup}:${returnTo}:${nonce}`);
   return url.toString();
 }
 

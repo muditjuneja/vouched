@@ -68,8 +68,10 @@ shared bearer token, resolving a `tenantId` that flows into
 only tools that currently need it) via a per-request field on `env`, not a
 signature change to all 18 tools, see `Env.__tenantId`'s doc comment for
 why. The Google OAuth connect flow (`/oauth/google/start`) is
-Clerk-session-gated in cloud mode instead of the self-host `setup_token`,
-with the tenant id riding through Google's `state` param to the callback.
+Clerk-session-gated in cloud mode instead of the self-host `setup_token`.
+The callback takes the tenant from the signed-in session, never from
+Google's `state` param, and only accepts a `state` whose nonce matches the
+cookie `/oauth/google/start` set in the same browser.
 
 **Not verified**: no Clerk account was available to test against in this
 sandbox, `verifyToken`'s real behavior (a valid session, a real JWKS/PEM
