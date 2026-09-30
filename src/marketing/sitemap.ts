@@ -31,6 +31,7 @@ ${urls}
 export function renderRobotsTxt(origin: string): string {
   return `User-agent: *
 Allow: /
+Disallow: /dashboard
 
 Sitemap: ${origin}/sitemap.xml
 `;

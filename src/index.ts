@@ -283,6 +283,14 @@ app.all("/mcp", async (c) => {
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     if (!isCloudMode(env)) return app.fetch(request, env, ctx);
+    // The provider's resource URL must be https (http only on loopback), so
+    // a plain-http request would throw constructing it. Redirect instead.
+    const url = new URL(request.url);
+    if (url.protocol === "http:" && !["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)) {
+      url.protocol = "https:";
+      url.port = "";
+      return Response.redirect(url.toString(), 308);
+    }
     const limited = await limitClientRegistration(request, env);
     if (limited) return limited;
     return oauthProviderFor(new URL(request.url).origin, app).fetch(request, env, ctx);

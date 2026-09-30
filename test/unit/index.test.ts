@@ -320,6 +320,17 @@ describe("the Worker in cloud mode: standard MCP authorization", () => {
     expect(body.code_challenge_methods_supported).toContain("S256");
   });
 
+  it("redirects plain http to https instead of failing to build the OAuth provider", async () => {
+    const res = await worker.fetch(new Request("http://vouchedhq.com:2052/wp-login.php?x=1"), env, ctx);
+    expect(res.status).toBe(308);
+    expect(res.headers.get("Location")).toBe("https://vouchedhq.com/wp-login.php?x=1");
+  });
+
+  it("leaves plain http on localhost alone for wrangler dev", async () => {
+    const res = await worker.fetch(new Request("http://localhost:8787/health"), env, ctx);
+    expect(res.status).toBe(200);
+  });
+
   it("still serves every other page through the app", async () => {
     const res = await worker.fetch(new Request("https://vouchedhq.com/health"), env, ctx);
     expect(res.status).toBe(200);
