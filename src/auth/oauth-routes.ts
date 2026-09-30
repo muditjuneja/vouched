@@ -1,6 +1,7 @@
 import { resolveTenant } from "../db/team";
 import { authenticateBillingRequest } from "./clerk";
 import { buildAuthUrl, exchangeCodeForTokens, type OAuthReturnTo } from "./google-oauth";
+import { importGoogleSites } from "./google-sites";
 import type { ScopeGroup } from "../db/google-tokens";
 import { isCloudMode, type Env } from "../types/env";
 
@@ -113,6 +114,9 @@ export async function handleOAuthCallback(request: Request, env: Env): Promise<R
 
   const redirectUri = new URL("/oauth/google/callback", url.origin).toString();
   await exchangeCodeForTokens(env, code, redirectUri, scope, tenantId);
+  // Track the account's sites now, so its data is queryable straight away.
+  // Best-effort: a listing failure must never undo a successful connection.
+  await importGoogleSites(env, scope, tenantId).catch((error: unknown) => console.warn(`[oauth] importing ${scope} sites failed:`, error));
 
   // Cloud mode: this is a same-tab navigation from the dashboard (the
   // connect link is a plain <a>, not a popup), so land back on a real,

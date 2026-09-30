@@ -40,10 +40,11 @@ describe("sitemap route generation", () => {
     expect(xml.trim().startsWith("<?xml")).toBe(true);
   });
 
-  it("robots.txt allows everything and points at the sitemap for the given origin", () => {
+  it("robots.txt allows everything but the dashboard and points at the sitemap for the given origin", () => {
     const robots = renderRobotsTxt("https://example.com");
     expect(robots).toContain("User-agent: *");
     expect(robots).toContain("Allow: /");
+    expect(robots).toContain("Disallow: /dashboard");
     expect(robots).toContain("Sitemap: https://example.com/sitemap.xml");
   });
 });

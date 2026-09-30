@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { checkConnectionState, type ConnectionState } from "../../auth/google-oauth";
+import { importGoogleSites } from "../../auth/google-sites";
 import { listWebsites as queryWebsites } from "../../db/websites";
 import { propertyEntityId } from "../../envelope/entities";
 import { envelope } from "../../envelope/builder";
@@ -22,7 +23,21 @@ async function connectionState(
 
 async function handler(_args: Record<string, never>, env: Env) {
   const tenantId = env.__tenantId ?? null;
-  const websites = await queryWebsites(env.DB, tenantId);
+  let websites = await queryWebsites(env.DB, tenantId);
+  if (websites.length === 0) {
+    // Nothing tracked yet: bring in the connected Google account's sites.
+    const imported = await Promise.all(
+      (["webmaster_console", "analytics_property"] as const).map(async (scope) =>
+        (await checkConnectionState(env, scope, tenantId)) === "connected"
+          ? importGoogleSites(env, scope, tenantId).catch((error: unknown) => {
+              console.warn(`[list_websites] importing ${scope} sites failed:`, error);
+              return 0;
+            })
+          : 0
+      )
+    );
+    if (imported.some((count) => count > 0)) websites = await queryWebsites(env.DB, tenantId);
+  }
 
   if (websites.length === 0) {
     return envelope("core", { connection_required: true, websites: [] })

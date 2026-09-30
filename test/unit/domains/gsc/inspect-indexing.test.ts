@@ -8,10 +8,14 @@ vi.mock("../../../../src/db/websites", async (importOriginal) => {
   return { ...actual, getWebsiteByDomain };
 });
 
-const { getValidAccessToken } = vi.hoisted(() => ({ getValidAccessToken: vi.fn() }));
+const { getValidAccessToken, checkConnectionState } = vi.hoisted(() => ({
+  getValidAccessToken: vi.fn(),
+  // Not connected: an untracked site has nothing to import from.
+  checkConnectionState: vi.fn(async () => "not_connected")
+}));
 vi.mock("../../../../src/auth/google-oauth", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../../../src/auth/google-oauth")>();
-  return { ...actual, getValidAccessToken };
+  return { ...actual, getValidAccessToken, checkConnectionState };
 });
 
 const { inspectUrl } = vi.hoisted(() => ({ inspectUrl: vi.fn() }));

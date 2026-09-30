@@ -2,7 +2,7 @@ import { z } from "zod";
 import { getValidAccessToken } from "../../auth/google-oauth";
 import type { SearchAnalyticsFilter, SearchAnalyticsQuery, SearchAnalyticsRow } from "../../clients/google/search-console";
 import { querySearchAnalytics } from "../../clients/google/search-console";
-import { getWebsiteByDomain } from "../../db/websites";
+import { findWebsiteForScope } from "../../auth/google-sites";
 import { envelope } from "../../envelope/builder";
 import { keywordEntityId, pageEntityId, propertyEntityId } from "../../envelope/entities";
 import { provenance } from "../../envelope/provenance";
@@ -225,11 +225,11 @@ async function fetchTotals(
 
 async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   const tenantId = env.__tenantId ?? null;
-  const website = await getWebsiteByDomain(env.DB, args.domain, tenantId);
+  const website = await findWebsiteForScope(env, args.domain, "webmaster_console", tenantId);
   if (!website?.gsc_site_url) {
     throw new ConnectionRequiredError(
       "webmaster_console",
-      `${args.domain} has no Search Console property linked yet. In the Vouched dashboard, open Websites, edit ${args.domain} and pick its Search Console property.`
+      `No Search Console property found for ${args.domain}. Connect Search Console in the Vouched dashboard (Settings) with a Google account that has access to ${args.domain}; its sites are added automatically.`
     );
   }
   const siteUrl = website.gsc_site_url;

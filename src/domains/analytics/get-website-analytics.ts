@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { getValidAccessToken } from "../../auth/google-oauth";
 import { runReport } from "../../clients/google/analytics-ga4";
-import { getWebsiteByDomain } from "../../db/websites";
+import { findWebsiteForScope } from "../../auth/google-sites";
 import { envelope } from "../../envelope/builder";
 import { pageEntityId, propertyEntityId } from "../../envelope/entities";
 import { provenance } from "../../envelope/provenance";
@@ -23,11 +23,11 @@ const inputSchema = z.object({
 
 async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   const tenantId = env.__tenantId ?? null;
-  const website = await getWebsiteByDomain(env.DB, args.domain, tenantId);
+  const website = await findWebsiteForScope(env, args.domain, "analytics_property", tenantId);
   if (!website?.ga4_property_id) {
     throw new ConnectionRequiredError(
       "analytics_property",
-      `${args.domain} has no Google Analytics property linked yet. In the Vouched dashboard, connect Google Analytics (Settings), then open Websites, edit ${args.domain} and pick its GA4 property.`
+      `No Google Analytics property found for ${args.domain}. Connect Google Analytics in the Vouched dashboard (Settings) with a Google account that has access to it, or open Websites, edit ${args.domain} and pick its GA4 property.`
     );
   }
 
