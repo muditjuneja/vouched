@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+/// <reference types="vite/client" />
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { compareBacklinkGap } from "../../../src/domains/backlinks/compare-backlink-gap";
 import { inspectBacklinks } from "../../../src/domains/backlinks/inspect-backlinks";
@@ -41,8 +41,13 @@ const FIXTURE_BY_PATH: Record<string, string> = {
 
 const requests: Array<{ path: string; body: Record<string, unknown> }> = [];
 
+// Inlined at transform time: the Workers test runtime has no access to the repo's files.
+const FIXTURES = import.meta.glob<string>("../../fixtures/dataforseo/*.json", { query: "?raw", import: "default", eager: true });
+
 function fixture(name: string): string {
-  return readFileSync(new URL(`../../fixtures/dataforseo/${name}.json`, import.meta.url), "utf8");
+  const raw = FIXTURES[`../../fixtures/dataforseo/${name}.json`];
+  if (raw === undefined) throw new Error(`missing fixture ${name}.json`);
+  return raw;
 }
 
 beforeEach(() => {
@@ -245,6 +250,11 @@ describe("AI visibility tools", () => {
     expect(requests.map((r) => r.body.target)).toEqual([[{ domain: "semrush.com" }], [{ domain: "ahrefs.com" }]]);
     const you = result.facts.find((f) => f.data.is_you);
     expect(you?.data).toMatchObject({ mentions: 65637, share_of_voice: 0.5 });
+  });
+
+  it("inspect_ai_visibility: no share of voice without competitors to share it with", async () => {
+    const result = await inspectAiVisibility.handler({ domain: "semrush.com" }, env);
+    expect(result.facts[0]?.data).toMatchObject({ mentions: 65637, share_of_voice: null });
   });
 });
 
