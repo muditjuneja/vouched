@@ -1080,7 +1080,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
         name: "domain",
         type: "string",
         required: true,
-        description: "A tracked website's primary_domain (e.g. example.com)."
+        description: "Your site's domain (e.g. example.com): a tracked website, or any site the connected Google account can see."
       },
       {
         name: "startDate",
@@ -1249,7 +1249,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
         name: "domain",
         type: "string",
         required: true,
-        description: "A tracked website's primary_domain (e.g. example.com)."
+        description: "Your site's domain (e.g. example.com): a tracked website, or any site the connected Google account can see."
       },
       {
         name: "url",
@@ -1329,7 +1329,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
         name: "domain",
         type: "string",
         required: true,
-        description: "A tracked website's primary_domain (e.g. example.com)."
+        description: "Your site's domain (e.g. example.com): a tracked website, or any site the connected Google account can see."
       }
     ],
     dataSummary: "Lists all XML sitemaps submitted to Google Search Console for this website, their last submission/read timestamp, processing warnings/errors, and submitted URL counts.",
@@ -1398,7 +1398,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
         name: "domain",
         type: "string",
         required: true,
-        description: "A tracked website's primary_domain (e.g. example.com)."
+        description: "Your site's domain (e.g. example.com): a tracked website, or any site the connected Google account can see."
       },
       {
         name: "startDate",

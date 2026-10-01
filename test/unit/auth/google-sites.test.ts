@@ -41,7 +41,7 @@ vi.mock("../../../src/db/websites", () => ({
   })
 }));
 
-import { findWebsiteForScope, importGoogleSites } from "../../../src/auth/google-sites";
+import { findWebsiteForScope } from "../../../src/auth/google-sites";
 
 const env = { DB: {} } as unknown as Env;
 
@@ -50,44 +50,43 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe("importGoogleSites", () => {
-  it("tracks every Search Console site, one per domain, preferring the domain property", async () => {
+describe("findWebsiteForScope", () => {
+  it("tracks just the requested site from the connected account, preferring the domain property", async () => {
     listSites.mockResolvedValueOnce([
       { siteUrl: "https://xmit.sh/", permissionLevel: "siteOwner" },
       { siteUrl: "sc-domain:xmit.sh", permissionLevel: "siteOwner" },
-      { siteUrl: "sc-domain:koin.theretrosaga.com", permissionLevel: "siteFullUser" },
-      { siteUrl: "sc-domain:not-mine.com", permissionLevel: "siteUnverifiedUser" }
+      { siteUrl: "sc-domain:koin.theretrosaga.com", permissionLevel: "siteFullUser" }
     ]);
-    expect(await importGoogleSites(env, "webmaster_console", "user_1")).toBe(2);
-    expect(rows.map((r) => [r.primary_domain, r.gsc_site_url])).toEqual([
-      ["xmit.sh", "sc-domain:xmit.sh"],
-      ["koin.theretrosaga.com", "sc-domain:koin.theretrosaga.com"]
-    ]);
-  });
-
-  it("links Analytics to sites already tracked, and never replaces a property someone picked", async () => {
-    rows.push(
-      { website_id: "w1", name: "xmit.sh", primary_domain: "xmit.sh", gsc_site_url: "sc-domain:xmit.sh", ga4_property_id: null } as WebsiteRow,
-      { website_id: "w2", name: "koin", primary_domain: "koin.theretrosaga.com", gsc_site_url: null, ga4_property_id: "properties/1" } as WebsiteRow
-    );
-    listPropertiesWithDomains.mockResolvedValueOnce([
-      { property: "properties/517891211", displayName: "xmit", domain: "www.xmit.sh" },
-      { property: "properties/2", displayName: "koin", domain: "koin.theretrosaga.com" },
-      { property: "properties/3", displayName: "app only", domain: null }
-    ]);
-    expect(await importGoogleSites(env, "analytics_property", "user_1")).toBe(0);
-    expect(rows.map((r) => r.ga4_property_id)).toEqual(["properties/517891211", "properties/1"]);
-  });
-});
-
-describe("findWebsiteForScope", () => {
-  it("imports from the connected account when the site isn't tracked yet", async () => {
-    listSites.mockResolvedValueOnce([{ siteUrl: "sc-domain:xmit.sh", permissionLevel: "siteOwner" }]);
-    const website = await findWebsiteForScope(env, "xmit.sh", "webmaster_console", "user_1");
+    const website = await findWebsiteForScope(env, "www.xmit.sh", "webmaster_console", "user_1");
     expect(website?.gsc_site_url).toBe("sc-domain:xmit.sh");
+    expect(rows.map((r) => r.primary_domain)).toEqual(["xmit.sh"]);
   });
 
-  it("finds a site passed as www or a URL", async () => {
+  it("doesn't track a property the account can't read", async () => {
+    listSites.mockResolvedValueOnce([{ siteUrl: "sc-domain:not-mine.com", permissionLevel: "siteUnverifiedUser" }]);
+    expect(await findWebsiteForScope(env, "not-mine.com", "webmaster_console", "user_1")).toBeNull();
+    expect(rows).toEqual([]);
+  });
+
+  it("links Analytics to a site already tracked, however its domain was typed", async () => {
+    rows.push({ website_id: "w1", name: "xmit", primary_domain: "https://www.xmit.sh/", gsc_site_url: "sc-domain:xmit.sh", ga4_property_id: null } as WebsiteRow);
+    listPropertiesWithDomains.mockResolvedValueOnce([
+      { property: "properties/3", displayName: "app only", domain: null },
+      { property: "properties/517891211", displayName: "xmit", domain: "www.xmit.sh" }
+    ]);
+    const website = await findWebsiteForScope(env, "xmit.sh", "analytics_property", "user_1");
+    expect(website?.website_id).toBe("w1");
+    expect(website?.ga4_property_id).toBe("properties/517891211");
+    expect(rows).toHaveLength(1);
+  });
+
+  it("never replaces a property someone picked", async () => {
+    rows.push({ website_id: "w1", name: "koin", primary_domain: "koin.theretrosaga.com", gsc_site_url: null, ga4_property_id: "properties/1" } as WebsiteRow);
+    expect((await findWebsiteForScope(env, "koin.theretrosaga.com", "analytics_property", "user_1"))?.ga4_property_id).toBe("properties/1");
+    expect(listPropertiesWithDomains).not.toHaveBeenCalled();
+  });
+
+  it("finds a site passed as www or a URL without calling Google", async () => {
     rows.push({ website_id: "w1", name: "xmit.sh", primary_domain: "xmit.sh", gsc_site_url: "sc-domain:xmit.sh" } as WebsiteRow);
     expect((await findWebsiteForScope(env, "https://www.xmit.sh/", "webmaster_console", "user_1"))?.website_id).toBe("w1");
     expect(listSites).not.toHaveBeenCalled();
@@ -97,5 +96,10 @@ describe("findWebsiteForScope", () => {
     checkConnectionState.mockResolvedValueOnce("not_connected");
     expect(await findWebsiteForScope(env, "xmit.sh", "webmaster_console", "user_1")).toBeNull();
     expect(listSites).not.toHaveBeenCalled();
+  });
+
+  it("falls back to what's tracked when Google can't be reached", async () => {
+    listSites.mockRejectedValueOnce(new Error("503"));
+    expect(await findWebsiteForScope(env, "xmit.sh", "webmaster_console", "user_1")).toBeNull();
   });
 });

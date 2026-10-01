@@ -12,7 +12,7 @@ import type { ToolModule } from "../types";
 const METRICS = ["sessions", "activeUsers", "engagementRate"] as const;
 
 const inputSchema = z.object({
-  domain: z.string().describe("A tracked website's primary_domain, e.g. example.com"),
+  domain: z.string().describe("Your site's domain, e.g. example.com: a tracked website, or any site the connected Google account can see"),
   startDate: z.string().describe("YYYY-MM-DD"),
   endDate: z.string().describe("YYYY-MM-DD"),
   dimension: z
@@ -99,7 +99,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const getWebsiteAnalytics: ToolModule<typeof inputSchema> = {
   name: "get_website_analytics",
   title: "Get website analytics",
-  description: "Sessions, users and engagement from your own Google Analytics (GA4) for a tracked website.",
+  description: "Sessions, users and engagement from your own Google Analytics (GA4) for one of your websites.",
   inputSchema,
   handler
 };

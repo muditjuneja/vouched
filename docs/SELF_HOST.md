@@ -53,11 +53,15 @@ none of them set. Adding them unlocks the corresponding domains, which
   via `urlInspection.index:inspect`), `list_sitemaps` (`sitemaps.list`),
   and `get_website_analytics`, via hand-rolled Google OAuth (no `googleapis`
   SDK, see `docs/ARCHITECTURE.md`) and plain `fetch` against the official
-  Search Console / GA4 Data REST APIs. To connect an account, add a row to
-  the `websites` D1 table (see `migrations/0001_init.sql`) with its
-  `gsc_site_url`/`ga4_property_id`, then visit
+  Search Console / GA4 Data REST APIs. To connect an account, visit
   `https://<your-worker>/oauth/google/start?scope=webmaster_console&setup_token=<MCP_BEARER_TOKEN>`
-  (and again with `scope=analytics_property`) to grant access.
+  (and again with `scope=analytics_property`) to grant access. There's no
+  need to add sites first: the first time a tool is asked about a domain,
+  it finds that domain's property in the connected account and adds a row
+  to the `websites` D1 table for it. To pin a specific property instead,
+  insert the row yourself (see `migrations/0001_init.sql`) with its
+  `gsc_site_url`/`ga4_property_id`; a property already set is never
+  replaced.
 
 **DataForSEO-backed tier, `seo` + `serp` domains** (M4-M6, 9 tools):
 `inspect_domain`, `discover_competitors`, `research_keywords`,

@@ -14,7 +14,7 @@ import { cachedGscCall } from "./shared";
 const CACHE_TTL_SECONDS = 60 * 60 * 6;
 
 const inputSchema = z.object({
-  domain: z.string().describe("A tracked website's primary_domain, e.g. example.com")
+  domain: z.string().describe("Your site's domain, e.g. example.com: a tracked website, or any site the connected Google account can see")
 });
 
 async function handler(args: z.infer<typeof inputSchema>, env: Env) {
@@ -23,7 +23,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   if (!website?.gsc_site_url) {
     throw new ConnectionRequiredError(
       "webmaster_console",
-      `No Search Console property found for ${args.domain}. Connect Search Console in the Vouched dashboard (Settings) with a Google account that has access to ${args.domain}; its sites are added automatically.`
+      `No Search Console property found for ${args.domain}. Connect Search Console in the Vouched dashboard (Settings) with a Google account that has access to ${args.domain}, or check the domain is spelled the way Search Console lists it.`
     );
   }
   const siteUrl = website.gsc_site_url;
@@ -84,7 +84,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const listSitemapsTool: ToolModule<typeof inputSchema> = {
   name: "list_sitemaps",
   title: "List sitemaps",
-  description: "Submitted sitemaps for one of your tracked websites, from Search Console: last read, warnings, errors and submitted URL counts. Google's indexed count here is deprecated (always 0); use inspect_indexing for real indexing status.",
+  description: "Submitted sitemaps for one of your websites, from Search Console: last read, warnings, errors and submitted URL counts. Google's indexed count here is deprecated (always 0); use inspect_indexing for real indexing status.",
   inputSchema,
   handler
 };

@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { checkConnectionState, type ConnectionState } from "../../auth/google-oauth";
-import { importGoogleSites } from "../../auth/google-sites";
 import { listWebsites as queryWebsites } from "../../db/websites";
 import { propertyEntityId } from "../../envelope/entities";
 import { envelope } from "../../envelope/builder";
@@ -23,25 +22,17 @@ async function connectionState(
 
 async function handler(_args: Record<string, never>, env: Env) {
   const tenantId = env.__tenantId ?? null;
-  let websites = await queryWebsites(env.DB, tenantId);
-  if (websites.length === 0) {
-    // Nothing tracked yet: bring in the connected Google account's sites.
-    const imported = await Promise.all(
-      (["webmaster_console", "analytics_property"] as const).map(async (scope) =>
-        (await checkConnectionState(env, scope, tenantId)) === "connected"
-          ? importGoogleSites(env, scope, tenantId).catch((error: unknown) => {
-              console.warn(`[list_websites] importing ${scope} sites failed:`, error);
-              return 0;
-            })
-          : 0
-      )
-    );
-    if (imported.some((count) => count > 0)) websites = await queryWebsites(env.DB, tenantId);
-  }
+  const websites = await queryWebsites(env.DB, tenantId);
 
   if (websites.length === 0) {
     return envelope("core", { connection_required: true, websites: [] })
-      .setCoverage({ returned: 0, total: 0, as_of: null, scope_note: "no websites configured yet" })
+      .setCoverage({
+        returned: 0,
+        total: 0,
+        as_of: null,
+        // Sites in the connected Google account are tracked on first use.
+        scope_note: "no websites tracked yet: the Search Console and Analytics tools accept any site in the connected Google account"
+      })
       .build();
   }
 
@@ -75,7 +66,7 @@ async function handler(_args: Record<string, never>, env: Env) {
 export const listWebsitesTool: ToolModule<z.ZodObject<Record<string, never>>> = {
   name: "list_websites",
   title: "List websites",
-  description: "Your tracked websites and whether Search Console and Google Analytics are connected for each. Pass a returned domain to the Google tools.",
+  description: "Your tracked websites and whether Search Console and Google Analytics are connected for each. Pass a returned domain, or any other site in the connected Google account, to the Google tools.",
   inputSchema: z.object({}),
   handler
 };
