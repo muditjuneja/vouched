@@ -78,7 +78,7 @@ are set.
 **`backlinks` domain** (M7, 2 tools): `inspect_backlinks` (view-selectable:
 authority / referring domains / anchors / individual backlinks, one call,
 not four) and `compare_backlink_gap` (link gap across up to 5 competitors,
-spam-score filtered, with a heuristic earned-link flag). Same field-shape
+spam-score filtered, the companies' own sites left out). Same field-shape
 caveat as `seo`/`serp` above.
 
 **`ai_visibility` domain** (M8, 2 tools): `discover_ai_citations` and

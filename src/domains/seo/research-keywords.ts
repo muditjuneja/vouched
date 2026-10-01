@@ -83,7 +83,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const researchKeywords: ToolModule<typeof inputSchema> = {
   name: "research_keywords",
   title: "Research keywords",
-  description: "Expand seed keywords into keyword ideas with search volume, difficulty, CPC and intent, to decide what to target. Suggestions mode costs one request per seed keyword. Paid market data (Pro and Team plans).",
+  description: "Expand seed keywords into keyword ideas with search volume, difficulty, CPC and intent, to decide what to target. Suggestions mode costs one request per seed keyword. Paid market data (Pro and Team plans). A keyword_difficulty of 0 can mean the provider had too little data to score it, not that it's easy; check it against CPC and who ranks.",
   inputSchema,
   handler
 };

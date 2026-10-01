@@ -280,8 +280,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     ],
     dataSummary: "Lists organic competitor domains ranked by search keyword overlap, average position, and shared keywords.",
     emittedFacts: [
-      { type: "seo.competitor", description: "Competitor domain with average position and count of shared ranking keywords.", fields: ["competitor_domain", "avg_position", "shared_keyword_count"] },
-      { type: "core.data_freshness", description: "Observation timestamp and search index crawl freshness.", fields: ["observed_at"] }
+      { type: "seo.competitor", description: "Competitor domain with average position and count of shared ranking keywords.", fields: ["competitor_domain", "avg_position", "shared_keyword_count"] }
     ],
     entitiesEmitted: [
       { kind: "domain", description: "Target domain and each identified competitor domain." }
@@ -498,8 +497,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     ],
     dataSummary: "Current ranking positions across an explicit list of target keywords, with optional real-time live SERP verification.",
     emittedFacts: [
-      { type: "seo.keyword_ranking", description: "Absolute ranking position for target keyword.", fields: ["keyword", "position", "source"] },
-      { type: "core.data_freshness", description: "Timestamp and freshness metadata for live rechecks.", fields: ["recheck_live", "checked_at"] }
+      { type: "seo.keyword_ranking", description: "Absolute ranking position for target keyword.", fields: ["keyword", "position", "source"] }
     ],
     entitiesEmitted: [
       { kind: "domain", description: "Target domain." },
@@ -890,7 +888,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
         description: "Competitor domains to find link gaps against."
       }
     ],
-    dataSummary: "Discovers referring domains linking to competitors but not to your domain. Automatically filters out spam domains (spam_score > 30) and flags earned links.",
+    dataSummary: "Discovers referring domains linking to competitors but not to your domain. Automatically filters out spam domains (spam_score > 30) and the companies' own sites.",
     emittedFacts: [
       { type: "backlinks.link_gap", description: "A site linking to a competitor but not to your domain, with its rank and spam score.", fields: ["referring_domain", "referring_domain_rank", "backlinks_to_competitor", "spam_score", "first_seen", "competitor_domain"] }
     ],
@@ -954,8 +952,7 @@ export const TOOL_DOCS: Record<string, ToolDocumentation> = {
     ],
     dataSummary: "Lists the most frequently cited domains in generative AI answers (Google AI Overviews and ChatGPT) for a given market vertical.",
     emittedFacts: [
-      { type: "ai_visibility.citation_source", description: "Domain cited in AI answers with mention count and citation rank.", fields: ["domain", "rank", "mentions", "ai_search_volume"] },
-      { type: "core.data_freshness", description: "Observation timestamp and platform identifier.", fields: ["platform", "observed_at"] }
+      { type: "ai_visibility.citation_source", description: "Domain cited in AI answers with mention count and citation rank.", fields: ["domain", "rank", "mentions", "ai_search_volume"] }
     ],
     entitiesEmitted: [
       { kind: "domain", description: "Cited source domains." }

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { rankedKeywords } from "../../clients/dataforseo/endpoints/labs";
 import { organicSerp } from "../../clients/dataforseo/endpoints/serp";
 import { envelope } from "../../envelope/builder";
-import { domainEntityId, keywordEntityId } from "../../envelope/entities";
+import { domainEntityId, keywordEntityId, pageEntityId } from "../../envelope/entities";
 import { provenance } from "../../envelope/provenance";
 import type { Env } from "../../types/env";
 import type { ToolModule } from "../types";
@@ -20,15 +20,24 @@ const inputSchema = z.object({
 
 interface RankedKeywordResult {
   keyword_data?: { keyword?: string };
-  ranked_serp_element?: { serp_item?: { rank_group?: number } };
+  ranked_serp_element?: { serp_item?: { rank_group?: number; url?: string } };
 }
 interface SerpItem {
   type?: string;
   rank_group?: number;
   domain?: string;
+  url?: string;
 }
 interface SerpResult {
   items?: SerpItem[];
+}
+
+/** The domain itself or one of its subdomains (www., blog.), never a lookalike that merely contains it. */
+function onDomain(host: string | undefined, domain: string): boolean {
+  if (!host) return false;
+  const h = host.toLowerCase();
+  const d = domain.toLowerCase().replace(/^www\./, "");
+  return h === d || h.endsWith(`.${d}`);
 }
 
 async function handler(args: z.infer<typeof inputSchema>, env: Env) {
@@ -52,11 +61,18 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
     if (!keyword) continue;
     foundKeywords.add(keyword);
     const keywordId = keywordEntityId(keyword);
+    const serpItem = item.ranked_serp_element?.serp_item;
+    const subject = [domainId, keywordId];
     builder.addEntity({ id: keywordId, kind: "keyword", label: keyword });
+    if (serpItem?.url) {
+      const pageId = pageEntityId(serpItem.url);
+      builder.addEntity({ id: pageId, kind: "page", label: serpItem.url });
+      subject.push(pageId);
+    }
     builder.addFact({
       type: "seo.keyword_ranking",
-      subject: [domainId, keywordId],
-      data: { keyword, ranking: true, position: item.ranked_serp_element?.serp_item?.rank_group ?? null },
+      subject,
+      data: { keyword, ranking: true, position: serpItem?.rank_group ?? null, url: serpItem?.url ?? null },
       provenance: provenance("search_index", "ranked_keywords", { observedAt })
     });
   }
@@ -69,7 +85,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
       builder.addFact({
         type: "seo.keyword_ranking",
         subject: [domainId, keywordId],
-        data: { keyword, ranking: false, position: null },
+        data: { keyword, ranking: false, position: null, url: null },
         provenance: provenance("search_index", "ranked_keywords", {
           observedAt,
           confidence: 0.6
@@ -88,11 +104,17 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
       )
     );
     for (const { keyword, items } of liveResults) {
-      const hit = items.find((item) => item.type === "organic" && item.domain?.includes(args.domain));
+      const hit = items.find((item) => item.type === "organic" && onDomain(item.domain, args.domain));
+      const subject = [domainId, keywordEntityId(keyword)];
+      if (hit?.url) {
+        const pageId = pageEntityId(hit.url);
+        builder.addEntity({ id: pageId, kind: "page", label: hit.url });
+        subject.push(pageId);
+      }
       builder.addFact({
         type: "seo.keyword_ranking",
-        subject: [domainId, keywordEntityId(keyword)],
-        data: { keyword, ranking: Boolean(hit), position: hit?.rank_group ?? null, live_recheck: true },
+        subject,
+        data: { keyword, ranking: Boolean(hit), position: hit?.rank_group ?? null, url: hit?.url ?? null, live_recheck: true },
         provenance: provenance("live_serp", "google_serp", { observedAt })
       });
     }
@@ -113,7 +135,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const inspectSearchVisibility: ToolModule<typeof inputSchema> = {
   name: "inspect_search_visibility",
   title: "Inspect search visibility",
-  description: "Where a domain ranks in Google for a given list of keywords. Paid market data (Pro and Team plans).",
+  description: "Where a domain ranks in Google for a given list of keywords, and which of its pages ranks. Paid market data (Pro and Team plans).",
   inputSchema,
   handler
 };

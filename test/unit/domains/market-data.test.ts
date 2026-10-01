@@ -178,6 +178,20 @@ describe("Labs tools read the rows, not the wrapper", () => {
     expect(ranking?.data).toMatchObject({ ranking: true, position: 1 }); // rank_group 1, even though rank_absolute is 2
   });
 
+  it("inspect_search_visibility: names the ranking page, as a page entity", async () => {
+    const result = await inspectSearchVisibility.handler({ domain: "dataforseo.com", keywords: ["1000 keywords"] }, env);
+    const url = "https://dataforseo.com/free-seo-stats/top-1000-keywords";
+    expect(result.facts.find((f) => f.data.keyword === "1000 keywords")?.data.url).toBe(url);
+    expect(result.entities.some((e) => e.kind === "page" && e.label === url)).toBe(true);
+  });
+
+  it("inspect_search_visibility: a live recheck counts subdomains but not lookalike domains", async () => {
+    const own = await inspectSearchVisibility.handler({ domain: "wikipedia.org", keywords: ["pizza"], recheckLive: true }, env);
+    expect(own.facts.find((f) => f.data.live_recheck)?.data).toMatchObject({ ranking: true, position: 2, url: "https://en.wikipedia.org/wiki/Pizza" });
+    const lookalike = await inspectSearchVisibility.handler({ domain: "pedia.org", keywords: ["pizza"], recheckLive: true }, env);
+    expect(lookalike.facts.find((f) => f.data.live_recheck)?.data).toMatchObject({ ranking: false, position: null, url: null });
+  });
+
   it("inspect_search_visibility: says explicitly when a keyword isn't ranking, and lists it as an entity", async () => {
     const result = await inspectSearchVisibility.handler({ domain: "dataforseo.com", keywords: ["not in the fixture"] }, env);
     expect(result.facts.find((f) => f.data.keyword === "not in the fixture")?.data).toMatchObject({ ranking: false, position: null });
@@ -217,6 +231,16 @@ describe("backlink tools", () => {
     expect(anchors.facts[0]!.data.anchor).toEqual(expect.any(String));
     const links = await inspectBacklinks.handler({ domain: "semrush.com", view: "backlinks", limit: 2 }, env);
     expect(links.facts[0]!.data.url_from).toEqual(expect.any(String));
+  });
+
+  it("inspect_backlinks: list views report the provider's total, and rank says its scale", async () => {
+    const domains = await inspectBacklinks.handler({ domain: "semrush.com", view: "referring_domains", limit: 2 }, env);
+    expect(domains.coverage.total).toBe(36);
+    expect(domains.facts[0]!.data.rank_scale).toBe(1000);
+    const anchors = await inspectBacklinks.handler({ domain: "semrush.com", view: "anchors", limit: 2 }, env);
+    expect(anchors.coverage.total).toBe(4016);
+    const authority = await inspectBacklinks.handler({ domain: "semrush.com" }, env);
+    expect(authority.facts[0]!.data.rank_scale).toBe(1000);
   });
 
   it("inspect_backlinks: the authority view doesn't claim a row limit", async () => {
@@ -286,5 +310,23 @@ describe("no supplier leaks", () => {
     expect(JSON.stringify(result).toLowerCase()).not.toContain("dataforseo_labs");
     expect(result.facts.map((f) => f.provenance.method)).toContain("domain_overview");
     expect(JSON.stringify(result.facts)).not.toContain('"raw"');
+  });
+});
+
+describe("inspect_serp features", () => {
+  it("lists a feature Google repeats on the page once, at its first slot", async () => {
+    const related = { type: "related_searches", rank_absolute: 11, items: ["a", "b"] };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json({
+          status_code: 20000,
+          tasks: [{ status_code: 20000, cost: 0, result: [{ items: [related, { ...related, rank_absolute: 22 }, { ...related, rank_absolute: 30, items: ["c"] }] }] }]
+        })
+      )
+    );
+    const result = await inspectSerp.handler({ keyword: "pizza" }, env);
+    const features = result.facts.filter((f) => f.type === "serp.feature");
+    expect(features.map((f) => f.data.slot_on_page)).toEqual([11, 30]);
   });
 });

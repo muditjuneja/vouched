@@ -41,10 +41,10 @@ Generated from `src/mcp/manifest.ts` by `npm run docs:tools`, edit that file, no
 | Tool | Summary | Fact types | Source classes | Connection |
 |---|---|---|---|---|
 | `inspect_domain` | Compact factual snapshot for one domain. | `seo.domain_summary`, `seo.keyword_ranking`, `seo.top_page`, `seo.competitor` | `search_index` | - |
-| `discover_competitors` | Organic competitors by overlap or seed keywords. | `seo.competitor`, `core.data_freshness` | `search_index` | - |
+| `discover_competitors` | Organic competitors by overlap or seed keywords. | `seo.competitor` | `search_index` | - |
 | `research_keywords` | Expand a seed term into a ranked demand list. | `seo.keyword_opportunity` | `search_index` | - |
 | `compare_keyword_coverage` | Keyword gap vs competitors. | `seo.keyword_opportunity` | `search_index` | - |
-| `inspect_search_visibility` | Ranking positions across a keyword set. | `seo.keyword_ranking`, `core.data_freshness` | `search_index`, `live_serp` | - |
+| `inspect_search_visibility` | Ranking positions across a keyword set. | `seo.keyword_ranking` | `search_index`, `live_serp` | - |
 | `inspect_keyword` | Search volume, difficulty, CPC and intent for one keyword. | `seo.keyword_opportunity` | `search_index` | - |
 | `inspect_page` | Keywords + traffic for a single URL. | `seo.keyword_ranking`, `seo.top_page` | `search_index` | - |
 
@@ -59,11 +59,11 @@ Generated from `src/mcp/manifest.ts` by `npm run docs:tools`, edit that file, no
 | Tool | Summary | Fact types | Source classes | Connection |
 |---|---|---|---|---|
 | `inspect_backlinks` | One domain's link profile, sliced by view (authority / referring domains / anchors / individual backlinks). | `backlinks.domain_authority`, `backlinks.referring_domain`, `backlinks.anchor`, `backlinks.backlink` | `backlink_index` | - |
-| `compare_backlink_gap` | Backlink gap / link intersect: referring domains that link to N competitors, ranked by true authority, spam-filtered, earned-flagged. | `backlinks.link_gap` | `backlink_index` | - |
+| `compare_backlink_gap` | Backlink gap / link intersect: referring domains that link to N competitors but not to you, strongest first, spam-filtered, the companies' own sites left out. | `backlinks.link_gap` | `backlink_index` | - |
 
 ## `ai_visibility` (dataforseo)
 
 | Tool | Summary | Fact types | Source classes | Connection |
 |---|---|---|---|---|
-| `discover_ai_citations` | Which sources AI cites in your category (Google AI Overview). | `ai_visibility.citation_source`, `core.data_freshness` | `ai_answer` | - |
+| `discover_ai_citations` | Which sources AI cites in your category (Google AI Overview). | `ai_visibility.citation_source` | `ai_answer` | - |
 | `inspect_ai_visibility` | How a domain shows up in AI answers, vs named competitors. | `ai_visibility.brand_mentions` | `ai_answer` | - |

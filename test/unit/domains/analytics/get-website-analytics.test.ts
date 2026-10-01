@@ -65,6 +65,15 @@ describe("get_website_analytics", () => {
     expect(runReport).toHaveBeenCalledWith("token-123", "properties/42", expect.objectContaining({ metricAggregations: ["TOTAL"] }));
     expect(result.facts[0]!.data).toEqual({ sessions: 100, active_users: 74, avg_engagement_rate: 0.26 });
     expect(result.coverage).toMatchObject({ returned: 2, total: 40 });
+    expect(result.coverage.scope_note).toContain("38 of 40 sessionSource rows not listed");
+  });
+
+  it("passes limit through, and has no scope note when every row is listed", async () => {
+    getWebsiteByDomain.mockResolvedValueOnce(WEBSITE as never);
+    runReport.mockResolvedValueOnce({ rows: [], totals: [{ metricValues: [{ value: "0" }, { value: "0" }, { value: "0" }] }], rowCount: 0 });
+    const result = await getWebsiteAnalytics.handler({ ...ARGS, limit: 500 }, env);
+    expect(runReport).toHaveBeenCalledWith("token-123", "properties/42", expect.objectContaining({ limit: 500 }));
+    expect(result.coverage.scope_note).toBeNull();
   });
 
   it("reports a null engagement rate, not 0, when there were no sessions", async () => {

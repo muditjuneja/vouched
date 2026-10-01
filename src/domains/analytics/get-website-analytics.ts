@@ -10,6 +10,8 @@ import { assertDateRange, isoDate } from "../../lib/date-range";
 import type { Env } from "../../types/env";
 import type { ToolModule } from "../types";
 
+const DEFAULT_LIMIT = 25;
+
 const METRICS = ["sessions", "activeUsers", "engagementRate"] as const;
 
 const inputSchema = z.object({
@@ -19,7 +21,8 @@ const inputSchema = z.object({
   dimension: z
     .enum(["date", "pagePath", "sessionSource"])
     .optional()
-    .describe("Break rows down by date, page, or traffic source (default date)")
+    .describe("Break rows down by date, page, or traffic source (default date)"),
+  limit: z.number().int().min(1).max(1000).optional().describe("Max rows to return (default 25). The summary always covers every row.")
 });
 
 async function handler(args: z.infer<typeof inputSchema>, env: Env) {
@@ -40,6 +43,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
     endDate: args.endDate,
     dimensions: [dimension],
     metrics: [...METRICS],
+    limit: args.limit ?? DEFAULT_LIMIT,
     metricAggregations: ["TOTAL"]
   });
 
@@ -51,8 +55,8 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   // active users are deduplicated across days/pages/sources (so adding
   // rows double-counts), and engagementRate is a ratio that only averages
   // correctly weighted by sessions.
-  const total = report.totals?.[0]?.metricValues;
-  const totalOf = (i: number): number | null => (total?.[i]?.value != null ? Number(total[i]!.value) : null);
+  const totalValues = report.totals?.[0]?.metricValues;
+  const totalOf = (i: number): number | null => (totalValues?.[i]?.value != null ? Number(totalValues[i]!.value) : null);
   const sessions = totalOf(0) ?? 0;
 
   const builder = envelope("analytics", {
@@ -93,8 +97,17 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
     });
   }
 
+  const total = report.rowCount ?? null;
+  const truncated = total !== null && total > rows.length;
   return builder
-    .setCoverage({ returned: rows.length, total: report.rowCount ?? null, as_of: observedAt.toISOString(), scope_note: null })
+    .setCoverage({
+      returned: rows.length,
+      total,
+      as_of: observedAt.toISOString(),
+      scope_note: truncated
+        ? `${total - rows.length} of ${total} ${dimension} rows not listed; the traffic_summary totals still include them. Raise limit (max 1000) to list more.`
+        : null
+    })
     .build();
 }
 

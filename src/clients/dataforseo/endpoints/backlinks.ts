@@ -1,5 +1,5 @@
 import type { Env } from "../../../types/env";
-import { dfsLiveItems, dfsLivePost } from "../client";
+import { dfsLiveItems, dfsLivePage, dfsLivePost } from "../client";
 
 /** Field names used by the tools are confirmed against the responses in test/fixtures/dataforseo/. */
 
@@ -7,16 +7,16 @@ export function backlinksSummary(env: Env, toolName: string, target: string) {
   return dfsLivePost(env, toolName, "/v3/backlinks/summary/live", { target });
 }
 
-export function referringDomains(env: Env, toolName: string, target: string, limit = 50) {
-  return dfsLiveItems(env, toolName, "/v3/backlinks/referring_domains/live", { target, limit });
+export function referringDomains<T = unknown>(env: Env, toolName: string, target: string, limit = 50) {
+  return dfsLivePage<T>(env, toolName, "/v3/backlinks/referring_domains/live", { target, limit });
 }
 
-export function anchors(env: Env, toolName: string, target: string, limit = 50) {
-  return dfsLiveItems(env, toolName, "/v3/backlinks/anchors/live", { target, limit });
+export function anchors<T = unknown>(env: Env, toolName: string, target: string, limit = 50) {
+  return dfsLivePage<T>(env, toolName, "/v3/backlinks/anchors/live", { target, limit });
 }
 
-export function backlinksList(env: Env, toolName: string, target: string, limit = 50) {
-  return dfsLiveItems(env, toolName, "/v3/backlinks/backlinks/live", { target, limit, mode: "as_is" });
+export function backlinksList<T = unknown>(env: Env, toolName: string, target: string, limit = 50) {
+  return dfsLivePage<T>(env, toolName, "/v3/backlinks/backlinks/live", { target, limit, mode: "as_is" });
 }
 
 /**

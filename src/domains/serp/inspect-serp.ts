@@ -44,6 +44,10 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
     label: args.keyword
   });
 
+  // Google can repeat a feature on one page (related searches at the top and
+  // the bottom); list each distinct one once, at its first slot.
+  const seenFeatures = new Set<string>();
+
   for (const item of items) {
     if (item.type === "organic" && item.url && item.domain) {
       const pageId = pageEntityId(item.url);
@@ -65,10 +69,14 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
       // Non-organic SERP furniture: featured snippet, People Also Ask, AI
       // Overview, etc. Presence/exact content of these is less stable than
       // an organic ranking, hence the lower confidence.
+      const content = featureContent(item as unknown as Record<string, unknown>);
+      const key = `${item.type}:${JSON.stringify(content)}`;
+      if (seenFeatures.has(key)) continue;
+      seenFeatures.add(key);
       builder.addFact({
         type: "serp.feature",
         subject: [keywordId],
-        data: { feature_type: item.type, slot_on_page: item.rank_absolute ?? null, ...featureContent(item as unknown as Record<string, unknown>) },
+        data: { feature_type: item.type, slot_on_page: item.rank_absolute ?? null, ...content },
         provenance: provenance("live_serp", "google_serp", {
           observedAt,
           confidence: 0.6

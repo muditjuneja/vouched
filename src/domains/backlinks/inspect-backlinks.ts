@@ -11,6 +11,9 @@ import { provenance } from "../../envelope/provenance";
 import type { Env } from "../../types/env";
 import type { ToolModule } from "../types";
 
+/** The provider scores domain rank 0-1000 (its default rank_scale), not 0-100 like Domain Rating. */
+const RANK_SCALE = 1000;
+
 const VIEWS = ["authority", "referring_domains", "anchors", "backlinks"] as const;
 
 const inputSchema = z.object({
@@ -56,6 +59,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   });
 
   let returned = 0;
+  let total: number | null = null;
 
   if (view === "authority") {
     const results = (await backlinksSummary(env, "inspect_backlinks", args.domain)) as SummaryResult[];
@@ -67,6 +71,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
         subject: [domainId],
         data: {
           rank: summary.rank ?? null,
+          rank_scale: RANK_SCALE,
           total_backlinks: summary.backlinks ?? null,
           referring_domains: summary.referring_domains ?? null,
           referring_main_domains: summary.referring_main_domains ?? null
@@ -75,13 +80,10 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
       });
     }
   } else if (view === "referring_domains") {
-    const results = (await fetchReferringDomains(
-      env,
-      "inspect_backlinks",
-      args.domain,
-      limit
-    )) as ReferringDomainResult[];
+    const page = await fetchReferringDomains<ReferringDomainResult>(env, "inspect_backlinks", args.domain, limit);
+    const results = page.items;
     returned = results.length;
+    total = page.totalCount;
     for (const item of results) {
       if (!item.domain) continue;
       const referringId = domainEntityId(item.domain);
@@ -89,13 +91,15 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
       builder.addFact({
         type: "backlinks.referring_domain",
         subject: [domainId, referringId],
-        data: { referring_domain: item.domain, backlinks: item.backlinks ?? null, rank: item.rank ?? null },
+        data: { referring_domain: item.domain, backlinks: item.backlinks ?? null, rank: item.rank ?? null, rank_scale: RANK_SCALE },
         provenance: provenance("backlink_index", "referring_domains", { observedAt })
       });
     }
   } else if (view === "anchors") {
-    const results = (await fetchAnchors(env, "inspect_backlinks", args.domain, limit)) as AnchorResult[];
+    const page = await fetchAnchors<AnchorResult>(env, "inspect_backlinks", args.domain, limit);
+    const results = page.items;
     returned = results.length;
+    total = page.totalCount;
     for (const item of results) {
       if (!item.anchor) continue;
       builder.addFact({
@@ -110,8 +114,10 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
       });
     }
   } else {
-    const results = (await backlinksList(env, "inspect_backlinks", args.domain, limit)) as BacklinkResult[];
+    const page = await backlinksList<BacklinkResult>(env, "inspect_backlinks", args.domain, limit);
+    const results = page.items;
     returned = results.length;
+    total = page.totalCount;
     for (const item of results) {
       if (!item.url_from) continue;
       builder.addFact({
@@ -131,7 +137,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   }
 
   return builder
-    .setCoverage({ returned, total: null, as_of: observedAt.toISOString(), scope_note: view === "authority" ? "view=authority" : `view=${view}, limit=${limit}` })
+    .setCoverage({ returned, total: view === "authority" ? returned : total, as_of: observedAt.toISOString(), scope_note: view === "authority" ? "view=authority" : `view=${view}, limit=${limit}` })
     .build();
 }
 

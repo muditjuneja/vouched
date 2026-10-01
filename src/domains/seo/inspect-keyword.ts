@@ -60,7 +60,7 @@ export const inspectKeyword: ToolModule<typeof inputSchema> = {
   name: "inspect_keyword",
   title: "Inspect keyword",
   description:
-    "How big and how hard one keyword is: search volume, difficulty, CPC and intent. For who ranks for it right now, use inspect_serp. Paid market data (Pro and Team plans).",
+    "How big and how hard one keyword is: search volume, difficulty, CPC and intent. For who ranks for it right now, use inspect_serp. Paid market data (Pro and Team plans). A keyword_difficulty of 0 can mean the provider had too little data to score it, not that it's easy; check it against CPC and who ranks.",
   inputSchema,
   handler
 };
