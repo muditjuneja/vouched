@@ -26,7 +26,13 @@ async function handler(_args: Record<string, never>, env: Env) {
 
   if (websites.length === 0) {
     return envelope("core", { connection_required: true, websites: [] })
-      .setCoverage({ returned: 0, total: 0, as_of: null, scope_note: "no websites configured yet" })
+      .setCoverage({
+        returned: 0,
+        total: 0,
+        as_of: null,
+        // Sites in the connected Google account are tracked on first use.
+        scope_note: "no websites tracked yet: the Search Console and Analytics tools accept any site in the connected Google account"
+      })
       .build();
   }
 
@@ -60,7 +66,7 @@ async function handler(_args: Record<string, never>, env: Env) {
 export const listWebsitesTool: ToolModule<z.ZodObject<Record<string, never>>> = {
   name: "list_websites",
   title: "List websites",
-  description: "Your tracked websites and whether Search Console and Google Analytics are connected for each. Pass a returned domain to the Google tools.",
+  description: "Your tracked websites and whether Search Console and Google Analytics are connected for each. Pass a returned domain, or any other site in the connected Google account, to the Google tools.",
   inputSchema: z.object({}),
   handler
 };

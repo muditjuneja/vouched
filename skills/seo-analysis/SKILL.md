@@ -15,10 +15,10 @@ than from general SEO knowledge.
 
 1. Call `describe_capabilities` once. It says which tools are enabled on this
    server and what each one costs. Don't call a tool it doesn't list.
-2. If the question is about the user's own site, call `list_websites`. The
-   `domain` argument of the Search Console and Analytics tools must be one of
-   the `primary_domain` values it returns, and it shows which Google
-   connections each site has.
+2. If the question is about the user's own site, call `list_websites`. It
+   shows the tracked sites and which Google connections each one has. The
+   Search Console and Analytics tools also accept any other site the
+   connected Google account can see, and start tracking it on first use.
 3. Work out today's date before choosing date ranges. Search Console data
    lags by about two days; pass `dataState: "all"` if the user needs the
    last day or two.

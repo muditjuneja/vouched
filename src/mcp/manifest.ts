@@ -216,7 +216,7 @@ export const TOOL_MANIFEST: ToolManifestEntry[] = [
     // Covers Search Console's sitemaps.list.
     name: "list_sitemaps",
     domain: "gsc",
-    summary: "Submitted sitemaps for a tracked website: last-read status, warnings/errors, submitted counts (Google's indexed count here is deprecated, always 0).",
+    summary: "Submitted sitemaps for one of your websites: last-read status, warnings/errors, submitted counts (Google's indexed count here is deprecated, always 0).",
     fact_types: ["gsc.sitemap_status"],
     source_classes: ["webmaster_console"],
     requires_connection: "webmaster_console",

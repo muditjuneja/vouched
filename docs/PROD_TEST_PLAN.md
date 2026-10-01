@@ -97,6 +97,7 @@ Allow on the Vouched consent page. Confirm with `describe_capabilities`.
 |---|---|---|
 | 3.1 | `describe_capabilities {}` | Lists 19 tools; `audit_site` absent or marked not implemented |
 | 3.2 | `list_websites {}` | `SITE` present with both connections shown as connected |
+| 3.2a | `list_sitemaps {domain: "<another site in the Google account, not tracked yet>"}` | Returns its sitemaps; the site now appears on the dashboard's Websites page, with only that one site added |
 | 3.3 | `get_search_performance {domain: SITE, startDate, endDate}` | `gsc.performance_summary` fact with clicks/impressions/ctr/position; `source_class: webmaster_console`, confidence 1 |
 | 3.4 | Same call again | Same numbers; `provenance.cache_hit: true` this time |
 | 3.5 | `get_search_performance {domain: SITE, startDate, endDate, dimensions: ["query"], rowLimit: 5, compareToPreviousPeriod: true}` | 5 `gsc.query_performance` rows; `deltas` present; if the site has more than 5 queries, `resources` holds an `mcpseo://` URI and `coverage.scope_note` mentions `export_dataset` |

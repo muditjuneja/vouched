@@ -26,7 +26,7 @@ Generated from `src/mcp/manifest.ts` by `npm run docs:tools`, edit that file, no
 |---|---|---|---|---|
 | `get_search_performance` | Query/page/date/country/device performance from Search Console, with filters and period-over-period comparison. | `gsc.performance_summary`, `gsc.query_performance` | `webmaster_console` | `webmaster_console` |
 | `inspect_indexing` | Google's own indexing status for one URL: indexed?, canonical Google chose, rich results, last crawl. | `gsc.index_status`, `gsc.rich_results` | `webmaster_console` | `webmaster_console` |
-| `list_sitemaps` | Submitted sitemaps for a tracked website: last-read status, warnings/errors, submitted counts (Google's indexed count here is deprecated, always 0). | `gsc.sitemap_status` | `webmaster_console` | `webmaster_console` |
+| `list_sitemaps` | Submitted sitemaps for one of your websites: last-read status, warnings/errors, submitted counts (Google's indexed count here is deprecated, always 0). | `gsc.sitemap_status` | `webmaster_console` | `webmaster_console` |
 
 ## `analytics` (free)
 

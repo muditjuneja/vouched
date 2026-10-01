@@ -10,7 +10,7 @@ export interface DiscoveredProperty {
 }
 
 /** GSC site URLs come as either "sc-domain:example.com" or a full URL-prefix property like "https://example.com/"; normalizeDomain only understands the latter shape. */
-function gscSiteDomain(siteUrl: string): string {
+export function gscSiteDomain(siteUrl: string): string {
   return normalizeDomain(siteUrl.startsWith("sc-domain:") ? siteUrl.slice("sc-domain:".length) : siteUrl);
 }
 

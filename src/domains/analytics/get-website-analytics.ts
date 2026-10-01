@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { getValidAccessToken } from "../../auth/google-oauth";
 import { runReport } from "../../clients/google/analytics-ga4";
-import { getWebsiteByDomain } from "../../db/websites";
+import { findWebsiteForScope } from "../../auth/google-sites";
 import { envelope } from "../../envelope/builder";
 import { pageEntityId, propertyEntityId } from "../../envelope/entities";
 import { provenance } from "../../envelope/provenance";
@@ -12,7 +12,7 @@ import type { ToolModule } from "../types";
 const METRICS = ["sessions", "activeUsers", "engagementRate"] as const;
 
 const inputSchema = z.object({
-  domain: z.string().describe("A tracked website's primary_domain, e.g. example.com"),
+  domain: z.string().describe("Your site's domain, e.g. example.com: a tracked website, or any site the connected Google account can see"),
   startDate: z.string().describe("YYYY-MM-DD"),
   endDate: z.string().describe("YYYY-MM-DD"),
   dimension: z
@@ -23,11 +23,11 @@ const inputSchema = z.object({
 
 async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   const tenantId = env.__tenantId ?? null;
-  const website = await getWebsiteByDomain(env.DB, args.domain, tenantId);
+  const website = await findWebsiteForScope(env, args.domain, "analytics_property", tenantId);
   if (!website?.ga4_property_id) {
     throw new ConnectionRequiredError(
       "analytics_property",
-      `${args.domain} has no Google Analytics property linked yet. In the Vouched dashboard, connect Google Analytics (Settings), then open Websites, edit ${args.domain} and pick its GA4 property.`
+      `No Google Analytics property found for ${args.domain}. Connect Google Analytics in the Vouched dashboard (Settings) with a Google account that has access to it, or open Websites, edit ${args.domain} and pick its GA4 property.`
     );
   }
 
@@ -99,7 +99,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
 export const getWebsiteAnalytics: ToolModule<typeof inputSchema> = {
   name: "get_website_analytics",
   title: "Get website analytics",
-  description: "Sessions, users and engagement from your own Google Analytics (GA4) for a tracked website.",
+  description: "Sessions, users and engagement from your own Google Analytics (GA4) for one of your websites.",
   inputSchema,
   handler
 };
