@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Env } from "../../../../src/types/env";
 
-import { cachedGscCall } from "../../../../src/domains/gsc/shared";
+import { cachedGscCall, urlInProperty } from "../../../../src/domains/gsc/shared";
 
 function fakeKv(): KVNamespace {
   const store = new Map<string, string>();
@@ -78,5 +78,20 @@ describe("cachedGscCall", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe("urlInProperty", () => {
+  it("matches a domain property's host and subdomains on either scheme, and nothing else", () => {
+    expect(urlInProperty("https://example.com/a", "sc-domain:example.com")).toBe(true);
+    expect(urlInProperty("http://blog.example.com/a", "sc-domain:example.com")).toBe(true);
+    expect(urlInProperty("https://notexample.com/a", "sc-domain:example.com")).toBe(false);
+    expect(urlInProperty("https://example.com.evil.io/a", "sc-domain:example.com")).toBe(false);
+  });
+
+  it("matches a URL-prefix property only under its exact prefix", () => {
+    expect(urlInProperty("https://example.com/blog/post", "https://example.com/blog/")).toBe(true);
+    expect(urlInProperty("http://example.com/blog/post", "https://example.com/blog/")).toBe(false);
+    expect(urlInProperty("https://example.com/shop", "https://example.com/blog/")).toBe(false);
   });
 });

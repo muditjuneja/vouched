@@ -17,6 +17,19 @@ export class ConnectionRequiredError extends Error {
   }
 }
 
+/**
+ * The caller's arguments are well-formed but can't be right (a reversed
+ * date range, a URL outside the website's property). Caught before any
+ * upstream call so the agent gets a fixable `invalid_input` instead of
+ * Google's raw 400/403 as `tool_failed`.
+ */
+export class InvalidInputError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "InvalidInputError";
+  }
+}
+
 /** A configuration problem (missing secret, malformed env), not the caller's fault. */
 export class ConfigError extends Error {
   constructor(message: string) {

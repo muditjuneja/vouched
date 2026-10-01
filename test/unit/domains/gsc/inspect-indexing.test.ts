@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ConnectionRequiredError } from "../../../../src/lib/errors";
+import { ConnectionRequiredError, InvalidInputError } from "../../../../src/lib/errors";
 import type { Env } from "../../../../src/types/env";
 
 const { getWebsiteByDomain } = vi.hoisted(() => ({ getWebsiteByDomain: vi.fn() }));
@@ -130,5 +130,13 @@ describe("inspect_indexing", () => {
     await inspectIndexing.handler(args, env);
     await inspectIndexing.handler(args, env);
     expect(inspectUrl).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects a URL outside the property with invalid_input, without calling Google", async () => {
+    getWebsiteByDomain.mockResolvedValueOnce(WEBSITE);
+    await expect(
+      inspectIndexing.handler({ domain: "example.com", url: "https://other.com/page" }, fakeEnv())
+    ).rejects.toThrow(InvalidInputError);
+    expect(inspectUrl).not.toHaveBeenCalled();
   });
 });

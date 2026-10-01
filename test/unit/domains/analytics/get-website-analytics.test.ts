@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WebsiteRow } from "../../../../src/db/websites";
-import { ConnectionRequiredError } from "../../../../src/lib/errors";
+import { ConnectionRequiredError, InvalidInputError } from "../../../../src/lib/errors";
 import type { Env } from "../../../../src/types/env";
 
 const { getWebsiteByDomain, listWebsites, addWebsite, updateWebsite } = vi.hoisted(() => ({
@@ -38,14 +38,46 @@ describe("get_website_analytics", () => {
       rows: [
         { dimensionValues: [{ value: "20260901" }], metricValues: [{ value: "10" }, { value: "8" }, { value: "0.5" }] },
         { dimensionValues: [{ value: "20260902" }], metricValues: [{ value: "20" }, { value: "12" }, { value: "0.7" }] }
-      ]
+      ],
+      totals: [{ metricValues: [{ value: "30" }, { value: "15" }, { value: "0.633" }] }]
     });
 
     const result = await getWebsiteAnalytics.handler(ARGS, env);
 
     expect(addWebsite).toHaveBeenCalledWith(env.DB, { name: "xmit.sh", primaryDomain: "xmit.sh", ga4PropertyId: "properties/42" }, null);
     expect(runReport).toHaveBeenCalledWith("token-123", "properties/42", expect.objectContaining({ dimensions: ["date"] }));
-    expect(result.facts[0]).toMatchObject({ type: "analytics.traffic_summary", data: { sessions: 30, active_users: 20 } });
+    expect(result.facts[0]).toMatchObject({ type: "analytics.traffic_summary", data: { sessions: 30, active_users: 15 } });
+  });
+
+  it("reports GA4's own totals, not a sum or unweighted mean of the returned rows", async () => {
+    getWebsiteByDomain.mockResolvedValueOnce(WEBSITE as never);
+    runReport.mockResolvedValueOnce({
+      rows: [
+        { dimensionValues: [{ value: "google" }], metricValues: [{ value: "90" }, { value: "70" }, { value: "0.2" }] },
+        { dimensionValues: [{ value: "x.com" }], metricValues: [{ value: "10" }, { value: "9" }, { value: "0.8" }] }
+      ],
+      totals: [{ metricValues: [{ value: "100" }, { value: "74" }, { value: "0.26" }] }],
+      rowCount: 40
+    });
+
+    const result = await getWebsiteAnalytics.handler({ ...ARGS, dimension: "sessionSource" }, env);
+
+    expect(runReport).toHaveBeenCalledWith("token-123", "properties/42", expect.objectContaining({ metricAggregations: ["TOTAL"] }));
+    expect(result.facts[0]!.data).toEqual({ sessions: 100, active_users: 74, avg_engagement_rate: 0.26 });
+    expect(result.coverage).toMatchObject({ returned: 2, total: 40 });
+  });
+
+  it("reports a null engagement rate, not 0, when there were no sessions", async () => {
+    getWebsiteByDomain.mockResolvedValueOnce(WEBSITE as never);
+    runReport.mockResolvedValueOnce({});
+    const result = await getWebsiteAnalytics.handler(ARGS, env);
+    expect(result.facts[0]!.data).toEqual({ sessions: 0, active_users: null, avg_engagement_rate: null });
+  });
+
+  it("rejects a reversed date range before calling Google", async () => {
+    await expect(getWebsiteAnalytics.handler({ ...ARGS, startDate: "2026-09-30", endDate: "2026-09-01" }, env)).rejects.toThrow(InvalidInputError);
+    await expect(getWebsiteAnalytics.handler({ ...ARGS, endDate: "2026-02-30" }, env)).rejects.toThrow(InvalidInputError);
+    expect(runReport).not.toHaveBeenCalled();
   });
 
   it("throws ConnectionRequiredError when the connected account has no property for the site", async () => {

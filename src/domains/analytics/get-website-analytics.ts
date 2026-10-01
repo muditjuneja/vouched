@@ -6,6 +6,7 @@ import { envelope } from "../../envelope/builder";
 import { pageEntityId, propertyEntityId } from "../../envelope/entities";
 import { provenance } from "../../envelope/provenance";
 import { ConnectionRequiredError } from "../../lib/errors";
+import { assertDateRange, isoDate } from "../../lib/date-range";
 import type { Env } from "../../types/env";
 import type { ToolModule } from "../types";
 
@@ -13,8 +14,8 @@ const METRICS = ["sessions", "activeUsers", "engagementRate"] as const;
 
 const inputSchema = z.object({
   domain: z.string().describe("Your site's domain, e.g. example.com: a tracked website, or any site the connected Google account can see"),
-  startDate: z.string().describe("YYYY-MM-DD"),
-  endDate: z.string().describe("YYYY-MM-DD"),
+  startDate: isoDate,
+  endDate: isoDate,
   dimension: z
     .enum(["date", "pagePath", "sessionSource"])
     .optional()
@@ -22,6 +23,7 @@ const inputSchema = z.object({
 });
 
 async function handler(args: z.infer<typeof inputSchema>, env: Env) {
+  assertDateRange(args.startDate, args.endDate);
   const tenantId = env.__tenantId ?? null;
   const website = await findWebsiteForScope(env, args.domain, "analytics_property", tenantId);
   if (!website?.ga4_property_id) {
@@ -37,21 +39,21 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
     startDate: args.startDate,
     endDate: args.endDate,
     dimensions: [dimension],
-    metrics: [...METRICS]
+    metrics: [...METRICS],
+    metricAggregations: ["TOTAL"]
   });
 
   const rows = report.rows ?? [];
   const observedAt = new Date();
   const propertyId = propertyEntityId(website.website_id);
 
-  const totals = rows.reduce(
-    (acc, row) => ({
-      sessions: acc.sessions + Number(row.metricValues[0]?.value ?? 0),
-      activeUsers: acc.activeUsers + Number(row.metricValues[1]?.value ?? 0),
-      engagementSum: acc.engagementSum + Number(row.metricValues[2]?.value ?? 0)
-    }),
-    { sessions: 0, activeUsers: 0, engagementSum: 0 }
-  );
+  // GA4's own totals, not a sum over rows: rows are capped at the limit,
+  // active users are deduplicated across days/pages/sources (so adding
+  // rows double-counts), and engagementRate is a ratio that only averages
+  // correctly weighted by sessions.
+  const total = report.totals?.[0]?.metricValues;
+  const totalOf = (i: number): number | null => (total?.[i]?.value != null ? Number(total[i]!.value) : null);
+  const sessions = totalOf(0) ?? 0;
 
   const builder = envelope("analytics", {
     domain: args.domain,
@@ -64,9 +66,9 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
       type: "analytics.traffic_summary",
       subject: [propertyId],
       data: {
-        sessions: totals.sessions,
-        active_users: totals.activeUsers,
-        avg_engagement_rate: rows.length > 0 ? totals.engagementSum / rows.length : 0
+        sessions,
+        active_users: totalOf(1),
+        avg_engagement_rate: sessions > 0 ? totalOf(2) : null
       },
       provenance: provenance("analytics_property", "ga4.runReport", { observedAt })
     });
@@ -92,7 +94,7 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
   }
 
   return builder
-    .setCoverage({ returned: rows.length, total: null, as_of: observedAt.toISOString(), scope_note: null })
+    .setCoverage({ returned: rows.length, total: report.rowCount ?? null, as_of: observedAt.toISOString(), scope_note: null })
     .build();
 }
 

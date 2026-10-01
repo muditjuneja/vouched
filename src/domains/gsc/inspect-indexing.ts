@@ -5,10 +5,10 @@ import { findWebsiteForScope } from "../../auth/google-sites";
 import { envelope } from "../../envelope/builder";
 import { pageEntityId, propertyEntityId } from "../../envelope/entities";
 import { provenance } from "../../envelope/provenance";
-import { ConnectionRequiredError } from "../../lib/errors";
+import { ConnectionRequiredError, InvalidInputError } from "../../lib/errors";
 import type { Env } from "../../types/env";
 import type { ToolModule } from "../types";
-import { cachedGscCall } from "./shared";
+import { cachedGscCall, urlInProperty } from "./shared";
 
 /** Indexing status changes slower than click/impression counts, no need to re-check as often as get_search_performance's default. */
 const CACHE_TTL_SECONDS = 60 * 60 * 4;
@@ -28,6 +28,11 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
     );
   }
   const siteUrl = website.gsc_site_url;
+  if (!urlInProperty(args.url, siteUrl)) {
+    throw new InvalidInputError(
+      `${args.url} isn't part of the Search Console property ${siteUrl} for ${args.domain}. Pass a URL on that site, or the domain whose property owns this URL.`
+    );
+  }
 
   const accessToken = await getValidAccessToken(env, "webmaster_console", tenantId);
   const { value: result, cacheHit, fetchedAt: observedAt } = await cachedGscCall(

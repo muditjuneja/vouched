@@ -30,3 +30,25 @@ export async function cachedGscCall<T>(
   }));
   return { value: entry.value, cacheHit, fetchedAt: new Date(entry.fetchedAt) };
 }
+
+/**
+ * Whether `url` belongs to a Search Console property, so a URL Inspection
+ * call for some other site is caught here rather than coming back as
+ * Google's 403. A domain property (sc-domain:example.com) covers the host
+ * and every subdomain over either scheme; a URL-prefix property
+ * (https://example.com/blog/) covers exactly what starts with it.
+ */
+export function urlInProperty(url: string, siteUrl: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+  if (siteUrl.startsWith("sc-domain:")) {
+    const domain = siteUrl.slice("sc-domain:".length).toLowerCase();
+    const host = parsed.hostname.toLowerCase();
+    return host === domain || host.endsWith(`.${domain}`);
+  }
+  return parsed.href.toLowerCase().startsWith(siteUrl.toLowerCase());
+}

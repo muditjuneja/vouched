@@ -7,6 +7,9 @@ export interface GA4Report {
     dimensionValues: { value: string }[];
     metricValues: { value: string }[];
   }[];
+  /** Present when the query asked for metricAggregations: ["TOTAL"]. Computed by GA4 over every row, not just the returned page. */
+  totals?: { metricValues: { value: string }[] }[];
+  rowCount?: number;
 }
 
 export interface GA4ReportQuery {
@@ -15,6 +18,7 @@ export interface GA4ReportQuery {
   dimensions: string[];
   metrics: string[];
   limit?: number;
+  metricAggregations?: ("TOTAL" | "MAXIMUM" | "MINIMUM" | "COUNT")[];
 }
 
 /**
@@ -43,7 +47,8 @@ export async function runReport(
       dateRanges: [{ startDate: query.startDate, endDate: query.endDate }],
       dimensions: query.dimensions.map((name) => ({ name })),
       metrics: query.metrics.map((name) => ({ name })),
-      limit: String(query.limit ?? 25)
+      limit: String(query.limit ?? 25),
+      ...(query.metricAggregations ? { metricAggregations: query.metricAggregations } : {})
     })
   });
   if (!res.ok) {

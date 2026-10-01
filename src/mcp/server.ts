@@ -22,7 +22,7 @@ import { inspectSerp } from "../domains/serp/inspect-serp";
 import type { ToolModule } from "../domains/types";
 import type { Plan } from "../db/subscriptions";
 import { ofeEnvelopeSchema } from "../envelope/schema";
-import { ConnectionRequiredError, QuotaExceededError, UpgradeRequiredError } from "../lib/errors";
+import { ConnectionRequiredError, InvalidInputError, QuotaExceededError, UpgradeRequiredError } from "../lib/errors";
 import { DISPLAY_NAME, MCP_SERVER_NAME, SITE_URL } from "../lib/product";
 import { hasDataForSEO, type Env } from "../types/env";
 import { checkDailyCap } from "./daily-cap";
@@ -152,6 +152,7 @@ export function buildMcpServer(env: Env, tenantId: string | null = null, plan: P
           if (error instanceof ConnectionRequiredError) {
             return toolError("connection_required", error.message, { connection: error.connection });
           }
+          if (error instanceof InvalidInputError) return toolError("invalid_input", error.message);
           if (error instanceof QuotaExceededError) return toolError("quota_exceeded", error.message);
           if (error instanceof UpgradeRequiredError) return toolError("upgrade_required", error.message);
           return toolError("tool_failed", error instanceof Error ? error.message : String(error));

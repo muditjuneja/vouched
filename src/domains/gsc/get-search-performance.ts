@@ -9,6 +9,7 @@ import { provenance } from "../../envelope/provenance";
 import type { Entity } from "../../envelope/types";
 import { ConnectionRequiredError } from "../../lib/errors";
 import { storeDataset, type FactDataset } from "../../resources/store";
+import { assertDateRange, isoDate } from "../../lib/date-range";
 import type { Env } from "../../types/env";
 import type { ToolModule } from "../types";
 import { cachedGscCall } from "./shared";
@@ -33,8 +34,8 @@ const FILTER_OPERATORS = ["equals", "contains", "notContains", "notEquals", "inc
 
 const inputSchema = z.object({
   domain: z.string().describe("Your site's domain, e.g. example.com: a tracked website, or any site the connected Google account can see"),
-  startDate: z.string().describe("YYYY-MM-DD"),
-  endDate: z.string().describe("YYYY-MM-DD"),
+  startDate: isoDate,
+  endDate: isoDate,
   dimensions: z
     .array(z.enum(DIMENSIONS))
     .min(1)
@@ -224,6 +225,7 @@ async function fetchTotals(
 }
 
 async function handler(args: z.infer<typeof inputSchema>, env: Env) {
+  assertDateRange(args.startDate, args.endDate);
   const tenantId = env.__tenantId ?? null;
   const website = await findWebsiteForScope(env, args.domain, "webmaster_console", tenantId);
   if (!website?.gsc_site_url) {

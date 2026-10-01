@@ -40,7 +40,8 @@ async function handler(args: z.infer<typeof inputSchema>, env: Env) {
         is_you: domain === args.domain,
         mentions: t.mentions,
         ai_search_volume: t.aiSearchVolume,
-        share_of_voice: allMentions > 0 ? Math.round((t.mentions / allMentions) * 1000) / 1000 : null,
+        // Share of voice needs someone to share with: alone, it would always read 1.
+        share_of_voice: domains.length > 1 && allMentions > 0 ? Math.round((t.mentions / allMentions) * 1000) / 1000 : null,
         top_cited_sources: t.topSources
       },
       provenance: provenance("ai_answer", "ai_answer_mentions", { observedAt, confidence: 0.5 })
