@@ -12,7 +12,14 @@ import { renderPricing } from "./pages/PricingPage";
 import { renderToolPage } from "./pages/ToolPage";
 import { renderToolsIndex } from "./pages/ToolsIndexPage";
 import { renderRobotsTxt, renderSitemapXml } from "./sitemap";
-import { ICON_180_PNG_BASE64, ICON_512_PNG_BASE64, ICON_SVG, OG_PNG_BASE64 } from "./brand-assets.generated";
+import {
+  FAVICON_ICO_BASE64,
+  ICON_180_PNG_BASE64,
+  ICON_512_PNG_BASE64,
+  ICON_SMALL_SVG,
+  ICON_SVG,
+  OG_PNG_BASE64
+} from "./brand-assets.generated";
 
 /**
  * The public, unauthenticated marketing/pSEO site: a self-contained Hono
@@ -85,22 +92,28 @@ marketing.get("/for/:slug", (c) => {
 });
 
 // Brand images (assets/brand/, embedded by `npm run brand:assets`): the
-// social preview image, and the icons directories, Google's consent screen
-// and server.json point at.
+// social preview image, the icons directories, Google's consent screen
+// and server.json point at, and the favicons. /favicon.ico and
+// /favicon.svg are real files, not just <link> data URIs, because favicon
+// crawlers (Google Search, the favicon services directories fall back
+// on) fetch a URL and often try /favicon.ico before reading the page.
 const BRAND_CACHE = "public, max-age=86400";
-function pngFromBase64(base64: string): ArrayBuffer {
+function bytesFromBase64(base64: string): ArrayBuffer {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
   return bytes.buffer;
 }
-const OG_PNG = pngFromBase64(OG_PNG_BASE64);
-const ICON_512_PNG = pngFromBase64(ICON_512_PNG_BASE64);
-const ICON_180_PNG = pngFromBase64(ICON_180_PNG_BASE64);
+const OG_PNG = bytesFromBase64(OG_PNG_BASE64);
+const ICON_512_PNG = bytesFromBase64(ICON_512_PNG_BASE64);
+const ICON_180_PNG = bytesFromBase64(ICON_180_PNG_BASE64);
+const FAVICON_ICO = bytesFromBase64(FAVICON_ICO_BASE64);
 marketing.get("/og.png", (c) => c.body(OG_PNG, 200, { "Content-Type": "image/png", "Cache-Control": BRAND_CACHE }));
 marketing.get("/brand/icon.svg", (c) => c.body(ICON_SVG, 200, { "Content-Type": "image/svg+xml", "Cache-Control": BRAND_CACHE }));
 marketing.get("/brand/icon-512.png", (c) => c.body(ICON_512_PNG, 200, { "Content-Type": "image/png", "Cache-Control": BRAND_CACHE }));
 marketing.get("/brand/icon-180.png", (c) => c.body(ICON_180_PNG, 200, { "Content-Type": "image/png", "Cache-Control": BRAND_CACHE }));
+marketing.get("/favicon.ico", (c) => c.body(FAVICON_ICO, 200, { "Content-Type": "image/x-icon", "Cache-Control": BRAND_CACHE }));
+marketing.get("/favicon.svg", (c) => c.body(ICON_SMALL_SVG, 200, { "Content-Type": "image/svg+xml", "Cache-Control": BRAND_CACHE }));
 
 marketing.get("/sitemap.xml", (c) => {
   return c.body(renderSitemapXml(originFor(c.req.url)), 200, { "Content-Type": "application/xml; charset=utf-8" });

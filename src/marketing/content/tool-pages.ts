@@ -46,7 +46,7 @@ function buildMetaDescription(title: string, entry: ToolManifestEntry): string {
   const scope =
     entry.billing === "free"
       ? "Free, no DataForSEO key needed."
-      : "Self-host with your own DataForSEO key (zero markup), or use it bundled on the hosted plans.";
+      : "Market data from DataForSEO: bundled on the hosted Pro and Team plans, or self-host with your own key (zero markup).";
   return truncate(`${title}: ${entry.summary} ${scope}`, 300);
 }
 

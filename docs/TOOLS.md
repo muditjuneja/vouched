@@ -34,7 +34,7 @@ Generated from `src/mcp/manifest.ts` by `npm run docs:tools`, edit that file, no
 |---|---|---|---|---|
 | `get_website_analytics` | Sessions/users/engagement from owned website analytics. | `analytics.traffic_summary`, `analytics.traffic_by_dimension` | `analytics_property` | `analytics_property` |
 
-## DataForSEO-backed tier, bring your own key
+## DataForSEO-backed tier: Pro and Team when hosted, your own key when self-hosted
 
 ## `seo` (dataforseo)
 

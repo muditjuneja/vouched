@@ -52,7 +52,7 @@ function PricingPage({ cloudMode, signedIn }: { cloudMode: boolean; signedIn: bo
       <Hero
         eyebrow="Pricing"
         heading="Start free with your own Google data. Pay when you need market data."
-        lede="Your Search Console and Analytics data is free. Keyword, backlink, SERP and AI-visibility data costs us real money per call, so it comes with Pro and Team, at cost."
+        lede="Your Search Console and Analytics data is free. Keyword, backlink, SERP and AI-visibility data comes from DataForSEO and costs us real money per call, so it comes with Pro and Team, at cost."
       />
 
       <section id="cloud">

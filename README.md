@@ -23,7 +23,7 @@ Every tool returns the same JSON envelope. Each fact in it says where it came fr
 
 ## Two ways to run it
 
-**Hosted at [vouchedhq.com](https://vouchedhq.com).** Add `https://vouchedhq.com/mcp` as a connector in your AI client and sign in. Your own Google data is free; live market data needs a Pro or Team plan and is billed at cost. See [pricing](https://vouchedhq.com/pricing).
+**Hosted at [vouchedhq.com](https://vouchedhq.com).** Add `https://vouchedhq.com/mcp` as a connector in your AI client and sign in. Your own Google data is free; live market data comes from [DataForSEO](https://dataforseo.com), needs a Pro or Team plan and is billed at cost. See [pricing](https://vouchedhq.com/pricing).
 
 **Self-hosted.** Run the same server on your own Cloudflare account, with your own Google OAuth client and, if you want market data, your own DataForSEO key. No markup, no account with us. See [docs/SELF_HOST.md](docs/SELF_HOST.md).
 
@@ -42,7 +42,7 @@ Both run the same code and expose the same tools.
 | `list_sitemaps` | Submitted sitemaps, with errors, warnings and URL counts |
 | `get_website_analytics` | Sessions, users and engagement from GA4 |
 
-**Market data** (DataForSEO on self-host; Pro or Team plan when hosted)
+**Market data** (from DataForSEO: on a Pro or Team plan when hosted, with your own key when self-hosted)
 
 | Tool | What it answers |
 |---|---|
@@ -68,6 +68,23 @@ Both run the same code and expose the same tools.
 | `export_dataset` | The full result behind a truncated response, kept for 7 days |
 
 Each tool has a page with inputs, outputs and an example response at [vouchedhq.com/tools](https://vouchedhq.com/tools). The generated reference is [docs/TOOLS.md](docs/TOOLS.md).
+
+## Where the data comes from
+
+Vouched has no search index or web crawler of its own. What Vouched builds and runs is the MCP server: sign-in, the response envelope, provenance and confidence on every fact, caching, period comparisons, exports and billing. The data behind the tools comes from your Google account or from DataForSEO:
+
+| Tools | Upstream API | Source class in `provenance` |
+|---|---|---|
+| `get_search_performance`, `inspect_indexing`, `list_sitemaps` | Google Search Console API (Search Analytics, URL Inspection, Sitemaps), read with your own Google sign-in | `webmaster_console` |
+| `get_website_analytics` | Google Analytics Data API (GA4), same sign-in | `analytics_property` |
+| `inspect_domain`, `discover_competitors`, `research_keywords`, `inspect_keyword`, `inspect_page`, `compare_keyword_coverage` | DataForSEO Labs API | `search_index` |
+| `inspect_serp` | DataForSEO SERP API (live Google results) | `live_serp` |
+| `inspect_search_visibility` | DataForSEO Labs API, plus the SERP API when asked to re-check positions live | `search_index`, `live_serp` |
+| `inspect_backlinks`, `compare_backlink_gap` | DataForSEO Backlinks API | `backlink_index` |
+| `discover_ai_citations`, `inspect_ai_visibility` | DataForSEO AI Optimization API (LLM Mentions, for Google AI Overviews or ChatGPT) | `ai_answer` |
+| `describe_capabilities`, `list_websites`, `export_dataset` | None: Vouched's own data | none |
+
+On the hosted Pro and Team plans, market-data calls go through Vouched's DataForSEO account and count against your plan's included market data, priced at DataForSEO's cost (see [pricing](https://vouchedhq.com/pricing)). Self-hosted, they use your own DataForSEO key. DataForSEO only receives the keywords, domains and URLs a request asks about, never your Google data.
 
 ## What a response looks like
 

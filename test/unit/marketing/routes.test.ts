@@ -36,10 +36,12 @@ describe("marketing routes", () => {
     expect(body).toContain('name="twitter:title"');
   });
 
-  it("has a favicon", async () => {
+  it("has a favicon that crawlers can fetch, not just a data URI", async () => {
     const res = await marketing.request("/", {}, fakeEnv());
     const body = await res.text();
-    expect(body).toContain('rel="icon"');
+    expect(body).toContain('<link rel="icon" href="/favicon.ico" sizes="48x48"/>');
+    expect(body).toContain('<link rel="icon" href="/favicon.svg" type="image/svg+xml"/>');
+    expect(body).not.toContain('rel="icon" href="data:');
   });
 
   it("GET /pricing shows the real plan amounts and included quotas", async () => {
@@ -187,13 +189,18 @@ describe("brand images", () => {
     ["/og.png", "image/png"],
     ["/brand/icon-512.png", "image/png"],
     ["/brand/icon-180.png", "image/png"],
-    ["/brand/icon.svg", "image/svg+xml"]
+    ["/brand/icon.svg", "image/svg+xml"],
+    ["/favicon.ico", "image/x-icon"],
+    ["/favicon.svg", "image/svg+xml"]
   ])("serves %s as %s", async (path, type) => {
     const res = await marketing.request(path, {}, fakeEnv());
     expect(res.status).toBe(200);
     expect(res.headers.get("Content-Type")).toBe(type);
     const bytes = new Uint8Array(await res.arrayBuffer());
     if (type === "image/png") expect([...bytes.slice(1, 4)].map((b) => String.fromCharCode(b)).join("")).toBe("PNG");
+    // ICO header: reserved 0, type 1 (icon), then the image count.
+    if (type === "image/x-icon") expect([...bytes.slice(0, 4)]).toEqual([0, 0, 1, 0]);
+    if (type === "image/svg+xml") expect(new TextDecoder().decode(bytes)).toContain("<svg");
   });
 
   it("points every page's share preview at the social image, on the page's own origin", async () => {
