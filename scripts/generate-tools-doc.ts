@@ -48,7 +48,7 @@ const body = [
   "## Free tier, no paid vendor",
   "",
   ...domainsFree.map((d) => section(d, "free")),
-  "## DataForSEO-backed tier, bring your own key",
+  "## DataForSEO-backed tier: Pro and Team when hosted, your own key when self-hosted",
   "",
   ...domainsPaid.map((d) => section(d, "dataforseo"))
 ].join("\n");

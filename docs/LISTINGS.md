@@ -77,7 +77,21 @@ Feeds the server lists in VS Code/GitHub Copilot and other clients.
 
 - Anyone can add Vouched today as a custom connector: Settings → Connectors →
   Add custom connector → `https://vouchedhq.com/mcp`.
-- Submitted; waiting on review.
+- Submitted. The first review asked for an icon and (optionally) clearer
+  data-source answers; resubmit with the form answers below.
+- **Icon:** `https://vouchedhq.com/brand/icon-512.png`. It must be a direct
+  link to an image file. If the field is blank, the directory falls back to
+  a public favicon service for `vouchedhq.com`, which came back empty during
+  review. The site now also serves `/favicon.ico` and `/favicon.svg` as real
+  files for that fallback, but don't rely on it.
+- **First-party API vs. proxying other services:** both are true, so say
+  which part is which. The MCP server is Vouched's own API: sign-in, the
+  response envelope with provenance on every fact, caching, exports and
+  billing. The data comes from Google's Search Console API (including URL
+  Inspection, for `inspect_indexing`) and Analytics Data API, read with the
+  user's own Google sign-in, and from DataForSEO for the market-data tools
+  on Pro and Team. Link the README's "Where the data comes from" table for
+  the per-tool breakdown.
 
 ## Claude Code plugins
 

@@ -64,7 +64,7 @@ describe("pSEO tool page generation", () => {
     const paidHtml = renderToolPage(paidPage, "https://example.com/tools/paid", true);
 
     expect(freeHtml).toContain("Free on every plan");
-    expect(paidHtml).toContain("Paid market data, on Pro and Team.");
+    expect(paidHtml).toContain("Paid market data from DataForSEO, on Pro and Team.");
   });
 
   it("the tools index page links to every tool page and has exactly one h1", () => {

@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from "hono/jsx";
-import { BASE_CSS, FAVICON_HREF, TOKENS_CSS, renderToString } from "../design";
+import { BASE_CSS, FAVICON_HREF, FAVICON_ICO_HREF, TOKENS_CSS, renderToString } from "../design";
 import { DISPLAY_NAME } from "./brand";
 import { Footer } from "./components/Footer";
 import { Nav } from "./components/Nav";
@@ -53,7 +53,8 @@ function Layout({ title, description, canonicalUrl, cloudMode, signedIn = false,
         <title>{title}</title>
         <meta name="description" content={description} />
         <link rel="canonical" href={canonicalUrl} />
-        <link rel="icon" href={FAVICON_HREF} />
+        <link rel="icon" href={FAVICON_ICO_HREF} sizes="48x48" />
+        <link rel="icon" href={FAVICON_HREF} type="image/svg+xml" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,600&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />

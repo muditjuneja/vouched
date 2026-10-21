@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from "hono/jsx";
-import { BASE_CSS, FAVICON_HREF, TOKENS_CSS, renderToString } from "../design";
+import { BASE_CSS, FAVICON_HREF, FAVICON_ICO_HREF, TOKENS_CSS, renderToString } from "../design";
 import { DISPLAY_NAME } from "../lib/product";
 import { Sidebar } from "./components/Sidebar";
 
@@ -46,7 +46,8 @@ function Layout({ title, activePath, user, notice, breadcrumbs, hideSidebar, chi
         <title>
           {title} · {DISPLAY_NAME}
         </title>
-        <link rel="icon" href={FAVICON_HREF} />
+        <link rel="icon" href={FAVICON_ICO_HREF} sizes="48x48" />
+        <link rel="icon" href={FAVICON_HREF} type="image/svg+xml" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
         <link

@@ -14,7 +14,7 @@ function billingNote(entry: ToolPageContent["entry"]): string {
   const costLine = cost
     ? ` A call typically costs ${describeCost(cost)} of market data, so Pro's included $${MONTHLY_QUOTA_USD.pro} covers roughly ${callsIncludedInPro(cost)} ${costUnit(cost)}.`
     : "";
-  return `Paid market data, on Pro and Team.${costLine} Self-hosted, it uses your own DataForSEO key and bills you directly, with nothing added. See pricing for what each tool costs.`;
+  return `Paid market data from DataForSEO, on Pro and Team.${costLine} Self-hosted, it uses your own DataForSEO key and bills you directly, with nothing added. See pricing for what each tool costs.`;
 }
 
 function confidenceLabel(sourceClass: string, score: number): { label: string; badgeClass: string } {
