@@ -406,3 +406,15 @@ describe("/webhooks/clerk", () => {
     expect(await res.text()).toBe("invalid signature");
   });
 });
+
+describe("scheduled (hourly cron)", () => {
+  it("runs the onboarding nudges via waitUntil, and on self-host touches nothing", async () => {
+    const pending: Promise<unknown>[] = [];
+    const ctx = { waitUntil: (p: Promise<unknown>) => pending.push(p), passThroughOnException: () => {} } as unknown as ExecutionContext;
+    const prepare = vi.fn();
+    await worker.scheduled({} as ScheduledController, fakeEnv({ DB: { prepare } as unknown as D1Database }), ctx);
+    expect(pending).toHaveLength(1);
+    await expect(pending[0]).resolves.toEqual({ sent: 0, candidates: 0 });
+    expect(prepare).not.toHaveBeenCalled();
+  });
+});

@@ -23,6 +23,14 @@
 			"invocation_logs": true
 		}
 	},
+	// Hourly: onboarding nudges, see src/email/nudges.ts. Hourly rather than
+	// daily so each person hears from us ~24h after signing up, around the
+	// time of day they were last active, with no time-zone guessing.
+	// Self-host deployments get the trigger too, but the handler does nothing
+	// outside cloud mode.
+	"triggers": {
+		"crons": ["0 * * * *"]
+	},
 	// D1: config (websites), Google OAuth tokens, DataForSEO cost log,
 	// prior-observation snapshots (backs the OFE `deltas` field).
 	"d1_databases": [

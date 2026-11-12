@@ -14,6 +14,7 @@ import { getMembership, resolveTenant } from "./db/team";
 import { ConfigError } from "./lib/errors";
 import { marketing } from "./marketing/routes";
 import { buildMcpServer } from "./mcp/server";
+import { runNudges } from "./email/nudges";
 import { HEALTH_BODY } from "./lib/product";
 import { isCloudMode, type Env } from "./types/env";
 
@@ -302,6 +303,12 @@ export default {
     const limited = await limitClientRegistration(request, env);
     if (limited) return limited;
     return oauthProviderFor(new URL(request.url).origin, app).fetch(request, env, ctx);
+  },
+
+  // The hourly cron in wrangler.jsonc: onboarding nudges (src/email/nudges.ts).
+  // A no-op on self-host, which has no signups or email.
+  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil(runNudges(env));
   }
 };
 

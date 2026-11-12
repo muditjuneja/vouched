@@ -299,6 +299,12 @@ Wired into:
   client on `/authorize`, for people who sign up inside Cursor or Claude and
   may never open the dashboard (that welcome names the client); or any
   dashboard request, as the fallback.
+- **Connect-Google nudge**: the hourly cron (`0 * * * *`, `src/email/nudges.ts`),
+  once per person, to anyone who signed up 1 to 14 days ago and still has no
+  Google connection in the workspace they use, so it lands about 24h after
+  signup; a failed send is retried at most once a day. Names their MCP client when
+  one was approved on `/authorize`; otherwise a general version that also
+  covers connecting a client (API-key users never have a client name).
 - **API key issued/rotated**: every `POST /dashboard/api-keys`.
 - **Google reconnect nudge**: `GET /dashboard`, when GSC/GA4's connection
   state is `reconnect_required`, cooldown-limited to once per 24h per scope.

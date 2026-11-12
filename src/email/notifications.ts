@@ -127,6 +127,85 @@ export function welcomeEmail({ clientName, plan = "free" }: WelcomeOptions = {})
   };
 }
 
+/**
+ * The follow-up for someone who signed up a day or more ago and still hasn't
+ * connected Google (src/email/nudges.ts). With a known client (approved on
+ * /authorize) it speaks to what they've likely seen by now: their agent
+ * asking and getting nothing back. Without one (an API-key connection, or
+ * nothing connected yet) it's the general "one step from real data".
+ */
+export function connectGoogleNudgeEmail(clientName?: string | null): { subject: string; content: EmailContent } {
+  if (!clientName) {
+    return {
+      subject: `Your ${DISPLAY_NAME} setup is one step from real data`,
+      content: {
+        preheader: "Connect Google and your agent can answer from your own Search Console and Analytics. About a minute, read-only.",
+        eyebrow: "One step left",
+        heading: "Your agent is still <em>waiting on data</em>",
+        blocks: [
+          {
+            kind: "p",
+            html: `Your ${DISPLAY_NAME} workspace is set up, but Google isn't connected yet, so there's nothing for your agent to read: questions about your clicks, rankings or traffic come back empty. Connecting takes about a minute, and access is read-only.`
+          },
+          {
+            kind: "steps",
+            items: [
+              { title: "Add your site", html: "Pick the domain you want your agent to work on." },
+              { title: "Connect Google", html: "Search Console and Analytics, read-only. You can disconnect any time from Settings." },
+              {
+                title: "Connect your AI client",
+                html: `Already done? Skip this. Otherwise add <strong>${MCP_URL}</strong> to Claude, Cursor or any MCP client and sign in, then ask: <strong>“${SAMPLE_PROMPT}”</strong>`
+              }
+            ]
+          },
+          { kind: "cta" },
+          {
+            kind: "note",
+            html: `Keyword, backlink, SERP and AI-visibility data are on Pro: $${PLAN_PRICES_USD.pro}/mo, with $${MONTHLY_QUOTA_USD.pro} of data included each month.`
+          }
+        ],
+        cta: { label: "Connect Google", href: dash("/websites") }
+      }
+    };
+  }
+
+  const name = clientName.slice(0, 60);
+  const client = escapeHtml(name);
+  return {
+    subject: `${name} can't see your site yet`,
+    content: {
+      preheader: `Connect Google and ${name} can answer from your own Search Console and Analytics. About a minute, read-only.`,
+      eyebrow: "One step left",
+      heading: `${client} is connected, but it's <em>flying blind</em>`,
+      blocks: [
+        {
+          kind: "p",
+          html: `You connected ${client} to ${DISPLAY_NAME}, but Google isn't connected yet, so there's nothing for it to read: questions about your clicks, rankings or traffic come back empty. Connecting takes about a minute, and access is read-only.`
+        },
+        {
+          kind: "steps",
+          items: [
+            { title: "Add your site", html: "Pick the domain you want your agent to work on." },
+            { title: "Connect Google", html: "Search Console and Analytics, read-only. You can disconnect any time from Settings." },
+            { title: `Ask ${name}`, html: `Head back and try: <strong>“${SAMPLE_PROMPT}”</strong>` }
+          ]
+        },
+        { kind: "cta" },
+        {
+          kind: "note",
+          html: `Asked for keyword, backlink or SERP data and hit a wall? That's on Pro: $${PLAN_PRICES_USD.pro}/mo, with $${MONTHLY_QUOTA_USD.pro} of data included each month.`
+        }
+      ],
+      cta: { label: "Connect Google", href: dash("/websites") }
+    }
+  };
+}
+
+export async function notifyConnectGoogleNudge(env: Env, userId: string, clientName: string | null): Promise<boolean> {
+  const { subject, content } = connectGoogleNudgeEmail(clientName);
+  return sendToTenant(env, userId, subject, content);
+}
+
 /** Sent once per person, from whichever comes first: Clerk's signup webhook, an MCP client's consent, or the dashboard (see src/email/welcome.ts). */
 export async function notifyWelcome(env: Env, userId: string, options: WelcomeOptions = {}): Promise<boolean> {
   const { subject, content } = welcomeEmail(options);
