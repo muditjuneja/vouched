@@ -27,7 +27,15 @@ const SOURCE_LABEL: Record<SignupSource, string> = {
  * markup). HTML escaping still happens at render time on top of this.
  */
 export function cleanClientName(name: string | null | undefined): string | undefined {
-  const cleaned = (name ?? "").replace(/[\u0000-\u001f\u007f<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 60);
+  const cleaned = Array.from(name ?? "")
+    .filter((ch) => {
+      const code = ch.charCodeAt(0);
+      return code > 0x1f && code !== 0x7f && ch !== "<" && ch !== ">";
+    })
+    .join("")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 60);
   return cleaned || undefined;
 }
 
