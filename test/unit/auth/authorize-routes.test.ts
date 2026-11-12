@@ -2,13 +2,15 @@ import { AuthorizationError } from "@cloudflare/workers-oauth-provider";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "../../../src/types/env";
 
-const { authenticateDashboardRequest, getTenantEmail, resolveTenant } = vi.hoisted(() => ({
+const { authenticateDashboardRequest, getTenantEmail, resolveTenant, onboardUser } = vi.hoisted(() => ({
+  onboardUser: vi.fn(async () => {}),
   authenticateDashboardRequest: vi.fn(),
   getTenantEmail: vi.fn(async () => "me@example.com"),
   resolveTenant: vi.fn(async (_db: unknown, userId: string) => ({ userId, tenantId: userId, role: "owner", pausedTeamId: null }))
 }));
 vi.mock("../../../src/auth/clerk", () => ({ authenticateDashboardRequest, getTenantEmail }));
 vi.mock("../../../src/db/team", () => ({ resolveTenant }));
+vi.mock("../../../src/email/welcome", () => ({ onboardUser }));
 
 import { authorizeRoutes } from "../../../src/auth/authorize-routes";
 
@@ -89,6 +91,8 @@ describe("/authorize", () => {
     expect(oauth.completeAuthorization).toHaveBeenCalledWith(
       expect.objectContaining({ userId: "user_1", scope: ["mcp"], props: { kind: "oauth", userId: "user_1" } })
     );
+    // Someone signing up inside an MCP client may never open the dashboard.
+    expect(onboardUser).toHaveBeenCalledWith(expect.anything(), "user_1", { source: "mcp_authorize", clientName: "Claude" });
   });
 
   it("on Deny, redirects back with access_denied and issues nothing", async () => {

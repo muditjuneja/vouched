@@ -50,6 +50,10 @@ CLERK_PUBLISHABLE_KEY=
 # URL or a custom sign-in page; a redirect_url back to the dashboard is
 # appended automatically.
 CLERK_SIGN_IN_URL=
+# Optional: signing secret (whsec_...) of a Clerk webhook endpoint at
+# /webhooks/clerk subscribed to user.created. Records signups and sends the
+# welcome email the moment an account exists.
+CLERK_WEBHOOK_SIGNING_SECRET=
 
 # Dodo Payments (billing). Create Pro/Team products in the Dodo dashboard
 # first and paste their ids below; DODO_ENVIRONMENT defaults to test_mode

@@ -4,6 +4,8 @@ import { csrf } from "hono/csrf";
 import { renderAuthorize, renderAuthorizeError } from "../dashboard/pages/AuthorizePage";
 import { signInTarget } from "../dashboard/pages/SignInRequiredPage";
 import { resolveTenant } from "../db/team";
+import { onboardUser } from "../email/welcome";
+import { runInBackground } from "../lib/background";
 import { ConfigError } from "../lib/errors";
 import { isCloudMode, type Env } from "../types/env";
 import { authenticateDashboardRequest, getTenantEmail } from "./clerk";
@@ -91,6 +93,9 @@ authorizeRoutes.on(["GET", "POST"], AUTHORIZE_PATH, async (c) => {
       scope: [MCP_SCOPE],
       props
     });
+    // Someone who signs up inside an MCP client may never open the
+    // dashboard: record them and their client, and welcome them, here.
+    await runInBackground(c, onboardUser(env, userId, { source: "mcp_authorize", clientName: client?.clientName }));
     approved.headers.set("Location", redirectTo);
     return new Response(null, { status: 302, headers: approved.headers });
   } catch (error) {

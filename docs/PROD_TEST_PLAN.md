@@ -59,7 +59,7 @@ connected the same way (section 2). Either one exercises the real sign-in.
 |---|---|---|
 | 1.1 | Open `https://vouchedhq.com`, signed out | Nav shows "Cloud", hero shows "Start on Cloud" |
 | 1.2 | Click "Start on Cloud", sign in | You land on `/dashboard`, not Clerk's `/default-redirect` and not a 401 loop |
-| 1.3 | Check your inbox | Welcome email from `hello@vouchedhq.com`, and its "Open Vouched" link works |
+| 1.3 | Check your inbox | Welcome email from `hello@vouchedhq.com`, and its "Add your site" button works |
 | 1.4 | Open `https://vouchedhq.com` again | Nav shows "Dashboard", hero shows "Open dashboard" |
 | 1.5 | Websites → Add website → Connect Google (Search Console) | Google consent, then back on Websites with `SITE` listed under discovered properties |
 | 1.6 | Track `SITE`; then connect Analytics and link its GA4 property | Both badges show connected |

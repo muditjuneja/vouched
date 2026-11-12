@@ -98,6 +98,7 @@ Worker runs in self-host mode.
 | `CLERK_PUBLISHABLE_KEY` | The post-sign-in handshake; without it `/dashboard` loops on 401 | Clerk → API Keys (`pk_live_...`) |
 | `CLERK_JWT_KEY` | Faster session checks (recommended) | Clerk → API Keys → PEM public key. Not the publishable key. |
 | `CLERK_SIGN_IN_URL` | Where signed-out visitors go | Your Clerk sign-in page, e.g. `https://accounts.vouchedhq.com/sign-in` |
+| `CLERK_WEBHOOK_SIGNING_SECRET` | Optional: verifies Clerk's `user.created` webhook (signup tracking, prompt welcome email) | Clerk → Webhooks → your endpoint's signing secret |
 | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` | Search Console and GA4 tools | Google Cloud → Credentials (section 6) |
 | `CLOUD_DATAFORSEO_LOGIN`, `CLOUD_DATAFORSEO_PASSWORD` | Paid market-data tools on Pro/Team | Our DataForSEO account |
 | `DATAFORSEO_DAILY_BUDGET_USD` | Optional daily spend warning | Pick a number |
@@ -143,6 +144,12 @@ the domain each request arrives on, and email links use
   treats as sensitive scopes. Until Google verifies the app, users see an
   "unverified app" warning and there's a 100-user cap. Start verification early:
   it takes weeks.
+
+**Clerk webhook** (signup tracking and the welcome email)
+- In Clerk → Webhooks, add endpoint `https://vouchedhq.com/webhooks/clerk`
+  subscribed to `user.created`. Copy its signing secret (`whsec_...`) into
+  `CLERK_WEBHOOK_SIGNING_SECRET`. Without it the welcome still goes out on a
+  person's first MCP sign-in or dashboard visit, just later.
 
 **Dodo Payments**
 - Webhook endpoint: `https://vouchedhq.com/webhooks/dodo`. Subscribe to every

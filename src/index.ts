@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { handleOAuthCallback, handleOAuthStart } from "./auth/oauth-routes";
 import { authenticateBillingRequest } from "./auth/clerk";
 import { authorizeRoutes } from "./auth/authorize-routes";
+import { handleClerkWebhook } from "./auth/clerk-webhook";
 import { limitClientRegistration, oauthProviderFor, type McpCaller } from "./auth/mcp-oauth";
 import { startCheckout, startCustomerPortalSession, startWalletTopup } from "./billing/dodo-client";
 import { MIN_TOPUP_USD } from "./billing/quotas";
@@ -82,6 +83,13 @@ app.post("/webhooks/dodo", async (c) => {
   }
   const handler = buildDodoWebhookHandler(c.env);
   return handler(c);
+});
+
+// Clerk's user.created webhook: records the signup and sends the welcome
+// email the moment an account exists, see src/auth/clerk-webhook.ts.
+app.post("/webhooks/clerk", async (c) => {
+  if (!isCloudMode(c.env)) return c.text("not found", 404);
+  return handleClerkWebhook(c.req.raw, c.env);
 });
 
 // Starts a plan upgrade. Cloud-mode + Clerk-session-gated, same pattern as

@@ -392,3 +392,17 @@ describe("/billing/portal", () => {
     expect(startCustomerPortalSession).toHaveBeenCalledWith(cloudEnv, "cus_123");
   });
 });
+
+describe("/webhooks/clerk", () => {
+  const post = (env: Env) => app.request("/webhooks/clerk", { method: "POST", body: "{}" }, env);
+
+  it("404s outside cloud mode", async () => {
+    expect((await post(fakeEnv({ CLERK_WEBHOOK_SIGNING_SECRET: "whsec_dGVzdA==" }))).status).toBe(404);
+  });
+
+  it("reaches the Clerk handler in cloud mode (an unsigned request is refused, not routed elsewhere)", async () => {
+    const res = await post({ ...cloudEnv, CLERK_WEBHOOK_SIGNING_SECRET: "whsec_dGVzdA==" } as Env);
+    expect(res.status).toBe(400);
+    expect(await res.text()).toBe("invalid signature");
+  });
+});

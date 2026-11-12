@@ -30,8 +30,10 @@ import { addWebsite, deleteWebsite, listWebsites, updateWebsite } from "../db/we
 import { normalizeDomain } from "../envelope/entities";
 import { MONTHLY_QUOTA_USD, TEAM_SEATS } from "../billing/quotas";
 import { buildDiscoveredProperties, type DiscoveredProperty } from "./discovery";
-import { markNotifiedWithCooldown, sendOnce } from "../email/dedup";
-import { notifyApiKeyIssued, notifyReconnectRequired, notifyTeamInvite, notifyWelcome } from "../email/notifications";
+import { markNotifiedWithCooldown } from "../email/dedup";
+import { notifyApiKeyIssued, notifyReconnectRequired, notifyTeamInvite } from "../email/notifications";
+import { onboardUser } from "../email/welcome";
+import { runInBackground } from "../lib/background";
 import { ConfigError } from "../lib/errors";
 import { hasDodo, hasGoogleOAuth, isCloudMode, type Env } from "../types/env";
 import { renderApiKeyCreated } from "./pages/ApiKeyCreatedPage";
@@ -246,6 +248,11 @@ dashboard.use("*", async (c, next) => {
   const ctx = await resolveTenant(c.env.DB, auth.session.userId);
   c.set("ctx", ctx);
   c.set("tenantId", ctx.tenantId);
+  // Fallback for the Clerk webhook and /authorize: whoever reaches the
+  // dashboard first without a welcome gets one (a single read when there's
+  // nothing to do). Page loads only, in the background, so it never slows
+  // a page down or runs on every form post.
+  if (c.req.method === "GET") await runInBackground(c, onboardUser(c.env, ctx.userId, { source: "dashboard" }));
   await next();
   // A stale session token got silently refreshed via authenticateDashboardRequest's
   // GET probe (see its doc comment): carry the refreshed cookies onto whatever
@@ -284,11 +291,6 @@ dashboard.all("/logout", async (c) => {
 dashboard.get("/", async (c) => {
   const tenantId = c.get("tenantId");
   const env = c.env;
-
-  // Approximates "signup complete" as "first dashboard visit": no Clerk
-  // user.created webhook exists in this build (out of scope to add one
-  // just for this welcome email).
-  await sendOnce(env.DB, tenantId, "welcome", () => notifyWelcome(env, tenantId));
 
   const [websiteRows, sub, usage, recentActivity, email, apiKeys, gscState, ga4State] = await Promise.all([
     listWebsites(env.DB, tenantId),

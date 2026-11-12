@@ -59,6 +59,9 @@ if (cloudMode) {
   console.log(
     `[${has("CLERK_SIGN_IN_URL") ? "x" : " "}] CLERK_SIGN_IN_URL set — where /dashboard sends a signed-out visitor`
   );
+  console.log(
+    `[${has("CLERK_WEBHOOK_SIGNING_SECRET") ? "x" : " "}] CLERK_WEBHOOK_SIGNING_SECRET set (optional) — /webhooks/clerk records signups and welcomes them immediately`
+  );
 
   const dodo = has("DODO_API_KEY") && has("DODO_WEBHOOK_SECRET");
   console.log(`[${dodo ? "x" : " "}] Dodo Payments configured (DODO_API_KEY + DODO_WEBHOOK_SECRET)`);

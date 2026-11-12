@@ -6,6 +6,8 @@ export interface SendEmailInput {
   to: string;
   subject: string;
   html: string;
+  /** The plain-text copy. Defaults to one derived from `html` (see htmlToText); src/email/layout.ts renders its own. */
+  text?: string;
   /** Defaults to XMIT_FROM_EMAIL. */
   from?: string;
 }
@@ -64,7 +66,7 @@ export async function sendEmail(env: Env, input: SendEmailInput): Promise<boolea
         to: input.to,
         subject: input.subject,
         html: input.html,
-        text: htmlToText(input.html),
+        text: input.text ?? htmlToText(input.html),
         // An operator copy of every platform email, when configured.
         ...(env.XMIT_BCC_EMAIL && env.XMIT_BCC_EMAIL !== input.to ? { bcc: env.XMIT_BCC_EMAIL } : {})
       })

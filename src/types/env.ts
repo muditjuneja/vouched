@@ -44,6 +44,8 @@ export interface Env {
   CLERK_JWT_KEY?: string; // PEM public key, enables verifyToken() with zero network roundtrip
   /** Where the dashboard sends an unauthenticated visitor: Clerk's Account Portal or a custom sign-in page. A `redirect_url` param is appended. */
   CLERK_SIGN_IN_URL?: string;
+  /** Signing secret (`whsec_...`) of the Clerk webhook endpoint for user.created, see src/auth/clerk-webhook.ts. Unset: /webhooks/clerk 404s and signups are noticed on first sign-in instead. */
+  CLERK_WEBHOOK_SIGNING_SECRET?: string;
   DODO_API_KEY?: string;
   DODO_WEBHOOK_SECRET?: string;
   /** "live_mode" or "test_mode" (Dodo's own enum). Defaults to test_mode when unset, never live by accident. */

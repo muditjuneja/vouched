@@ -292,8 +292,13 @@ neither a Clerk session token nor Dodo's webhook payload reliably carries
 an email address).
 
 Wired into:
-- **Welcome**: a tenant's first `GET /dashboard` visit (approximates
-  "signup complete"; no Clerk `user.created` webhook exists in this build).
+- **Welcome**: once per person, from whichever comes first (all three go
+  through `src/email/welcome.ts`'s `onboardUser`, which also records the
+  person in the `signups` table and pings `ADMIN_ALERT_WEBHOOK_URL`):
+  Clerk's `user.created` webhook (`POST /webhooks/clerk`); approving an MCP
+  client on `/authorize`, for people who sign up inside Cursor or Claude and
+  may never open the dashboard (that welcome names the client); or any
+  dashboard request, as the fallback.
 - **API key issued/rotated**: every `POST /dashboard/api-keys`.
 - **Google reconnect nudge**: `GET /dashboard`, when GSC/GA4's connection
   state is `reconnect_required`, cooldown-limited to once per 24h per scope.
